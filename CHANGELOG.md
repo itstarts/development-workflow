@@ -8,6 +8,9 @@
 
 - 导入经过任务级、集成和最终全量评审的初始实现。
 - 统一 Python 3.9 与 Python 3.14 对深层 JSON 输入的 `invalid_json` 错误分类。
+- 提示词只给出目标新会话的推荐 effort，不再生成模型能力或角色级 effort 配置。
+- 仓库与分支状态段只保留实施门，不再展开工作目录、分支、HEAD 或 worktree 状态。
+- 委派任务时优先使用职责匹配的个人全局 custom agent，并显式处理无法按名称启动的能力缺口。
 
 ### creating-development-specs-and-plans
 

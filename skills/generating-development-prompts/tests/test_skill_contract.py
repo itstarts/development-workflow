@@ -49,7 +49,6 @@ class SkillContractTests(unittest.TestCase):
             "scripts/discover_context.py",
             "scripts/render_prompt.py",
             "assets/development-prompt.md",
-            "assets/final-reviewer.toml",
             "references/discovery-policy.md",
             "references/model-permission-policy.md",
         ):
@@ -74,18 +73,28 @@ class SkillContractTests(unittest.TestCase):
         )
         self.assertIn("markdown code fence", skill)
 
-    def test_no_pause_preference_conflict_is_encoded_instead_of_clarified(self):
-        for relative_path in ("SKILL.md", "references/model-permission-policy.md"):
-            with self.subTest(relative_path=relative_path):
-                policy = read(relative_path).lower()
-                self.assertIn(
-                    "a request to run end-to-end without pausing is a preference, not a blocking ambiguity",
-                    policy,
-                )
-                self.assertIn(
-                    "encode the mandatory pause and current-thread switch gate in the generated prompt",
-                    policy,
-                )
+    def test_skill_records_only_the_new_session_effort_recommendation(self):
+        skill = read("SKILL.md")
+        policy = read("references/model-permission-policy.md")
+        template = read("assets/development-prompt.md")
+        renderer = read("scripts/render_prompt.py")
+
+        for text in (skill, policy, renderer):
+            with self.subTest(resource=text[:20]):
+                self.assertIn("recommended_effort", text)
+        self.assertIn("$new_session_effort", template)
+        for removed in (
+            "$model_evidence",
+            "$implementation_effort",
+            "$review_effort",
+            "$final_effort",
+            "$model_gate",
+        ):
+            with self.subTest(removed=removed):
+                self.assertNotIn(removed, template)
+        self.assertNotIn('"model": dict', renderer)
+        self.assertNotIn("role_efforts", renderer)
+        self.assertNotIn("subagent_overrides_supported", renderer)
 
     def test_execution_contract_contains_all_required_gates(self):
         template_path = ROOT / "assets/development-prompt.md"
@@ -96,6 +105,7 @@ class SkillContractTests(unittest.TestCase):
             ("test-driven development", "测试驱动开发"),
             ("systematic debugging", "系统化调试"),
             ("independent review", "独立评审"),
+            ("global custom agent", "全局子代理"),
             ("fix every finding", "修复所有发现"),
             ("re-review", "复审"),
             ("final full review", "最终全量评审"),
