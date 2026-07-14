@@ -8,9 +8,10 @@
 
 - 导入经过任务级、集成和最终全量评审的初始实现。
 - 统一 Python 3.9 与 Python 3.14 对深层 JSON 输入的 `invalid_json` 错误分类。
-- 提示词只给出目标新会话的推荐 effort，不再生成模型能力或角色级 effort 配置。
+- 移除无法基于任务复杂度可靠判断的 effort 建议及其输入、渲染和校验契约。
 - 仓库与分支状态段只保留实施门，不再展开工作目录、分支、HEAD 或 worktree 状态。
 - 委派任务时优先使用职责匹配的个人全局 custom agent，并显式处理无法按名称启动的能力缺口。
+- 默认自动发现目录改为 `docs/specs` 与 `docs/plans`；生成提示词不绑定外部开发方法或固定评审 skill，并以自包含合同要求任务级 TDD、独立评审循环和集成后的整体评审循环。
 
 ### creating-development-specs-and-plans
 

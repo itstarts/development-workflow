@@ -128,17 +128,6 @@ def validate() -> list[str]:
             if "/Users/" in text or "~/.codex/plugins/cache/" in text:
                 errors.append(f"{path.relative_to(ROOT)}: machine-local path remains")
 
-    asset_path = (
-        skills_root
-        / "generating-development-prompts"
-        / "assets"
-        / "final-reviewer.toml"
-    )
-    project_role_path = ROOT / ".codex" / "agents" / "final-reviewer.toml"
-    if asset_path.is_file() and project_role_path.is_file():
-        if asset_path.read_bytes() != project_role_path.read_bytes():
-            errors.append("project final-reviewer must match the bundled skill asset")
-
     for role_name in ("skill-reviewer", "final-reviewer", "workflow-final-reviewer"):
         path = ROOT / ".codex" / "agents" / f"{role_name}.toml"
         if not path.is_file():

@@ -19,10 +19,8 @@ TOP_LEVEL_TYPES = {
     "warnings": list,
     "request": dict,
     "session_rules": list,
-    "new_session": dict,
     "permissions": dict,
 }
-EFFORT_VALUES = {"minimal", "low", "medium", "high", "xhigh"}
 DEFAULT_ALLOWED = (
     "create-development-branch-or-worktree",
     "create-local-commit",
@@ -149,20 +147,6 @@ def validate(payload: Any) -> None:
     for field in ("reviewer", "reviewed_at"):
         require_nullable_string(review, field, "input.documents.plan.review")
 
-    new_session = payload["new_session"]
-    if set(new_session) != {"recommended_effort"}:
-        raise InputError(
-            "invalid_input",
-            ["input.new_session must contain only recommended_effort"],
-        )
-    recommended_effort = require_type(
-        new_session, "recommended_effort", str, "input.new_session"
-    )
-    if recommended_effort not in EFFORT_VALUES:
-        raise InputError(
-            "invalid_input",
-            ["input.new_session.recommended_effort is not recognized"],
-        )
     permissions = payload["permissions"]
     allowed = require_type(permissions, "allowed", list, "input.permissions")
     forbidden = require_type(permissions, "forbidden", list, "input.permissions")
@@ -242,7 +226,6 @@ def render(payload: Dict[str, Any]) -> str:
         else "计划评审未明确批准：实施前停止修改，取得明确批准后再继续。"
     )
     allowed, forbidden = effective_permissions(payload["permissions"])
-    new_session = payload["new_session"]
     values = {
         "goal_line": f"开发目标：{safe_text(payload['request']['goal'])}",
         "spec_path": safe_text(documents["spec"]["path"]),
@@ -254,10 +237,6 @@ def render(payload: Dict[str, Any]) -> str:
         "branch_gate": branch_gate,
         "rules": rule_lines,
         "plan_gate": plan_gate,
-        "new_session_effort": (
-            "新会话推荐 effort："
-            f"{safe_text(new_session['recommended_effort'])}"
-        ),
         "allowed": "、".join(safe_text(item) for item in allowed),
         "forbidden": "、".join(safe_text(item) for item in forbidden),
     }

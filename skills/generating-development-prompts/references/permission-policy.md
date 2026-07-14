@@ -1,23 +1,6 @@
-# New-Session Effort and Permission Policy
+# Permission Policy
 
-Build one effort recommendation for the target new session and one permission record.
-
-## Resolve the New-Session Effort
-
-Use this descending source priority:
-
-1. An explicit `reasoning_effort` in the current user message.
-2. The default recommendation `high`.
-
-Accept only `minimal`, `low`, `medium`, `high`, or `xhigh`. Record the result as:
-
-```json
-{
-  "recommended_effort": "high"
-}
-```
-
-The generated prompt contains exactly this one effort recommendation. It does not assign efforts to the main agent after startup, implementation subagents, reviewers, or other roles.
+Build one permission record for the target development session.
 
 ## Build the Permission Matrix
 

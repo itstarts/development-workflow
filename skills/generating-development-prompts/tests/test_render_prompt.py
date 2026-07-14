@@ -43,7 +43,6 @@ def valid_payload() -> dict:
         "session_rules": [
             {"path": "/Users/example/AGENTS.md", "source": "session", "precedence": -1}
         ],
-        "new_session": {"recommended_effort": "high"},
         "permissions": {
             "allowed": ["create-development-branch"],
             "forbidden": ["push"],
@@ -115,7 +114,6 @@ class RenderPromptTests(unittest.TestCase):
             ("warnings", {}),
             ("request", []),
             ("session_rules", {}),
-            ("new_session", []),
             ("permissions", []),
         )
         for field, value in cases:
@@ -168,25 +166,12 @@ class RenderPromptTests(unittest.TestCase):
         self.assertIn("main", completed.stdout)
         self.assertIn("master", completed.stdout)
 
-    def test_success_only_recommends_new_session_effort(self):
-        payload = valid_payload()
-
-        completed = self.render_raw(payload)
+    def test_success_omits_new_session_advice_and_effort(self):
+        completed = self.render_raw(valid_payload())
 
         self.assertEqual(0, completed.returncode, completed.stderr)
-        self.assertIn("新会话推荐 effort：high", completed.stdout)
-        self.assertNotIn("新会话推荐 effort：high（来源：", completed.stdout)
-        for removed in (
-            "模型与 reasoning effort",
-            "模型 identity",
-            "当前会话 effort",
-            "实现子代理：",
-            "任务评审与集成评审：",
-            "最终全量评审：",
-            "等待用户把当前线程切换",
-        ):
-            with self.subTest(removed=removed):
-                self.assertNotIn(removed, completed.stdout)
+        self.assertNotIn("新会话建议", completed.stdout)
+        self.assertNotIn("effort", completed.stdout.casefold())
 
     def test_repository_section_contains_only_implementation_gates(self):
         completed = self.render_raw(valid_payload())
@@ -229,7 +214,7 @@ class RenderPromptTests(unittest.TestCase):
             with self.subTest(expected=expected):
                 self.assertIn(expected, output)
 
-    def test_success_is_prompt_only_with_eight_ordered_sections(self):
+    def test_success_is_prompt_only_with_seven_ordered_sections(self):
         completed = self.render_raw(valid_payload())
         self.assertEqual(0, completed.returncode, completed.stderr)
         output = completed.stdout
@@ -243,7 +228,6 @@ class RenderPromptTests(unittest.TestCase):
             "开发目标与来源文档",
             "仓库与分支状态",
             "规则与文档优先级",
-            "新会话建议",
             "权限边界",
             "全局子代理选择",
             "主代理执行合同",
@@ -260,20 +244,54 @@ class RenderPromptTests(unittest.TestCase):
             "/workspace/example/docs/plan.md",
             "/Users/example/AGENTS.md",
             "/workspace/example/AGENTS.md",
-            "新会话推荐 effort：high",
             "create-development-branch",
             "push",
-            "测试驱动开发",
-            "系统化调试",
-            "独立评审",
-            "修复所有发现",
-            "复审",
-            "最终全量评审",
+            "按照计划和适用的仓库规则实施",
+            "与影响范围匹配的验证",
             "验证证据",
-            "只有最终全量评审通过且验证证据完整后，才报告完成",
+            "整体复审通过且验证证据完整后才报告完成",
         ):
             with self.subTest(expected=expected):
                 self.assertIn(expected, output)
+
+    def test_success_requires_generic_independent_review_and_final_rereview(self):
+        output = self.render_raw(valid_payload()).stdout
+
+        for expected in (
+            "未参与实现的独立评审者",
+            "由同一评审者复审当前版本",
+            "独立评审未通过不得进入下一项",
+            "执行整体评审",
+            "重复修复、验证和整体复审",
+            "整体复审通过且验证证据完整后才报告完成",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, output)
+        self.assertNotIn(("super" + "powers").casefold(), output.casefold())
+
+    def test_success_requires_tdd_and_repeatable_review_loops(self):
+        output = self.render_raw(valid_payload()).stdout
+
+        for expected in (
+            "先写并运行失败测试",
+            "确认失败原因符合预期",
+            "再写最小实现",
+            "重复修复、验证和复审，直到 APPROVED",
+            "全部计划任务完成并集成后",
+            "执行整体评审",
+            "重复修复、验证和整体复审，直到 APPROVED",
+        ):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, output)
+
+    def test_success_omits_removed_framework_derived_workflow(self):
+        output = self.render_raw(valid_payload()).stdout
+
+        for removed in (
+            "系统化" + "调试",
+        ):
+            with self.subTest(removed=removed):
+                self.assertNotIn(removed, output)
 
     def test_user_text_and_paths_are_rendered_as_inert_text(self):
         payload = valid_payload()
@@ -311,28 +329,6 @@ class RenderPromptTests(unittest.TestCase):
         self.assertIn(r"\u0060\u0060\u0060shell", output)
         self.assertIn(r"\rquote=\" slash=\\ control=\u0001\u2028\u2029", output)
         self.assertFalse(any(line.startswith("#") for line in output.splitlines()))
-
-    def test_new_session_effort_contract_is_strict(self):
-        cases = (
-            {"recommended_effort": "turbo"},
-            {},
-            {"recommended_effort": 1},
-            {"recommended_effort": "high", "source": "default"},
-        )
-        for new_session in cases:
-            with self.subTest(new_session=new_session):
-                payload = valid_payload()
-                payload["new_session"] = new_session
-                self.assert_rejected(payload, "invalid_input")
-
-    def test_explicit_new_session_effort_is_rendered(self):
-        payload = valid_payload()
-        payload["new_session"] = {"recommended_effort": "xhigh"}
-
-        completed = self.render_raw(payload)
-
-        self.assertEqual(0, completed.returncode, completed.stderr)
-        self.assertIn("新会话推荐 effort：xhigh", completed.stdout)
 
     def test_default_permission_matrix_is_complete(self):
         output = self.render_raw(valid_payload()).stdout

@@ -40,8 +40,8 @@
 
 ## 文档交接契约
 
-- 默认 spec 路径：`docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`。
-- 默认 plan 路径：`docs/superpowers/plans/YYYY-MM-DD-<topic>.md`。
+- 默认 spec 路径：`docs/specs/YYYY-MM-DD-<topic>-design.md`。
+- 默认 plan 路径：`docs/plans/YYYY-MM-DD-<topic>.md`。
 - 用户显式路径优先于默认路径。
 - spec 必须经过用户明确批准后才能作为 plan 的稳定输入。
 - plan 只有真实评审通过后才能记录 `review_status: approved`；不得预填或推断批准状态。

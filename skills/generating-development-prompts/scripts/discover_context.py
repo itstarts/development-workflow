@@ -371,8 +371,8 @@ def discover_documents(
         return missing_documents(), ambiguities, errors, warnings, 3
 
     root = Path(repository["root"]) if repository["root"] else workdir
-    specs = candidates_in(root / "docs" / "superpowers" / "specs", topic, root)
-    plans = candidates_in(root / "docs" / "superpowers" / "plans", topic, root)
+    specs = candidates_in(root / "docs" / "specs", topic, root)
+    plans = candidates_in(root / "docs" / "plans", topic, root)
 
     if explicit_spec and explicit_plan:
         if distinct_markdown_references(explicit_spec, explicit_plan) or distinct_markdown_references(

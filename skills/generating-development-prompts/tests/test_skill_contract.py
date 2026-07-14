@@ -21,6 +21,20 @@ def parse_frontmatter(text: str) -> dict[str, str]:
     return result
 
 
+def production_files() -> tuple[Path, ...]:
+    paths = [ROOT / "SKILL.md"]
+    for directory_name in ("agents", "assets", "references", "scripts"):
+        directory = ROOT / directory_name
+        paths.extend(
+            path
+            for path in directory.rglob("*")
+            if path.is_file()
+            and "__pycache__" not in path.parts
+            and path.suffix not in {".pyc", ".pyo"}
+        )
+    return tuple(sorted(paths))
+
+
 class SkillContractTests(unittest.TestCase):
     def test_frontmatter_has_only_name_and_description(self):
         metadata = parse_frontmatter(read("SKILL.md"))
@@ -50,7 +64,7 @@ class SkillContractTests(unittest.TestCase):
             "scripts/render_prompt.py",
             "assets/development-prompt.md",
             "references/discovery-policy.md",
-            "references/model-permission-policy.md",
+            "references/permission-policy.md",
         ):
             with self.subTest(relative_path=relative_path):
                 self.assertTrue(
@@ -73,28 +87,18 @@ class SkillContractTests(unittest.TestCase):
         )
         self.assertIn("markdown code fence", skill)
 
-    def test_skill_records_only_the_new_session_effort_recommendation(self):
-        skill = read("SKILL.md")
-        policy = read("references/model-permission-policy.md")
-        template = read("assets/development-prompt.md")
-        renderer = read("scripts/render_prompt.py")
-
-        for text in (skill, policy, renderer):
-            with self.subTest(resource=text[:20]):
-                self.assertIn("recommended_effort", text)
-        self.assertIn("$new_session_effort", template)
-        for removed in (
-            "$model_evidence",
-            "$implementation_effort",
-            "$review_effort",
-            "$final_effort",
-            "$model_gate",
-        ):
-            with self.subTest(removed=removed):
-                self.assertNotIn(removed, template)
-        self.assertNotIn('"model": dict', renderer)
-        self.assertNotIn("role_efforts", renderer)
-        self.assertNotIn("subagent_overrides_supported", renderer)
+    def test_production_files_have_no_effort_contract(self):
+        forbidden = (
+            "reasoning_effort",
+            "recommended_effort",
+            "new_session_effort",
+            "新会话建议",
+        )
+        for path in production_files():
+            text = path.read_text(encoding="utf-8").casefold()
+            for phrase in forbidden:
+                with self.subTest(path=path.name, phrase=phrase):
+                    self.assertNotIn(phrase.casefold(), text)
 
     def test_execution_contract_contains_all_required_gates(self):
         template_path = ROOT / "assets/development-prompt.md"
@@ -102,13 +106,12 @@ class SkillContractTests(unittest.TestCase):
         template = template_path.read_text(encoding="utf-8").lower()
         required_gates = (
             ("read the specification, plan, and every applicable agents.md", "读取规格、计划和所有适用的 agents.md"),
-            ("test-driven development", "测试驱动开发"),
-            ("systematic debugging", "系统化调试"),
-            ("independent review", "独立评审"),
             ("global custom agent", "全局子代理"),
-            ("fix every finding", "修复所有发现"),
+            ("repository rules", "仓库规则"),
+            ("tdd", "失败测试"),
+            ("independent reviewer", "独立评审者"),
             ("re-review", "复审"),
-            ("final full review", "最终全量评审"),
+            ("whole-scope review", "整体评审"),
             ("verification evidence", "验证证据"),
             ("only report completion", "才报告完成"),
         )
@@ -119,17 +122,20 @@ class SkillContractTests(unittest.TestCase):
                     f"execution template must contain one of {equivalents!r}",
                 )
 
-    def test_no_placeholder_text_remains(self):
-        production_files = (
-            ROOT / "SKILL.md",
-            ROOT / "assets/development-prompt.md",
-            ROOT / "assets/final-reviewer.toml",
-            ROOT / "references/discovery-policy.md",
-            ROOT / "references/model-permission-policy.md",
-            ROOT / "scripts/discover_context.py",
-            ROOT / "scripts/render_prompt.py",
+    def test_production_files_have_no_framework_name_path_or_derived_workflow(self):
+        forbidden = (
+            "super" + "powers",
+            "systematic " + "debugging",
+            "系统化" + "调试",
         )
-        for path in production_files:
+        for path in production_files():
+            text = path.read_text(encoding="utf-8").casefold()
+            for phrase in forbidden:
+                with self.subTest(path=path.name, phrase=phrase):
+                    self.assertNotIn(phrase.casefold(), text)
+
+    def test_no_placeholder_text_remains(self):
+        for path in production_files():
             with self.subTest(path=path.name):
                 self.assertTrue(path.is_file(), f"production file is missing: {path}")
                 text = path.read_text(encoding="utf-8")

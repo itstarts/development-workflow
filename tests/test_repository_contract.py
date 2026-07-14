@@ -46,7 +46,7 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertTrue((existing / "agents" / "openai.yaml").is_file())
         self.assertFalse(planned.exists())
 
-    def test_skill_final_reviewer_contract_and_workflow_role_do_not_conflict(self):
+    def test_handoff_skill_does_not_bundle_a_final_reviewer(self):
         skill_asset = (
             ROOT
             / "skills"
@@ -56,7 +56,8 @@ class RepositoryContractTests(unittest.TestCase):
         )
         project_role = ROOT / ".codex" / "agents" / "final-reviewer.toml"
         workflow_role = ROOT / ".codex" / "agents" / "workflow-final-reviewer.toml"
-        self.assertEqual(skill_asset.read_bytes(), project_role.read_bytes())
+        self.assertFalse(skill_asset.exists())
+        self.assertTrue(project_role.is_file())
         self.assertTrue(workflow_role.is_file())
 
     def test_agent_rules_record_tdd_and_self_containment_gates(self):
