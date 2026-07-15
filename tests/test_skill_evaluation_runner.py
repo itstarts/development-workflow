@@ -19,32 +19,106 @@ MODULE_SPEC.loader.exec_module(RUNNER)
 
 class SkillEvaluationRunnerTests(unittest.TestCase):
     def test_evaluation_prompt_declares_fixture_root_without_expected_output(self):
-        staged = Path("/tmp/codex-home/skills/creating-development-specs-and-plans")
-        prompt = RUNNER.build_evaluation_prompt("user request", staged)
+        staged = Path("/tmp/codex-home/skills/creating-product-requirements")
+        prompt = RUNNER.build_evaluation_prompt(
+            "user request", "creating-product-requirements", staged
+        )
 
         self.assertIn("current working directory is the fixture repository root", prompt)
         self.assertIn("Do not inspect or search any parent directory", prompt)
-        self.assertIn("Use $creating-development-specs-and-plans", prompt)
+        self.assertIn("Use $creating-product-requirements", prompt)
+        self.assertNotIn("$creating-development-specs-and-plans", prompt)
         self.assertTrue(prompt.endswith("user request"))
         for leaked in ("rubric", "expected output", "failure explanation"):
             self.assertNotIn(leaked, prompt.casefold())
+
+    def test_skill_name_selects_evaluation_root_and_matching_candidate(self):
+        self.assertEqual(
+            ROOT / "evaluations" / "creating-product-requirements",
+            RUNNER.evaluation_root("creating-product-requirements"),
+        )
+        with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "invalid skill name"):
+            RUNNER.evaluation_root("../outside")
+
+        with tempfile.TemporaryDirectory() as directory:
+            skill = Path(directory) / "different-skill"
+            skill.mkdir()
+            (skill / "SKILL.md").write_text(
+                "---\nname: different-skill\ndescription: Use when testing.\n---\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "does not match"):
+                RUNNER.validate_phase_inputs(
+                    "green", "creating-product-requirements", skill
+                )
+
+    def test_case_must_belong_to_selected_skill_evaluation_root(self):
+        wrong_case = (
+            ROOT
+            / "evaluations"
+            / "creating-development-specs-and-plans"
+            / "cases"
+            / "01-approval-gate.md"
+        )
+        with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "does not belong"):
+            RUNNER.resolve_case_path("creating-product-requirements", wrong_case)
 
     def test_evidence_roles_enforce_skill_presence(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             case = root / "case.md"
             case.write_text("request\n", encoding="utf-8")
-            skill = root / "skill"
+            skill = root / "creating-product-requirements"
             skill.mkdir()
-            (skill / "SKILL.md").write_text("skill\n", encoding="utf-8")
+            (skill / "SKILL.md").write_text(
+                "---\nname: creating-product-requirements\n"
+                "description: Use when testing.\n---\n",
+                encoding="utf-8",
+            )
 
             with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "requires a candidate skill"):
-                RUNNER.validate_phase_inputs("current-skill-red", None)
+                RUNNER.validate_phase_inputs(
+                    "current-skill-red", "creating-product-requirements", None
+                )
             with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "cannot receive a target skill"):
-                RUNNER.validate_phase_inputs("migration-baseline", skill)
-            RUNNER.validate_phase_inputs("current-skill-red", skill)
-            RUNNER.validate_phase_inputs("migration-baseline", None)
-            RUNNER.validate_phase_inputs("green", skill)
+                RUNNER.validate_phase_inputs(
+                    "migration-baseline", "creating-product-requirements", skill
+                )
+            RUNNER.validate_phase_inputs(
+                "current-skill-red", "creating-product-requirements", skill
+            )
+            RUNNER.validate_phase_inputs(
+                "migration-baseline", "creating-product-requirements", None
+            )
+            RUNNER.validate_phase_inputs(
+                "green", "creating-product-requirements", skill
+            )
+
+    def test_cli_requires_explicit_skill_name(self):
+        with self.assertRaises(SystemExit):
+            RUNNER.parse_args(
+                [
+                    "--phase",
+                    "migration-baseline",
+                    "--case",
+                    "case.md",
+                    "--output-root",
+                    "output",
+                ]
+            )
+        args = RUNNER.parse_args(
+            [
+                "--skill-name",
+                "creating-product-requirements",
+                "--phase",
+                "migration-baseline",
+                "--case",
+                "case.md",
+                "--output-root",
+                "output",
+            ]
+        )
+        self.assertEqual("creating-product-requirements", args.skill_name)
 
     def test_sandbox_profile_limits_writes_to_fixture_and_home(self):
         with tempfile.TemporaryDirectory() as directory:

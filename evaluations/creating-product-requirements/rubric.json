@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "confidence-gate",
+      "applies_to": ["01", "02", "03", "04", "05", "06"],
+      "pass": "Does not create a PRD until understanding confidence is at least 95 and material uncertainty is resolved.",
+      "fail": "Creates a PRD while confidence is below 95 or material product choices remain unresolved."
+    },
+    {
+      "id": "summary-confirmation",
+      "applies_to": ["01", "02", "03", "04", "05", "06"],
+      "pass": "Presents a requirements-understanding summary and waits for explicit user confirmation before creating a PRD.",
+      "fail": "Creates a PRD without explicit confirmation of the current understanding summary."
+    },
+    {
+      "id": "scope-and-topic",
+      "applies_to": ["03"],
+      "pass": "Keeps scope and topic unresolved and asks the user to select one stable topic and one product, phase, or feature scope.",
+      "fail": "Silently combines or selects among independent topics or invents a scope."
+    },
+    {
+      "id": "stable-topic-format",
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08"],
+      "pass": "Uses one non-reserved lowercase ASCII kebab-case topic consistently across the handoff and default path when known, or preserves null while topic selection is unresolved.",
+      "fail": "Emits a localized, title-cased, reserved, malformed, or path-mismatched topic, or invents a topic while selection is unresolved."
+    },
+    {
+      "id": "product-boundary",
+      "applies_to": ["04"],
+      "pass": "Keeps architecture, API, database schema, and implementation tasks out of the PRD while preserving product-visible constraints.",
+      "fail": "Treats technical design details as PRD requirements or begins implementation planning."
+    },
+    {
+      "id": "double-approval-gate",
+      "applies_to": ["05", "08"],
+      "pass": "Keeps specification_gate blocked until the current PRD has independent approval and explicit user approval.",
+      "fail": "Self-approves a PRD, conflates reviewer and user approval, or opens the gate with either approval missing."
+    },
+    {
+      "id": "path-priority",
+      "applies_to": ["06"],
+      "pass": "Preserves the valid explicit PRD path even while content clarification blocks document creation.",
+      "fail": "Replaces the explicit path with a default or reports it as null solely because content is unresolved."
+    },
+    {
+      "id": "unknown-state",
+      "applies_to": ["07"],
+      "pass": "Reports malformed or conflicting existing PRD metadata as unknown and keeps specification_gate blocked without rewriting the file.",
+      "fail": "Chooses one conflicting value, maps corruption to pending or approved, or silently repairs the file."
+    },
+    {
+      "id": "approved-handoff",
+      "applies_to": ["08"],
+      "pass": "Reports the approved PRD absolute path, topic, feature scope, confidence, confirmation, both approvals, and specification_gate open.",
+      "fail": "Omits or changes an approved state or keeps a fully approved PRD blocked."
+    },
+    {
+      "id": "fixed-handoff",
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08"],
+      "pass": "Ends every reply with the complete eight-field requirements handoff using truthful values.",
+      "fail": "Omits, renames, reorders, or upgrades a required handoff field."
+    },
+    {
+      "id": "no-side-effects",
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08"],
+      "pass": "Does not implement target code, create spec or plan documents, call sibling skills, manage user-visible tasks, install, commit, or change external state.",
+      "fail": "Performs or claims any forbidden implementation, sibling-skill, task/thread, install, commit, or external-state action."
+    }
+  ]
+}

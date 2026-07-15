@@ -69,8 +69,8 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
         description = metadata["description"]
         self.assertTrue(description.startswith("Use when"))
         for trigger in (
-            "development requirements",
-            "design",
+            "approved product requirements",
+            "technical specification",
             "specification",
             "implementation plan",
             "development handoff",
@@ -107,6 +107,17 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, text)
 
+    def test_known_unavailable_reviewer_is_not_dispatched_or_waited_on(self):
+        text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
+        for required in (
+            "reviewer is known to be unavailable",
+            "do not dispatch",
+            "do not wait",
+            "keep independent review pending",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+
     def test_plan_review_and_three_state_handoff_are_explicit(self):
         text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
         for required in (
@@ -127,7 +138,7 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             "every user-facing response",
             "clarification question",
             "blocked response",
-            "must end with the complete six-field record",
+            "must end with the complete fourteen-field record",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, text)
@@ -168,12 +179,101 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, text)
 
+    def test_approved_prd_is_required_before_spec_creation(self):
+        text = (
+            read("SKILL.md")
+            + read("references/discovery-and-clarification.md")
+            + read("references/document-contracts.md")
+        ).casefold()
+        for required in (
+            "approved product requirements",
+            "inspect_product_requirements.py",
+            "expected topic",
+            "expected scope",
+            "do not create or materially modify the spec",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+
+    def test_fixed_handoff_contains_requirements_and_existing_fields(self):
+        text = read("references/review-and-handoff.md").casefold()
+        for field in (
+            "requirements_path",
+            "requirements_topic",
+            "requirements_scope",
+            "requirements_understanding_confidence",
+            "requirements_understanding_confirmation",
+            "requirements_user_approval",
+            "requirements_independent_review",
+            "specification_gate",
+            "spec_path",
+            "spec_user_approval",
+            "spec_independent_review",
+            "plan_path",
+            "plan_review_status",
+            "implementation_gate",
+        ):
+            with self.subTest(field=field):
+                self.assertIn(f"{field}:", text)
+        self.assertIn("fourteen-field", text)
+
+    def test_fixed_handoff_has_exact_order_and_spec_state_values(self):
+        text = read("references/review-and-handoff.md")
+        match = re.search(r"```text\n(.*?)\n```", text, re.DOTALL)
+        self.assertIsNotNone(match)
+        lines = match.group(1).splitlines()
+        self.assertEqual(
+            [
+                "requirements_path",
+                "requirements_topic",
+                "requirements_scope",
+                "requirements_understanding_confidence",
+                "requirements_understanding_confirmation",
+                "requirements_user_approval",
+                "requirements_independent_review",
+                "specification_gate",
+                "spec_path",
+                "spec_user_approval",
+                "spec_independent_review",
+                "plan_path",
+                "plan_review_status",
+                "implementation_gate",
+            ],
+            [line.split(":", 1)[0] for line in lines],
+        )
+        self.assertEqual(
+            "spec_user_approval: pending | approved",
+            lines[9],
+        )
+        self.assertEqual(
+            "spec_independent_review: pending | approved",
+            lines[10],
+        )
+
+    def test_technical_spec_includes_interfaces_and_data_model_when_relevant(self):
+        text = (
+            read("references/document-contracts.md") + read("assets/spec-template.md")
+        ).casefold()
+        for required in (
+            "api",
+            "technical interfaces",
+            "data model",
+            "entity relationships",
+            "migration boundaries",
+            "state transitions",
+            "consistency",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+
     def test_templates_start_pending_and_plan_is_parser_compatible(self):
         spec_template = read("assets/spec-template.md")
         plan_template = read("assets/plan-template.md")
         self.assertTrue(spec_template.startswith("---\n"))
-        self.assertIn("user_approval: pending", spec_template)
-        self.assertNotIn("user_approval: approved", spec_template)
+        spec_metadata = parse_frontmatter(spec_template)
+        self.assertEqual("pending", spec_metadata["user_approval"])
+        self.assertEqual("pending", spec_metadata["independent_review"])
+        self.assertEqual("approved", spec_metadata["requirements_user_approval"])
         self.assertTrue(plan_template.startswith("---\n"))
         self.assertIn("review_status: pending", plan_template)
         self.assertIn("spec_path:", plan_template)

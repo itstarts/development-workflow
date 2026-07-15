@@ -1,26 +1,24 @@
-# GREEN Case 06 — Selected Output
+检查完成，未修改任何文件。
 
-Sanitization: the ephemeral fixture prefix was replaced with `/workspace/order-service`.
+- [PRD](/workspace/fixture/docs/requirements/2026-07-12-order-approval.md)：已批准；理解置信度 97；理解确认、用户批准、独立评审均为 `approved`。
+- [Technical spec](/workspace/fixture/docs/specs/2026-07-12-order-approval-design.md)：用户批准和独立评审均为 `approved`。
+- [Implementation plan](/workspace/fixture/docs/plans/2026-07-12-order-approval.md)：独立评审状态为 `approved`。
 
-检查完成，文档未修改，未实现代码。
+引用链、topic `order-approval` 和 scope `feature` 均一致。因此实现门禁已开启，**现在可以开始实现**。
 
-- Spec：[2026-07-12-order-approval-design.md](/workspace/order-service/docs/specs/2026-07-12-order-approval-design.md)
-  - 用户批准：`approved`
-  - 独立评审：`approved`
-  - 评审者：`fixture-spec-reviewer`
-  - 日期：`2026-07-12`
-
-- Plan：[2026-07-12-order-approval.md](/workspace/order-service/docs/plans/2026-07-12-order-approval.md)
-  - 关联上述已批准 spec
-  - 独立评审：`approved`
-  - 评审者：`fixture-plan-reviewer`
-  - 日期：`2026-07-12`
-
-所需门禁均已满足，现在可以开始实现。
-
-spec_path: /workspace/order-service/docs/specs/2026-07-12-order-approval-design.md
+```text
+requirements_path: /workspace/fixture/docs/requirements/2026-07-12-order-approval.md
+requirements_topic: order-approval
+requirements_scope: feature
+requirements_understanding_confidence: 97
+requirements_understanding_confirmation: approved
+requirements_user_approval: approved
+requirements_independent_review: approved
+specification_gate: open
+spec_path: /workspace/fixture/docs/specs/2026-07-12-order-approval-design.md
 spec_user_approval: approved
 spec_independent_review: approved
-plan_path: /workspace/order-service/docs/plans/2026-07-12-order-approval.md
+plan_path: /workspace/fixture/docs/plans/2026-07-12-order-approval.md
 plan_review_status: approved
 implementation_gate: open
+```

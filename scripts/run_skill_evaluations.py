@@ -17,7 +17,6 @@ from typing import Any, Iterable, Optional, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EVALUATION_ROOT = ROOT / "evaluations" / "creating-development-specs-and-plans"
 PUBLISHABLE_ENTRIES = ("SKILL.md", "agents", "assets", "references", "scripts")
 MODEL_KEYS = ("model_provider", "model", "model_reasoning_effort")
 PROVIDER_KEYS = ("name", "base_url", "wire_api", "requires_openai_auth")
@@ -27,14 +26,56 @@ SANDBOX_DENIAL_MARKERS = (
     "deny file-read",
     "deny file-write",
 )
+SKILL_NAME_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 
 
 class EvaluationBlocked(RuntimeError):
     """Raised when isolation or runtime prerequisites are unavailable."""
 
 
-def validate_phase_inputs(phase: str, skill_dir: Optional[Path]) -> None:
+def evaluation_root(skill_name: str) -> Path:
+    """Return the versioned evidence root for one validated skill name."""
+    if SKILL_NAME_PATTERN.fullmatch(skill_name) is None:
+        raise EvaluationBlocked(f"invalid skill name: {skill_name}")
+    return ROOT / "evaluations" / skill_name
+
+
+def resolve_case_path(skill_name: str, case_path: Path) -> Path:
+    """Resolve a case only when it belongs to the selected skill evidence root."""
+    resolved = case_path.resolve()
+    cases_root = (evaluation_root(skill_name) / "cases").resolve()
+    if os.path.commonpath((str(resolved), str(cases_root))) != str(cases_root):
+        raise EvaluationBlocked(
+            f"evaluation case does not belong to selected skill {skill_name}"
+        )
+    if not resolved.is_file():
+        raise EvaluationBlocked("evaluation case is unavailable")
+    return resolved
+
+
+def _candidate_skill_name(skill_dir: Path) -> str:
+    skill_path = skill_dir / "SKILL.md"
+    if not skill_path.is_file():
+        raise EvaluationBlocked("candidate skill is missing SKILL.md")
+    text = skill_path.read_text(encoding="utf-8")
+    match = re.match(r"\A---\n(.*?)\n---\n", text, re.DOTALL)
+    if match is None:
+        raise EvaluationBlocked("candidate skill frontmatter is malformed")
+    names = [
+        line.split(":", 1)[1].strip()
+        for line in match.group(1).splitlines()
+        if line.startswith("name:")
+    ]
+    if len(names) != 1 or SKILL_NAME_PATTERN.fullmatch(names[0]) is None:
+        raise EvaluationBlocked("candidate skill name is malformed")
+    return names[0]
+
+
+def validate_phase_inputs(
+    phase: str, skill_name: str, skill_dir: Optional[Path]
+) -> None:
     """Enforce which evidence roles may receive a candidate skill."""
+    evaluation_root(skill_name)
     if phase not in EVIDENCE_ROLES:
         raise EvaluationBlocked(f"unsupported evidence role: {phase}")
     if phase == "migration-baseline" and skill_dir is not None:
@@ -43,6 +84,12 @@ def validate_phase_inputs(phase: str, skill_dir: Optional[Path]) -> None:
         skill_dir is None or not (skill_dir / "SKILL.md").is_file()
     ):
         raise EvaluationBlocked(f"{phase} requires a candidate skill directory")
+    if skill_dir is not None:
+        candidate_name = _candidate_skill_name(skill_dir)
+        if skill_dir.name != skill_name or candidate_name != skill_name:
+            raise EvaluationBlocked(
+                f"candidate skill {skill_dir.name}/{candidate_name} does not match {skill_name}"
+            )
 
 
 def _sandbox_quote(path: Path) -> str:
@@ -121,7 +168,9 @@ def build_codex_command(fixture_root: Path, output_path: Path) -> list[str]:
     ]
 
 
-def build_evaluation_prompt(case_text: str, staged_skill: Optional[Path]) -> str:
+def build_evaluation_prompt(
+    case_text: str, skill_name: str, staged_skill: Optional[Path]
+) -> str:
     """Add only isolation boundaries and the optional staged-skill invocation."""
     parts = [
         "Isolation context: The current working directory is the fixture repository root. "
@@ -130,7 +179,7 @@ def build_evaluation_prompt(case_text: str, staged_skill: Optional[Path]) -> str
     ]
     if staged_skill is not None:
         parts.append(
-            "Use $creating-development-specs-and-plans at "
+            f"Use ${skill_name} at "
             f"{staged_skill} to handle this request."
         )
     parts.append(case_text)
@@ -326,12 +375,14 @@ def stage_runtime_shims(codex_home: Path) -> Path:
     return bin_dir
 
 
-def _copy_fixture(case_path: Path, fixture_root: Path) -> None:
-    common = EVALUATION_ROOT / "fixtures" / "common"
+def _copy_fixture(
+    case_path: Path, fixture_root: Path, selected_evaluation_root: Path
+) -> None:
+    common = selected_evaluation_root / "fixtures" / "common"
     if not common.is_dir():
         raise EvaluationBlocked("common evaluation fixture is unavailable")
     shutil.copytree(common, fixture_root)
-    overlay = EVALUATION_ROOT / "fixtures" / case_path.stem
+    overlay = selected_evaluation_root / "fixtures" / case_path.stem
     if overlay.is_dir():
         shutil.copytree(overlay, fixture_root, dirs_exist_ok=True)
 
@@ -447,9 +498,14 @@ def build_result(
 
 
 def run_evaluation(
-    phase: str, case_path: Path, output_root: Path, skill_dir: Optional[Path]
+    skill_name: str,
+    phase: str,
+    case_path: Path,
+    output_root: Path,
+    skill_dir: Optional[Path],
 ) -> int:
-    validate_phase_inputs(phase, skill_dir)
+    validate_phase_inputs(phase, skill_name, skill_dir)
+    selected_evaluation_root = evaluation_root(skill_name)
     sandbox_exec = Path("/usr/bin/sandbox-exec")
     codex = shutil.which("codex")
     if not sandbox_exec.is_file():
@@ -457,16 +513,14 @@ def run_evaluation(
     if not codex:
         raise EvaluationBlocked("codex CLI is unavailable")
 
-    case_path = case_path.resolve()
-    if not case_path.is_file():
-        raise EvaluationBlocked("evaluation case is unavailable")
+    case_path = resolve_case_path(skill_name, case_path)
     source_home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex")).expanduser()
 
     with tempfile.TemporaryDirectory(prefix="dw-skill-eval-") as temporary:
         temp_root = Path(temporary)
         fixture_root = temp_root / "fixture"
         codex_home = temp_root / "codex-home"
-        _copy_fixture(case_path, fixture_root)
+        _copy_fixture(case_path, fixture_root, selected_evaluation_root)
         _initialize_fixture_repository(fixture_root)
         stage_codex_home(source_home, codex_home, skill_dir)
         runtime_bin = stage_runtime_shims(codex_home)
@@ -482,7 +536,7 @@ def run_evaluation(
             _runtime_read_roots(Path(codex)),
         )
         prompt = build_evaluation_prompt(
-            case_path.read_text(encoding="utf-8"), staged_skill
+            case_path.read_text(encoding="utf-8"), skill_name, staged_skill
         )
         command = build_codex_command(fixture_root, final_path)
         provider_overrides = load_provider_overrides(source_home / "config.toml")
@@ -545,6 +599,7 @@ def run_evaluation(
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--skill-name", required=True)
     parser.add_argument("--phase", required=True, choices=EVIDENCE_ROLES)
     parser.add_argument("--case", required=True, type=Path)
     parser.add_argument("--skill-dir", type=Path)
@@ -556,7 +611,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     try:
         return run_evaluation(
-            args.phase, args.case, args.output_root, args.skill_dir
+            args.skill_name, args.phase, args.case, args.output_root, args.skill_dir
         )
     except EvaluationBlocked as error:
         _write_local_result(

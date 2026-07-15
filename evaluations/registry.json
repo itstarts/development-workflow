@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "skills": {
+    "creating-development-specs-and-plans": {
+      "evaluation_mode": "managed",
+      "evidence_profile": "creation-plus-current-red",
+      "stage": "review-approved"
+    },
+    "creating-product-requirements": {
+      "evaluation_mode": "managed",
+      "evidence_profile": "creation-only",
+      "stage": "review-approved"
+    },
+    "generating-development-prompts": {
+      "evaluation_mode": "imported",
+      "evidence_profile": "imported-reviewed",
+      "stage": "review-approved"
+    }
+  }
+}

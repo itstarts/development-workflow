@@ -1,18 +1,34 @@
-# GREEN Case 01 — Selected Output
+当前被硬门禁阻塞，不能创建 spec、plan 或开始编码。
 
-Sanitization: the ephemeral fixture prefix was replaced with `/workspace/order-service`.
+仓库证据显示订单系统目前只有创建订单能力，没有审批流程、通知渠道或审批权限模型。你也明确说明：
 
-仓库明确没有现成审批授权模型，而“谁能审批”会直接改变权限与安全边界。请先选择 MVP 方案：
+- 没有已批准 PRD；
+- 稳定 topic 尚未确认；
+- `feature` 只是暂定 scope；
+- 审批人、通知方式、驳回后重提规则均未确定。
 
-1. `order_approver` 固定角色（推荐）：边界清晰、实现最小，但需调用方提供可信身份/角色。
-2. 提交时为每个订单指定审批人：更灵活，但需要新增审批人字段及防篡改规则。
-3. 订单所有者的直属主管：符合常见流程，但当前仓库没有组织架构数据，会引入外部依赖。
+下一步需要先形成并批准 PRD，然后提供：
 
-请回复 `1`、`2` 或 `3`。之后我会继续逐项确认通知方式和驳回后能否重提。依照仓库及技能门禁，目前不能生成 spec、plan 或开始编码。
+1. PRD 的仓库内路径；
+2. 确认后的 kebab-case topic，例如 `order-approval`；
+3. 确认后的 scope；
+4. PRD 中可靠记录的理解确认、用户批准及独立评审状态。
 
-spec_path: /workspace/order-service/docs/specs/2026-07-15-order-approval-design.md
+之后才能依次进行：PRD 检查 → spec → 独立评审 → 你的明确批准 → plan → 独立评审。此技能的交付边界止于文档交接，本轮不能实施目标代码。
+
+```text
+requirements_path: null
+requirements_topic: null
+requirements_scope: unknown
+requirements_understanding_confidence: unknown
+requirements_understanding_confirmation: unknown
+requirements_user_approval: unknown
+requirements_independent_review: unknown
+specification_gate: blocked
+spec_path: null
 spec_user_approval: pending
 spec_independent_review: pending
-plan_path: /workspace/order-service/docs/plans/2026-07-15-order-approval.md
+plan_path: null
 plan_review_status: not-approved
 implementation_gate: blocked
+```

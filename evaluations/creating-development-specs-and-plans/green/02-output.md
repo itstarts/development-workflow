@@ -1,18 +1,24 @@
-# GREEN Case 02 — Selected Output
+未创建或修改任何文件，也未实现代码。
 
-Sanitization: the ephemeral fixture prefix was replaced with `/workspace/order-service`.
+原因：仓库没有已批准 PRD，且请求未提供 PRD 路径，因此规格门禁无法开启。根据技能及 `AGENTS.md`：
 
-仓库目前只有 `created` 状态，且明确没有审批授权模型。请确认采用哪种审批契约：
+- 不能创建 `design/order-approval.md`。
+- 未经独立评审及用户明确批准规格，不能创建计划。
+- 没有真实独立评审，不能把计划标记为 approved。
 
-1. **显式审批人（推荐）**：订单所有者提交后进入 `pending`；仅指定且非订单所有者的审批人可将其改为 `approved` 或 `rejected`。
-2. **任意非所有者审批**：无需预先指定审批人，权限边界较弱。
-3. **仅状态流、不做授权**：任何调用方均可审批，仅适合可信内部环境。
+仓库当前仅支持创建订单，尚无审批流程、通知渠道或审批授权模型。
 
-回复选项编号即可。按仓库和技能的强制门禁，确认前不能创建规格；计划还必须等待规格独立评审及你的明确批准。
-
-spec_path: /workspace/order-service/design/order-approval.md
+requirements_path: null
+requirements_topic: order-approval
+requirements_scope: feature
+requirements_understanding_confidence: unknown
+requirements_understanding_confirmation: unknown
+requirements_user_approval: unknown
+requirements_independent_review: unknown
+specification_gate: blocked
+spec_path: /workspace/fixture/design/order-approval.md
 spec_user_approval: pending
 spec_independent_review: pending
-plan_path: /workspace/order-service/delivery/order-approval-plan.md
+plan_path: /workspace/fixture/delivery/order-approval-plan.md
 plan_review_status: not-approved
 implementation_gate: blocked

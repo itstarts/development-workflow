@@ -1,0 +1,4 @@
+interface:
+  display_name: "Creating Product Requirements"
+  short_description: "Create approved product requirements before technical design"
+  default_prompt: "Use $creating-product-requirements to clarify this product request, confirm the requirements summary with me, and create an independently reviewed PRD."

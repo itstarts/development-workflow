@@ -1,11 +1,16 @@
 {
   "schema_version": 3,
   "evidence_role": "current-skill-red",
-  "selected_case": "04",
+  "selected_case": "09",
   "valid": true,
   "red_observed": true,
-  "failed_criteria": ["default-paths"],
-  "warnings": ["three recovered diagnostic command failures"],
-  "output": "migration-red/04-output.md",
-  "sanitization": "The ephemeral fixture prefix and removed historical namespace were replaced in the selected versioned output."
+  "failed_criteria": [
+    "approved-prd-required",
+    "requirements-status-fields"
+  ],
+  "warnings": [
+    "one recovered diagnostic command failure"
+  ],
+  "output": "migration-red/09-output.md",
+  "sanitization": "The ephemeral fixture prefix was replaced with /workspace/fixture in the selected versioned output."
 }
