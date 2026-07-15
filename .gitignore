@@ -1,10 +1,52 @@
+# OS and editors
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.codex/config.toml
+.codex/*.local.*
+.claude/settings.local.json
+
+# Python environments and caches
 __pycache__/
 *.py[cod]
 .venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# Local evaluation evidence
 work/
+
+# Build and test output
 dist/
 build/
 *.egg-info/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
+junit.xml
+
+# Logs and temporary files
+*.log
+*.pid
+*.tmp
+*.bak
+tmp/
+temp/
