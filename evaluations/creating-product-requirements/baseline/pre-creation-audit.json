@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "evidence_role": "pre-creation-audit",
+  "chronology": "All selected no-target-skill runs completed before the target skill directory was initialized.",
+  "valid_red_cases": ["01", "02", "03", "04", "05", "06", "07", "08"],
+  "cases": [
+    {"id": "01", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "02", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "03", "valid": true, "failed_criteria": ["scope-and-topic", "fixed-handoff"]},
+    {"id": "04", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "05", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "06", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "07", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "08", "valid": true, "failed_criteria": ["approved-handoff", "fixed-handoff"]}
+  ],
+  "red_observed": true,
+  "limitations": "Raw trace and stderr remain in ignored local work evidence; this audit preserves selected behavioral conclusions only."
+}

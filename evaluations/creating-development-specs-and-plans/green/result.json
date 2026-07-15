@@ -5,16 +5,64 @@
   "all_runs_valid": true,
   "all_required_passed": true,
   "review_status": "approved",
-  "reviewer": "independent-green-evaluation-reviewer",
+  "reviewer": "independent-skill-reviewer",
   "reviewed_at": "2026-07-15",
   "cases": [
-    {"id": "01", "valid": true, "passed_criteria": ["approval-gate", "real-spec-review", "spec-review-gate", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]},
-    {"id": "02", "valid": true, "passed_criteria": ["approval-gate", "explicit-path-priority", "absolute-output-paths", "real-spec-review", "spec-review-gate", "real-plan-review", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]},
-    {"id": "03", "valid": true, "passed_criteria": ["spec-review-gate", "real-plan-review", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]},
-    {"id": "04", "valid": true, "warnings": ["two recovered diagnostic command failures"], "passed_criteria": ["default-paths", "absolute-output-paths", "relative-document-links", "spec-review-gate", "real-plan-review", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]},
-    {"id": "05", "valid": true, "passed_criteria": ["absolute-output-paths", "unknown-review-state", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]},
-    {"id": "06", "valid": true, "passed_criteria": ["spec-review-gate", "open-gate", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]},
-    {"id": "07", "valid": true, "passed_criteria": ["spec-review-gate", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]},
-    {"id": "08", "valid": true, "passed_criteria": ["null-paths", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]}
+    {
+      "id": "01",
+      "valid": true,
+      "passed_criteria": ["approval-gate", "approved-prd-required", "requirements-status-fields", "real-spec-review", "spec-review-gate", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]
+    },
+    {
+      "id": "02",
+      "valid": true,
+      "warnings": ["one recovered diagnostic command failure"],
+      "passed_criteria": ["approval-gate", "approved-prd-required", "requirements-status-fields", "explicit-path-priority", "absolute-output-paths", "real-spec-review", "spec-review-gate", "real-plan-review", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]
+    },
+    {
+      "id": "03",
+      "valid": true,
+      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "spec-review-gate", "real-plan-review", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved"]
+    },
+    {
+      "id": "04",
+      "valid": true,
+      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "default-paths", "absolute-output-paths", "relative-document-links", "spec-review-gate", "real-plan-review", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved"]
+    },
+    {
+      "id": "05",
+      "valid": true,
+      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "unknown-review-state", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved"]
+    },
+    {
+      "id": "06",
+      "valid": true,
+      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "spec-review-gate", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "open-gate", "requirements-source-preserved"]
+    },
+    {
+      "id": "07",
+      "valid": true,
+      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "spec-review-gate", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved"]
+    },
+    {
+      "id": "08",
+      "valid": true,
+      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "null-paths"]
+    },
+    {
+      "id": "09",
+      "valid": true,
+      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "no-implementation", "no-user-visible-thread", "truthful-status-fields"]
+    },
+    {
+      "id": "10",
+      "valid": true,
+      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "prd-state-validation"]
+    },
+    {
+      "id": "11",
+      "valid": true,
+      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved", "technical-spec-boundary"]
+    }
   ]
 }

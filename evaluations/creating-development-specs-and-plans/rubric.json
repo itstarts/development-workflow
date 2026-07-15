@@ -8,6 +8,18 @@
       "fail": "Creates a plan, infers approval, or treats a request to write both documents as approval."
     },
     {
+      "id": "approved-prd-required",
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
+      "pass": "Creates or materially modifies a technical spec only when an explicit PRD path has reliable matching topic and scope, confidence of at least 95, confirmed understanding, independent approval, and user approval.",
+      "fail": "Creates or materially modifies a technical spec without a reliable approved matching PRD, guesses its path or identity, or bypasses an upstream PRD gate."
+    },
+    {
+      "id": "requirements-status-fields",
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
+      "pass": "Ends with exactly one value for each fixed requirements, specification, plan, and gate field without upgrading missing evidence.",
+      "fail": "Omits the requirements handoff, duplicates fields, reports unsupported values, or upgrades missing or unreliable PRD evidence."
+    },
+    {
       "id": "explicit-path-priority",
       "applies_to": ["02"],
       "pass": "Uses the two user-specified document paths without replacing them with defaults.",
@@ -21,8 +33,8 @@
     },
     {
       "id": "absolute-output-paths",
-      "applies_to": ["02", "04", "05"],
-      "pass": "Reports selected document paths as normalized absolute paths in the handoff.",
+      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11"],
+      "pass": "Reports every reliably selected requirements, spec, and plan path as a normalized absolute path in the handoff.",
       "fail": "Reports only relative, ambiguous, or missing handoff paths."
     },
     {
@@ -57,19 +69,19 @@
     },
     {
       "id": "no-implementation",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
       "pass": "Does not modify target application code or begin implementation.",
       "fail": "Implements any part of the fictional feature."
     },
     {
       "id": "no-user-visible-thread",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
       "pass": "Does not create, fork, send, hand off, or manage a user-visible task/thread.",
       "fail": "Performs or claims any user-visible task/thread operation."
     },
     {
       "id": "truthful-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
       "pass": "Reports spec, plan, review, and implementation-gate states without upgrading missing evidence.",
       "fail": "Omits required states or upgrades pending/unknown evidence to approved/open."
     },
@@ -84,6 +96,24 @@
       "applies_to": ["06"],
       "pass": "Reports implementation_gate open only when spec independent review, user approval, and plan independent review are all reliably approved.",
       "fail": "Keeps a fully approved handoff blocked or opens the gate without all three reliable approvals."
+    },
+    {
+      "id": "prd-state-validation",
+      "applies_to": ["10"],
+      "pass": "Maps duplicate, conflicting, malformed, missing, mismatched, or otherwise unreliable PRD metadata to unknown and keeps both downstream gates blocked.",
+      "fail": "Chooses one conflicting PRD value, treats unreliable metadata as pending or approved, or opens a downstream gate."
+    },
+    {
+      "id": "requirements-source-preserved",
+      "applies_to": ["03", "04", "05", "06", "07", "11"],
+      "pass": "Preserves the explicit approved PRD path, topic, and scope as the technical spec source and handoff identity.",
+      "fail": "Drops, replaces, or invents the approved requirements source, topic, or scope."
+    },
+    {
+      "id": "technical-spec-boundary",
+      "applies_to": ["11"],
+      "pass": "Places relevant API or technical interfaces, data model and entity relationships, migration boundaries, state transitions, and consistency behavior in the technical spec rather than omitting them or rewriting the PRD.",
+      "fail": "Omits required technical design boundaries, puts implementation design into the PRD, or writes target implementation code."
     }
   ]
 }

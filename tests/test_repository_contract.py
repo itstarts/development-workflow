@@ -36,9 +36,15 @@ def copy_repository(destination: Path) -> Path:
     return repository
 
 
-def run_repository_validator(repository: Path) -> subprocess.CompletedProcess[str]:
+def run_repository_validator(
+    repository: Path, *arguments: str
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(repository / "scripts" / "validate_repo.py")],
+        [
+            sys.executable,
+            str(repository / "scripts" / "validate_repo.py"),
+            *arguments,
+        ],
         cwd=repository,
         text=True,
         capture_output=True,
@@ -121,7 +127,8 @@ class RepositoryContractTests(unittest.TestCase):
                 / "migration-red"
                 / "result.json"
             )
-            output = result_path.parent / "04-output.md"
+            payload = json.loads(result_path.read_text(encoding="utf-8"))
+            output = result_path.parent / f"{payload['selected_case']}-output.md"
             output.unlink()
 
             result = run_repository_validator(repository)
@@ -166,14 +173,486 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual(str(plan.resolve()), payload["documents"]["plan"]["path"])
         self.assertEqual("approved", payload["documents"]["plan"]["review"]["status"])
 
+    def test_product_requirements_contract_uses_public_inspector_cli(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory) / "repository"
+            root.mkdir()
+            (root / ".git").mkdir()
+            requirements = root / "docs" / "requirements" / "order.md"
+            requirements.parent.mkdir(parents=True)
+            inspector = (
+                ROOT
+                / "skills"
+                / "creating-development-specs-and-plans"
+                / "scripts"
+                / "inspect_product_requirements.py"
+            )
+
+            def write_prd(**overrides: str) -> None:
+                fields = {
+                    "document_type": "product-requirements",
+                    "topic": "order-approval",
+                    "scope_type": "feature",
+                    "understanding_confidence": "97",
+                    "understanding_user_confirmation": "approved",
+                    "user_approval": "approved",
+                    "independent_review": "approved",
+                }
+                fields.update(overrides)
+                metadata = "\n".join(
+                    f"{key}: {value}" for key, value in fields.items()
+                )
+                requirements.write_text(
+                    f"---\n{metadata}\n---\n\n# Order Approval\n",
+                    encoding="utf-8",
+                )
+
+            def inspect(expected_topic: str = "order-approval", expected_scope: str = "feature"):
+                completed = subprocess.run(
+                    [
+                        sys.executable,
+                        str(inspector),
+                        "--repo-root",
+                        str(root),
+                        "--requirements",
+                        "docs/requirements/order.md",
+                        "--expected-topic",
+                        expected_topic,
+                        "--expected-scope",
+                        expected_scope,
+                    ],
+                    cwd=root,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(0, completed.returncode, completed.stderr)
+                return json.loads(completed.stdout)
+
+            write_prd()
+            approved = inspect()
+            write_prd(user_approval="pending")
+            pending = inspect()
+            write_prd(independent_review="approved\nindependent_review: pending")
+            unknown = inspect()
+            write_prd()
+            topic_mismatch = inspect(expected_topic="inventory-alert")
+            scope_mismatch = inspect(expected_scope="phase")
+
+            spec = root / "docs" / "specs" / "order.md"
+            plan = root / "docs" / "plans" / "order.md"
+            spec.parent.mkdir(parents=True)
+            plan.parent.mkdir(parents=True)
+            spec.write_text("user_approval: approved\nindependent_review: approved\n")
+            plan.write_text("review_status: approved\n")
+            write_prd(user_approval="pending")
+            invalidated = inspect()
+            implementation_gate = (
+                "open"
+                if invalidated["specification_gate"] == "open"
+                and "user_approval: approved" in spec.read_text(encoding="utf-8")
+                and "independent_review: approved" in spec.read_text(encoding="utf-8")
+                and "review_status: approved" in plan.read_text(encoding="utf-8")
+                else "blocked"
+            )
+
+        self.assertEqual("approved", approved["status"])
+        self.assertEqual("open", approved["specification_gate"])
+        self.assertEqual("not-approved", pending["status"])
+        self.assertEqual("unknown", unknown["status"])
+        self.assertEqual("unknown", topic_mismatch["status"])
+        self.assertEqual("unknown", scope_mismatch["status"])
+        self.assertEqual("blocked", invalidated["specification_gate"])
+        self.assertEqual("blocked", implementation_gate)
+
+    def test_upstream_prd_template_topic_is_accepted_by_downstream_inspector(self):
+        template = (
+            ROOT
+            / "skills"
+            / "creating-product-requirements"
+            / "assets"
+            / "prd-template.md"
+        ).read_text(encoding="utf-8")
+        document = (
+            template.replace("<stable-kebab-topic>", "order-approval", 1)
+            .replace("<scope-type>", "feature", 1)
+            .replace("<integer-from-95-through-100>", "97", 1)
+            .replace("user_approval: pending", "user_approval: approved", 1)
+            .replace("independent_review: pending", "independent_review: approved", 1)
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory) / "repository"
+            root.mkdir()
+            (root / ".git").mkdir()
+            requirements = root / "docs" / "requirements" / "order.md"
+            requirements.parent.mkdir(parents=True)
+            requirements.write_text(document, encoding="utf-8")
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(
+                        ROOT
+                        / "skills"
+                        / "creating-development-specs-and-plans"
+                        / "scripts"
+                        / "inspect_product_requirements.py"
+                    ),
+                    "--repo-root",
+                    str(root),
+                    "--requirements",
+                    str(requirements),
+                    "--expected-topic",
+                    "order-approval",
+                    "--expected-scope",
+                    "feature",
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        payload = json.loads(completed.stdout)
+        self.assertEqual("order-approval", payload["requirements_topic"])
+        self.assertEqual("approved", payload["status"])
+        self.assertEqual("open", payload["specification_gate"])
+
     def test_versioned_text_has_no_removed_namespace(self):
         docs = ROOT / "docs"
         unexpected = [
             path.name
             for path in docs.iterdir()
-            if path.is_dir() and path.name not in {"specs", "plans"}
+            if path.is_dir() and path.name not in {"requirements", "specs", "plans"}
         ]
         self.assertEqual([], unexpected)
+
+    def test_repository_validator_allows_requirements_namespace(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            requirements = repository / "docs" / "requirements"
+            requirements.mkdir(parents=True)
+            (requirements / "2026-07-15-order.md").write_text(
+                "# Order requirements\n", encoding="utf-8"
+            )
+
+            result = run_repository_validator(repository)
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_repository_validator_requires_evaluation_registry(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            registry = repository / "evaluations" / "registry.json"
+            if registry.exists():
+                registry.unlink()
+
+            result = run_repository_validator(repository)
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("evaluation registry is required", result.stderr)
+
+    def test_creation_only_baseline_does_not_require_migration_red(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            registry_path = repository / "evaluations" / "registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["skills"]["creating-product-requirements"] = {
+                "evaluation_mode": "managed",
+                "evidence_profile": "creation-only",
+                "stage": "baseline-only",
+            }
+            registry["skills"]["creating-development-specs-and-plans"][
+                "stage"
+            ] = "review-approved"
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            target = repository / "evaluations" / "creating-product-requirements"
+            shutil.rmtree(target / "green")
+            shutil.rmtree(repository / "skills" / "creating-product-requirements")
+            authoring_green_path = (
+                repository
+                / "evaluations"
+                / "creating-development-specs-and-plans"
+                / "green"
+                / "result.json"
+            )
+            authoring_green = json.loads(
+                authoring_green_path.read_text(encoding="utf-8")
+            )
+            authoring_green.update(
+                {
+                    "review_status": "approved",
+                    "reviewer": "test-independent-reviewer",
+                    "reviewed_at": "2026-07-15",
+                }
+            )
+            authoring_green_path.write_text(
+                json.dumps(authoring_green, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_repository_validator(repository)
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_evidence_only_allows_pending_review_but_strict_validation_blocks(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            registry_path = repository / "evaluations" / "registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["skills"]["creating-development-specs-and-plans"][
+                "stage"
+            ] = "implemented"
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            green_path = (
+                repository
+                / "evaluations"
+                / "creating-development-specs-and-plans"
+                / "green"
+                / "result.json"
+            )
+            green = json.loads(green_path.read_text(encoding="utf-8"))
+            green["review_status"] = "pending"
+            green_path.write_text(
+                json.dumps(green, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            strict = run_repository_validator(repository)
+            evidence = run_repository_validator(
+                repository,
+                "--evidence-only",
+                "creating-development-specs-and-plans",
+            )
+
+        self.assertEqual(1, strict.returncode)
+        self.assertIn("implemented evidence is not review-approved", strict.stderr)
+        self.assertEqual(0, evidence.returncode, evidence.stdout + evidence.stderr)
+
+    def test_repository_validator_requires_versioned_case_outputs(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            evaluation = (
+                repository / "evaluations" / "creating-development-specs-and-plans"
+            )
+            (evaluation / "baseline" / "01-output.md").unlink()
+            missing_baseline = run_repository_validator(repository)
+
+            shutil.copy2(
+                ROOT
+                / "evaluations"
+                / "creating-development-specs-and-plans"
+                / "baseline"
+                / "01-output.md",
+                evaluation / "baseline" / "01-output.md",
+            )
+            (evaluation / "green" / "01-output.md").unlink()
+            missing_green = run_repository_validator(repository)
+
+        self.assertEqual(1, missing_baseline.returncode)
+        self.assertIn("baseline case 01 output is required", missing_baseline.stderr)
+        self.assertEqual(1, missing_green.returncode)
+        self.assertIn("green case 01 output is required", missing_green.stderr)
+
+    def test_repository_validator_rejects_unregistered_or_invalid_baseline_cases(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            evaluation = (
+                repository / "evaluations" / "creating-development-specs-and-plans"
+            )
+            (evaluation / "cases" / "99-unregistered.md").write_text(
+                "unregistered case\n", encoding="utf-8"
+            )
+            extra_case = run_repository_validator(repository)
+
+            (evaluation / "cases" / "99-unregistered.md").unlink()
+            baseline_path = evaluation / "baseline" / "result.json"
+            baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+            baseline["cases"][0]["valid"] = False
+            baseline_path.write_text(
+                json.dumps(baseline, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            invalid_case = run_repository_validator(repository)
+
+        self.assertEqual(1, extra_case.returncode)
+        self.assertIn("case files must exactly match the rubric", extra_case.stderr)
+        self.assertEqual(1, invalid_case.returncode)
+        self.assertIn("baseline case 01 is invalid", invalid_case.stderr)
+
+    def test_creation_plus_current_red_allows_cases_added_after_creation_baseline(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            registry_path = repository / "evaluations" / "registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["skills"]["creating-development-specs-and-plans"][
+                "stage"
+            ] = "implemented"
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            result = run_repository_validator(
+                repository,
+                "--evidence-only",
+                "creating-development-specs-and-plans",
+            )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_repository_validator_reports_malformed_audit_without_traceback(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            audit_path = (
+                repository
+                / "evaluations"
+                / "creating-development-specs-and-plans"
+                / "baseline"
+                / "pre-creation-audit.json"
+            )
+            audit = json.loads(audit_path.read_text(encoding="utf-8"))
+            audit["valid_red_cases"] = 7
+            audit_path.write_text(
+                json.dumps(audit, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_repository_validator(repository)
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("pre-creation audit needs valid RED cases", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_repository_validator_reports_malformed_rubric_without_traceback(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            rubric_path = (
+                repository
+                / "evaluations"
+                / "creating-development-specs-and-plans"
+                / "rubric.json"
+            )
+            rubric = json.loads(rubric_path.read_text(encoding="utf-8"))
+            rubric["criteria"] = 7
+            rubric_path.write_text(
+                json.dumps(rubric, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_repository_validator(repository)
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("rubric is malformed", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_repository_validator_requires_review_approval_metadata(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            green_path = (
+                repository
+                / "evaluations"
+                / "creating-development-specs-and-plans"
+                / "green"
+                / "result.json"
+            )
+            green = json.loads(green_path.read_text(encoding="utf-8"))
+            green.pop("reviewer")
+            green.pop("reviewed_at")
+            green_path.write_text(
+                json.dumps(green, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_repository_validator(repository)
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("green evidence approval metadata is incomplete", result.stderr)
+
+    def test_evidence_only_ignores_other_managed_skill_review_stage(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            registry_path = repository / "evaluations" / "registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["skills"]["creating-development-specs-and-plans"][
+                "stage"
+            ] = "implemented"
+            registry["skills"]["creating-product-requirements"][
+                "stage"
+            ] = "implemented"
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            green_path = (
+                repository / "evaluations" / "creating-product-requirements"
+                / "green"
+                / "result.json"
+            )
+            green = json.loads(green_path.read_text(encoding="utf-8"))
+            green["review_status"] = "pending"
+            green.pop("reviewer", None)
+            green.pop("reviewed_at", None)
+            green_path.write_text(
+                json.dumps(green, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_repository_validator(
+                repository, "--evidence-only", "creating-product-requirements"
+            )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_repository_validator_rejects_invalid_imported_registry_entry(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            registry_path = repository / "evaluations" / "registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["skills"]["generating-development-prompts"][
+                "evidence_profile"
+            ] = "creation-only"
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_repository_validator(repository)
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn(
+            "generating-development-prompts: evaluation registry entry is invalid",
+            result.stderr,
+        )
+
+    def test_repository_validator_rejects_unregistered_skill_and_orphan_evidence(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            skill = repository / "skills" / "unregistered-skill"
+            (skill / "agents").mkdir(parents=True)
+            (skill / "SKILL.md").write_text(
+                "---\nname: unregistered-skill\n"
+                "description: Use when testing validation.\n---\n",
+                encoding="utf-8",
+            )
+            (skill / "agents" / "openai.yaml").write_text(
+                "interface: {}\n", encoding="utf-8"
+            )
+            (repository / "evaluations" / "orphan-evidence").mkdir()
+
+            result = run_repository_validator(repository)
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("unregistered-skill: active skill is not registered", result.stderr)
+        self.assertIn(
+            "orphan-evidence: orphan evaluation evidence is not registered",
+            result.stderr,
+        )
 
     def test_repository_validator_rejects_unsupported_planning_namespace(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -225,14 +704,16 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual("0.1.0", manifest["version"])
         serialized = json.dumps(manifest, ensure_ascii=False).casefold()
         for phrase in (
-            "approved specifications",
+            "approved product requirements",
+            "technical specifications",
             "reviewed plans",
             "handoff prompts",
         ):
             self.assertIn(phrase, serialized)
 
-    def test_both_skills_are_complete_and_exposed(self):
+    def test_all_three_skills_are_complete_and_exposed(self):
         for skill_name in (
+            "creating-product-requirements",
             "creating-development-specs-and-plans",
             "generating-development-prompts",
         ):
@@ -242,6 +723,9 @@ class RepositoryContractTests(unittest.TestCase):
                 self.assertTrue((skill / "agents" / "openai.yaml").is_file())
 
     def test_skill_trigger_descriptions_keep_authoring_and_handoff_distinct(self):
+        requirements = VALIDATOR.load_skill_frontmatter(
+            ROOT / "skills" / "creating-product-requirements" / "SKILL.md"
+        )["description"].casefold()
         authoring = VALIDATOR.load_skill_frontmatter(
             ROOT / "skills" / "creating-development-specs-and-plans" / "SKILL.md"
         )["description"].casefold()
@@ -249,12 +733,17 @@ class RepositoryContractTests(unittest.TestCase):
             ROOT / "skills" / "generating-development-prompts" / "SKILL.md"
         )["description"].casefold()
 
-        self.assertIn("clarify development requirements", authoring)
+        self.assertIn("product requirements", requirements)
+        self.assertIn("product scope", requirements)
+        self.assertIn("user scenarios", requirements)
+        self.assertNotIn("implementation plan", requirements)
+        self.assertIn("approved product requirements", authoring)
+        self.assertIn("technical specification", authoring)
         self.assertIn("implementation plan", authoring)
         self.assertNotIn("new-session development prompt", authoring)
         self.assertIn("new-session development prompt", handoff)
         self.assertIn("copyable codex development task instructions", handoff)
-        self.assertNotIn("clarify development requirements", handoff)
+        self.assertNotIn("approved product requirements", handoff)
 
     def test_authoring_plan_template_preserves_handoff_review_states(self):
         template = (
@@ -485,16 +974,23 @@ class RepositoryContractTests(unittest.TestCase):
 
     def test_skill_payloads_stage_independently_and_together(self):
         skills = [
+            ROOT / "skills" / "creating-product-requirements",
             ROOT / "skills" / "creating-development-specs-and-plans",
             ROOT / "skills" / "generating-development-prompts",
         ]
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
-            homes = [root / "authoring-home", root / "handoff-home", root / "combined-home"]
+            homes = [
+                root / "requirements-home",
+                root / "authoring-home",
+                root / "handoff-home",
+                root / "combined-home",
+            ]
             VALIDATOR.stage_skill_payloads([skills[0]], homes[0])
             VALIDATOR.stage_skill_payloads([skills[1]], homes[1])
-            VALIDATOR.stage_skill_payloads(skills, homes[2])
+            VALIDATOR.stage_skill_payloads([skills[2]], homes[2])
+            VALIDATOR.stage_skill_payloads(skills, homes[3])
 
             for index, skill in enumerate(skills):
                 expected = {
@@ -502,7 +998,7 @@ class RepositoryContractTests(unittest.TestCase):
                     for path in VALIDATOR.production_files(skill)
                 }
                 independent = homes[index] / "skills" / skill.name
-                combined = homes[2] / "skills" / skill.name
+                combined = homes[3] / "skills" / skill.name
                 for staged in (independent, combined):
                     actual = {
                         str(path.relative_to(staged)): path.read_bytes()
@@ -545,7 +1041,9 @@ class RepositoryContractTests(unittest.TestCase):
         skill_rules = (ROOT / "skills" / "AGENTS.md").read_text()
         for phrase in [
             "RED→GREEN→REFACTOR",
-            "仍须保留 RED 证据、GREEN 前向结果、仓库验证和独立评审门",
+            "creating-product-requirements",
+            "PRD",
+            "三个 skill",
             "不得依赖 `~/.codex/plugins/cache/`",
             "不得创建或操作用户可见 Codex task/thread",
         ]:
@@ -572,6 +1070,27 @@ class RepositoryContractTests(unittest.TestCase):
         )
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("repository validation passed", result.stdout)
+
+    def test_three_skill_workflow_docs_and_final_reviewer_are_current(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        rules = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        reviewer = (
+            ROOT / ".codex" / "agents" / "workflow-final-reviewer.toml"
+        ).read_text(encoding="utf-8")
+        for skill_name in (
+            "creating-product-requirements",
+            "creating-development-specs-and-plans",
+            "generating-development-prompts",
+        ):
+            with self.subTest(skill_name=skill_name):
+                self.assertIn(skill_name, readme)
+                self.assertIn(skill_name, changelog)
+        self.assertIn("PRD → technical spec/plan → development prompt", readme)
+        self.assertIn("三个 skill", rules)
+        self.assertIn("两个 authoring skill", reviewer)
+        self.assertIn("prompt skill", reviewer)
+        self.assertIn("三-skill plugin", reviewer)
 
     def test_repository_validator_passes_after_skill_test_cache_artifacts(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

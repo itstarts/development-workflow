@@ -4,18 +4,20 @@
 
 1. Read every session-supplied rule. Discover filesystem `AGENTS.md` or `CLAUDE.md` from the repository root to the working directory, outermost to innermost. Never recursively search above the repository root.
 2. Inspect repository status, relevant documentation, existing implementations, tests, and recent history. Do not infer behavior from filenames.
-3. Classify scope using the repository's task grading rules. Split independent subsystems into separate spec → plan cycles.
-4. Separate repository-answerable facts from choices only the user can make.
+3. Read the explicit approved product requirements handoff. Require `requirements_path`, expected topic, and expected scope as independent inputs; do not infer them from PRD contents or its filename. The expected topic must be a non-empty, non-reserved kebab-case stable topic; `null`, `unknown`, and `pending` are invalid inputs and block the gate.
+4. Run `python3 <this-skill-directory>/scripts/inspect_product_requirements.py --repo-root <repository-root> --requirements <requirements-path> --expected-topic <expected-topic> --expected-scope <expected-scope>`. Treat a nonzero exit or unparseable JSON as unknown.
+5. Classify the technical work using the repository's task grading rules. Split independent technical subsystems into separate spec → plan cycles only within the single approved PRD topic.
+6. Separate repository-answerable technical facts from choices only the user can make.
 
 ## Clarify Material Decisions
 
-Ask one question at a time only when the answer changes scope, public behavior, data, permissions, security, consistency, or another important contract. Use repository evidence for small technical details and record the assumption.
+Do not reopen approved product scope in this skill. Ask one question at a time only when an unresolved technical choice changes public interfaces, data, permissions, security, consistency, migration, or another important design contract. Use repository evidence for small technical details and record the assumption.
 
 When such a choice remains unresolved, ask one material question. Do not write or review either document, run document validation, or enter a later workflow stage in that turn. Immediately end the reply with the fixed handoff record from `review-and-handoff.md`.
 
 Keep reliably selected explicit paths in the handoff even when a material content question blocks document creation. Normalize them to absolute paths and preserve their priority; only use `null` when the path itself is unresolved.
 
-When multiple topics remain equally plausible, do not select a topic or document path. Report both `spec_path` and `plan_path` as `null` until the user chooses.
+When the requirements path, expected topic, or expected scope is missing or multiple values remain plausible, do not select one. Keep the PRD gate blocked and do not create or materially modify a spec. Report unresolved paths as `null` and unresolved identity as `null` or `unknown` according to the handoff mapping.
 
 When a real design choice exists, present two or three viable approaches with impact, risks, and a recommendation. When only one approach fits the evidence and constraints, state that directly instead of inventing alternatives.
 
@@ -23,7 +25,7 @@ When a real design choice exists, present two or three viable approaches with im
 
 - An explicit user path wins when it is valid. Resolve a relative explicit path against the working directory.
 - Otherwise use `docs/specs/YYYY-MM-DD-<topic>-design.md` and `docs/plans/YYYY-MM-DD-<topic>.md`.
-- Derive one stable kebab-case topic from the approved scope. Ask when multiple topics remain equally plausible.
+- Use the expected stable topic from the approved requirements handoff. Never derive it from a PRD filename or silently replace it.
 - Do not overwrite an existing document without explicit authorization. Resume it only when the user identifies it as the current document.
 - Keep links written inside versioned documents repository-relative. Report selected documents with normalized absolute paths in the handoff.
 

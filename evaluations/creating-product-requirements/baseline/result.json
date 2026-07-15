@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "evidence_role": "migration-baseline",
+  "target_skill_loaded": false,
+  "all_runs_valid": true,
+  "failures_observed": true,
+  "cases": [
+    {"id": "01", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "02", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "03", "valid": true, "failed_criteria": ["scope-and-topic", "fixed-handoff"]},
+    {"id": "04", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "05", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "06", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "07", "valid": true, "failed_criteria": ["fixed-handoff"]},
+    {"id": "08", "valid": true, "failed_criteria": ["approved-handoff", "fixed-handoff"]}
+  ]
+}
