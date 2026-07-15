@@ -1,18 +1,18 @@
 {
   "name": "development-workflow",
   "version": "0.1.0",
-  "description": "Generate executable Codex handoff prompts from existing specifications and plans.",
+  "description": "Author approved specifications and reviewed plans, then generate executable Codex handoff prompts.",
   "author": {
     "name": "development-workflow maintainers"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Development Workflow (dw)",
-    "shortDescription": "Generate development handoff prompts from approved docs.",
-    "longDescription": "Generate self-contained prompts from existing specifications and plans; the companion authoring skill is planned for a later release.",
+    "shortDescription": "Author plans and generate handoff prompts.",
+    "longDescription": "Author approved specifications and independently reviewed plans, then generate self-contained development handoff prompts from those documents.",
     "developerName": "development-workflow maintainers",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "Generate a Codex development handoff prompt from my existing specification and plan."
+    "defaultPrompt": "Clarify this development request, create an approved specification and reviewed plan, then generate a Codex handoff prompt when I ask."
   }
 }

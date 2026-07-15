@@ -1,0 +1,17 @@
+{
+  "schema_version": 3,
+  "evidence_role": "migration-baseline",
+  "target_skill_loaded": false,
+  "all_runs_valid": true,
+  "failures_observed": true,
+  "cases": [
+    {"id": "01", "valid": true, "failed_criteria": ["truthful-status-fields"]},
+    {"id": "02", "valid": true, "failed_criteria": ["truthful-status-fields"]},
+    {"id": "03", "valid": true, "failed_criteria": ["truthful-status-fields"], "warnings": ["one recovered diagnostic command failure"]},
+    {"id": "04", "valid": true, "failed_criteria": ["truthful-status-fields"], "warnings": ["one recovered diagnostic command failure"]},
+    {"id": "05", "valid": true, "failed_criteria": ["unknown-review-state", "truthful-status-fields"]},
+    {"id": "06", "valid": true, "failed_criteria": ["truthful-status-fields"]},
+    {"id": "07", "valid": true, "failed_criteria": ["truthful-status-fields"]},
+    {"id": "08", "valid": true, "failed_criteria": ["null-paths", "truthful-status-fields"]}
+  ]
+}

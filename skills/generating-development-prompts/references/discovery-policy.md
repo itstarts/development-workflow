@@ -21,8 +21,8 @@ Apply these rules while resolving repository, rule, specification, plan, and rev
 
 Search these directories in order when a side is not explicit:
 
-1. `<repo>/docs/superpowers/specs/`
-2. `<repo>/docs/superpowers/plans/`
+1. `<repo>/docs/specs/`
+2. `<repo>/docs/plans/`
 
 Pass the development request through the discovery CLI's `--request` argument. Derive safe topic tokens from explicit `--topic`, or from `--request` when no topic is explicit; explicit topic always wins. Treat both as single inert process arguments, never shell fragments. For every candidate compute independent `exact`, token `coverage`, filename ISO `date`, and `mtime_ns` values.
 

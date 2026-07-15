@@ -205,8 +205,8 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
         self.repository = self.base / "repository"
         self.repository.mkdir()
         initialize_repository(self.repository)
-        self.specs = self.repository / "docs" / "superpowers" / "specs"
-        self.plans = self.repository / "docs" / "superpowers" / "plans"
+        self.specs = self.repository / "docs" / "specs"
+        self.plans = self.repository / "docs" / "plans"
         self.specs.mkdir(parents=True)
         self.plans.mkdir(parents=True)
 
@@ -220,6 +220,16 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
 
     def discover(self, *args: str) -> tuple[subprocess.CompletedProcess[str], dict]:
         return self.run_script("--cwd", str(self.repository), *args)
+
+    def test_default_document_directories_are_docs_specs_and_docs_plans(self):
+        spec = self.write("docs/specs/2026-07-15-auth-design.md", "# Auth\n")
+        plan = self.write("docs/plans/2026-07-15-auth.md", "# Auth\n")
+
+        completed, payload = self.discover("--request", "Auth")
+
+        self.assertEqual(0, completed.returncode)
+        self.assertEqual(str(spec.resolve()), payload["documents"]["spec"]["path"])
+        self.assertEqual(str(plan.resolve()), payload["documents"]["plan"]["path"])
 
     def test_rules_are_listed_from_repository_root_to_workdir(self):
         app = self.repository / "packages" / "app"
@@ -277,8 +287,8 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
     def test_explicit_relative_documents_take_priority(self):
         explicit_spec = self.write("chosen/spec.md", "# Chosen Spec\n")
         explicit_plan = self.write("chosen/plan.md", "# Chosen Plan\n")
-        self.write("docs/superpowers/specs/2026-07-10-auth-design.md", "# Auth\n")
-        self.write("docs/superpowers/plans/2026-07-11-auth.md", "# Auth\n")
+        self.write("docs/specs/2026-07-10-auth-design.md", "# Auth\n")
+        self.write("docs/plans/2026-07-11-auth.md", "# Auth\n")
 
         completed, payload = self.discover(
             "--topic",
@@ -298,8 +308,8 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
         self.assertEqual("explicit", payload["documents"]["plan"]["source"])
 
     def test_unreadable_explicit_document_exits_three_without_fallback(self):
-        self.write("docs/superpowers/specs/2026-07-10-auth-design.md", "# Auth\n")
-        self.write("docs/superpowers/plans/2026-07-11-auth.md", "# Auth\n")
+        self.write("docs/specs/2026-07-10-auth-design.md", "# Auth\n")
+        self.write("docs/plans/2026-07-11-auth.md", "# Auth\n")
 
         completed, payload = self.discover("--topic", "auth", "--spec", "missing.md")
 
@@ -308,9 +318,9 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
         self.assertEqual("missing", payload["documents"]["spec"]["source"])
 
     def test_exact_topic_match_beats_partial_match(self):
-        exact = self.write("docs/superpowers/specs/2026-07-10-auth-design.md", "# Auth\n")
-        self.write("docs/superpowers/specs/2026-07-11-auth-login-design.md", "# Auth Login\n")
-        self.write("docs/superpowers/plans/2026-07-10-auth.md", "# Auth\n")
+        exact = self.write("docs/specs/2026-07-10-auth-design.md", "# Auth\n")
+        self.write("docs/specs/2026-07-11-auth-login-design.md", "# Auth Login\n")
+        self.write("docs/plans/2026-07-10-auth.md", "# Auth\n")
 
         completed, payload = self.discover("--topic", "auth")
 
@@ -319,28 +329,28 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
 
     def test_request_derives_topic_when_explicit_topic_is_absent(self):
         related_spec = self.write(
-            "docs/superpowers/specs/2026-07-10-checkout-auth-design.md",
+            "docs/specs/2026-07-10-checkout-auth-design.md",
             "# Checkout Auth\n",
             1,
         )
         related_plan = self.write(
-            "docs/superpowers/plans/2026-07-10-checkout-auth.md",
+            "docs/plans/2026-07-10-checkout-auth.md",
             "# Checkout Auth\n",
             1,
         )
         self.write(
-            "docs/superpowers/specs/2026-07-12-reporting-dashboard-design.md",
+            "docs/specs/2026-07-12-reporting-dashboard-design.md",
             "# Reporting Dashboard\n",
             2,
         )
         self.write(
-            "docs/superpowers/plans/2026-07-12-reporting-dashboard.md",
+            "docs/plans/2026-07-12-reporting-dashboard.md",
             "# Reporting Dashboard\n",
             2,
         )
 
         completed, payload = self.discover(
-            "--request", "Implement checkout auth with independent review"
+            "--request", "Implement checkout auth safely"
         )
 
         self.assertEqual(0, completed.returncode)
@@ -349,17 +359,17 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
 
     def test_explicit_topic_takes_priority_over_request_derived_topic(self):
         checkout_spec = self.write(
-            "docs/superpowers/specs/2026-07-10-checkout-auth-design.md", "# Checkout Auth\n"
+            "docs/specs/2026-07-10-checkout-auth-design.md", "# Checkout Auth\n"
         )
         checkout_plan = self.write(
-            "docs/superpowers/plans/2026-07-10-checkout-auth.md", "# Checkout Auth\n"
+            "docs/plans/2026-07-10-checkout-auth.md", "# Checkout Auth\n"
         )
         reporting_spec = self.write(
-            "docs/superpowers/specs/2026-07-11-reporting-dashboard-design.md",
+            "docs/specs/2026-07-11-reporting-dashboard-design.md",
             "# Reporting Dashboard\n",
         )
         reporting_plan = self.write(
-            "docs/superpowers/plans/2026-07-11-reporting-dashboard.md",
+            "docs/plans/2026-07-11-reporting-dashboard.md",
             "# Reporting Dashboard\n",
         )
 
@@ -375,12 +385,12 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
 
     def test_normalized_filename_exact_match_beats_partial_heading(self):
         exact = self.write(
-            "docs/superpowers/specs/2026-07-10-auth-design.md", "No heading here.\n"
+            "docs/specs/2026-07-10-auth-design.md", "No heading here.\n"
         )
         self.write(
-            "docs/superpowers/specs/2026-07-11-auth-login-design.md", "# Auth Login\n"
+            "docs/specs/2026-07-11-auth-login-design.md", "# Auth Login\n"
         )
-        self.write("docs/superpowers/plans/2026-07-10-auth.md", "# Auth\n")
+        self.write("docs/plans/2026-07-10-auth.md", "# Auth\n")
 
         completed, payload = self.discover("--topic", "auth")
 
@@ -388,7 +398,7 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
         self.assertEqual(str(exact.resolve()), payload["documents"]["spec"]["path"])
 
     def test_single_available_document_is_preserved_when_other_side_is_missing(self):
-        spec = self.write("docs/superpowers/specs/2026-07-10-auth-design.md", "# Auth\n")
+        spec = self.write("docs/specs/2026-07-10-auth-design.md", "# Auth\n")
 
         completed, payload = self.discover("--topic", "auth")
 
@@ -399,10 +409,10 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
 
     def test_auto_discovery_rejects_symlink_candidates_outside_repository(self):
         legal_spec = self.write(
-            "docs/superpowers/specs/2026-07-10-auth-design.md", "# Auth\n"
+            "docs/specs/2026-07-10-auth-design.md", "# Auth\n"
         )
         legal_plan = self.write(
-            "docs/superpowers/plans/2026-07-10-auth.md", "# Auth\n"
+            "docs/plans/2026-07-10-auth.md", "# Auth\n"
         )
         outside_spec = self.base / "outside-spec.md"
         outside_plan = self.base / "outside-plan.md"
@@ -452,11 +462,11 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
 
     def test_token_coverage_breaks_non_exact_tie(self):
         covered = self.write(
-            "docs/superpowers/specs/2026-07-10-auth-login-session-design.md",
+            "docs/specs/2026-07-10-auth-login-session-design.md",
             "# Auth Login Session\n",
         )
-        self.write("docs/superpowers/specs/2026-07-11-auth-session-design.md", "# Auth Session\n")
-        self.write("docs/superpowers/plans/2026-07-10-auth-login.md", "# Auth Login\n")
+        self.write("docs/specs/2026-07-11-auth-session-design.md", "# Auth Session\n")
+        self.write("docs/plans/2026-07-10-auth-login.md", "# Auth Login\n")
 
         completed, payload = self.discover("--topic", "auth login")
 
@@ -464,9 +474,9 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
         self.assertEqual(str(covered.resolve()), payload["documents"]["spec"]["path"])
 
     def test_newer_iso_date_breaks_topic_tie(self):
-        self.write("docs/superpowers/specs/2026-07-10-auth-design.md", "# Auth\n")
-        newer = self.write("docs/superpowers/specs/2026-07-11-auth-design.md", "# Auth\n")
-        self.write("docs/superpowers/plans/2026-07-11-auth.md", "# Auth\n")
+        self.write("docs/specs/2026-07-10-auth-design.md", "# Auth\n")
+        newer = self.write("docs/specs/2026-07-11-auth-design.md", "# Auth\n")
+        self.write("docs/plans/2026-07-11-auth.md", "# Auth\n")
 
         completed, payload = self.discover("--topic", "auth")
 
@@ -474,11 +484,11 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
         self.assertEqual(str(newer.resolve()), payload["documents"]["spec"]["path"])
 
     def test_mtime_breaks_tie_after_topic_and_date(self):
-        self.write("docs/superpowers/specs/auth-one.md", "# Auth\n", 1_000_000_000)
+        self.write("docs/specs/auth-one.md", "# Auth\n", 1_000_000_000)
         newer = self.write(
-            "docs/superpowers/specs/auth-two.md", "# Auth\n", 2_000_000_000
+            "docs/specs/auth-two.md", "# Auth\n", 2_000_000_000
         )
-        self.write("docs/superpowers/plans/auth.md", "# Auth\n")
+        self.write("docs/plans/auth.md", "# Auth\n")
 
         completed, payload = self.discover("--topic", "auth")
 
@@ -486,9 +496,9 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
         self.assertEqual(str(newer.resolve()), payload["documents"]["spec"]["path"])
 
     def test_complete_score_tie_requires_selection(self):
-        first = self.write("docs/superpowers/specs/auth-one.md", "# Auth\n", 1_000_000_000)
-        second = self.write("docs/superpowers/specs/auth-two.md", "# Auth\n", 1_000_000_000)
-        self.write("docs/superpowers/plans/auth.md", "# Auth\n")
+        first = self.write("docs/specs/auth-one.md", "# Auth\n", 1_000_000_000)
+        second = self.write("docs/specs/auth-two.md", "# Auth\n", 1_000_000_000)
+        self.write("docs/plans/auth.md", "# Auth\n")
 
         completed, payload = self.discover("--topic", "auth")
 
@@ -501,9 +511,9 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
     def test_explicit_spec_selects_plan_that_references_it(self):
         spec = self.write("chosen/auth-spec.md", "# Auth\n")
         referenced = self.write(
-            "docs/superpowers/plans/auth-one.md", "# Auth\n\nSee chosen/auth-spec.md.\n", 1
+            "docs/plans/auth-one.md", "# Auth\n\nSee chosen/auth-spec.md.\n", 1
         )
-        self.write("docs/superpowers/plans/auth-two.md", "# Auth\n", 2)
+        self.write("docs/plans/auth-two.md", "# Auth\n", 2)
 
         completed, payload = self.discover("--topic", "auth", "--spec", str(spec))
 
@@ -511,8 +521,8 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
         self.assertEqual(str(referenced.resolve()), payload["documents"]["plan"]["path"])
 
     def test_explicit_plan_selects_spec_that_it_references(self):
-        referenced = self.write("docs/superpowers/specs/auth-one.md", "# Auth\n", 1)
-        self.write("docs/superpowers/specs/auth-two.md", "# Auth\n", 2)
+        referenced = self.write("docs/specs/auth-one.md", "# Auth\n", 1)
+        self.write("docs/specs/auth-two.md", "# Auth\n", 2)
         plan = self.write("chosen/auth-plan.md", "# Auth\n\nSee auth-one.md.\n")
 
         completed, payload = self.discover("--topic", "auth", "--plan", str(plan))
@@ -521,12 +531,12 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
         self.assertEqual(str(referenced.resolve()), payload["documents"]["spec"]["path"])
 
     def test_auto_pair_prefers_single_direction_reference(self):
-        referenced_spec = self.write("docs/superpowers/specs/auth-one.md", "# Auth\n", 1)
-        self.write("docs/superpowers/specs/auth-two.md", "# Auth\n", 2)
+        referenced_spec = self.write("docs/specs/auth-one.md", "# Auth\n", 1)
+        self.write("docs/specs/auth-two.md", "# Auth\n", 2)
         referenced_plan = self.write(
-            "docs/superpowers/plans/auth-one.md", "# Auth\n\nSee auth-one.md.\n", 1
+            "docs/plans/auth-one.md", "# Auth\n\nSee auth-one.md.\n", 1
         )
-        self.write("docs/superpowers/plans/auth-two.md", "# Auth\n", 2)
+        self.write("docs/plans/auth-two.md", "# Auth\n", 2)
 
         completed, payload = self.discover("--topic", "auth")
 
@@ -536,14 +546,14 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
 
     def test_auto_pair_prefers_bidirectional_over_single_reference(self):
         bidirectional_spec = self.write(
-            "docs/superpowers/specs/auth-one.md", "# Auth\n\nSee auth-one-plan.md.\n", 1
+            "docs/specs/auth-one.md", "# Auth\n\nSee auth-one-plan.md.\n", 1
         )
-        self.write("docs/superpowers/specs/auth-two.md", "# Auth\n", 2)
+        self.write("docs/specs/auth-two.md", "# Auth\n", 2)
         bidirectional_plan = self.write(
-            "docs/superpowers/plans/auth-one-plan.md", "# Auth\n\nSee auth-one.md.\n", 1
+            "docs/plans/auth-one-plan.md", "# Auth\n\nSee auth-one.md.\n", 1
         )
         self.write(
-            "docs/superpowers/plans/auth-two-plan.md", "# Auth\n\nSee auth-two.md.\n", 2
+            "docs/plans/auth-two-plan.md", "# Auth\n\nSee auth-two.md.\n", 2
         )
 
         completed, payload = self.discover("--topic", "auth")
@@ -564,10 +574,10 @@ class DiscoverContextDocumentTests(DiscoverContextTestSupport, unittest.TestCase
         self.assertTrue(payload["warnings"])
 
     def test_highest_pair_tuple_tie_reports_all_involved_paths(self):
-        first = self.write("docs/superpowers/specs/auth-one.md", "# Auth\n", 1_000_000_000)
-        second = self.write("docs/superpowers/specs/auth-two.md", "# Auth\n", 1_000_000_000)
+        first = self.write("docs/specs/auth-one.md", "# Auth\n", 1_000_000_000)
+        second = self.write("docs/specs/auth-two.md", "# Auth\n", 1_000_000_000)
         plan = self.write(
-            "docs/superpowers/plans/auth.md",
+            "docs/plans/auth.md",
             "# Auth\n\nSee auth-one.md and auth-two.md.\n",
             1_000_000_000,
         )

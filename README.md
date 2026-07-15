@@ -8,10 +8,10 @@
 
 | Skill | 状态 | 职责 |
 |---|---|---|
-| `creating-development-specs-and-plans` | planned，尚不可用 | 澄清需求、取得设计批准并生成实施计划 |
+| `creating-development-specs-and-plans` | available | 澄清需求、取得设计批准并生成经独立评审的实施计划 |
 | `generating-development-prompts` | available | 从已有 spec、plan、仓库与会话证据生成可复制的开发提示词 |
 
-planned skill 当前故意不出现在 `skills/` 下，因为 plugin 会把每个 skill 子目录当作可发布组件。必须先完成无 skill baseline，才能按照仓库 `AGENTS.md` 创建目录和实现。
+两个 skill 职责独立：前者以显式文档路径和状态字段交付 spec/plan，后者读取这些文档和状态生成开发提示词；二者不通过本机安装路径互相调用。
 
 ## 安装
 
@@ -27,7 +27,17 @@ python3 \
     skills/generating-development-prompts
 ```
 
-在 companion skill 尚未实现的当前版本，只安装可用 skill：
+也可按职责单独安装其中一个 skill：
+
+```bash
+python3 \
+  "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
+  --repo <owner>/development-workflow \
+  --ref <tag> \
+  --path skills/creating-development-specs-and-plans
+```
+
+或：
 
 ```bash
 python3 \
@@ -49,7 +59,10 @@ python3 -m venv .venv
 
 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python scripts/validate_repo.py
+.venv/bin/python -m unittest discover -s skills/creating-development-specs-and-plans/tests -v
 .venv/bin/python -m unittest discover -s skills/generating-development-prompts/tests -v
+.venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
+  skills/creating-development-specs-and-plans
 .venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
   skills/generating-development-prompts
 .venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/plugin-creator/scripts/validate_plugin.py" .
@@ -58,6 +71,8 @@ python3 -m venv .venv
 支持范围为 Python 3.9 及以上；当前维护矩阵至少验证 Python 3.9 和 Python 3.14。`requirements-dev.txt` 固定官方 skill/plugin validator 所需的开发依赖。
 
 plugin manifest 位于 `.codex-plugin/plugin.json`。仓库尚未配置 GitHub remote、marketplace、license 或发布自动化；这些信息应在所有者明确选择后添加，不使用占位身份或虚构 URL。
+
+`evaluations/creating-development-specs-and-plans/` 保存脱敏后的固定场景、创建前 RED 结论、迁移 baseline 与 GREEN 评分；原始 JSONL trace 和 stderr 只保存在被忽略的 `work/`。版本化结果只记录场景、有效性、判据和必要 warning，不维护文件哈希或逐次 attempt 审计。本地 staging 已覆盖两个 skill 的单独/组合载荷及拒绝覆盖行为。由于仓库尚无 GitHub remote/tag 且本次未授权发布，Git tag 多路径安装仍是发布前未执行门。
 
 ## 来源
 

@@ -1,0 +1,13 @@
+{
+  "schema_version": 2,
+  "evidence_role": "pre-creation-audit",
+  "chronology": "Selected no-target-skill runs completed before the target skill directory was initialized.",
+  "valid_red_cases": ["03", "04", "05"],
+  "cases": [
+    {"id": "03", "valid": true, "failed_criteria": ["truthful-status-fields"]},
+    {"id": "04", "valid": true, "failed_criteria": ["truthful-status-fields"]},
+    {"id": "05", "valid": true, "failed_criteria": ["unknown-review-state", "truthful-status-fields"]}
+  ],
+  "red_observed": true,
+  "limitations": "Raw trace and stderr remain in ignored local work evidence; this audit preserves only the selected behavioral conclusion."
+}
