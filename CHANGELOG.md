@@ -35,6 +35,9 @@
 ### Repository
 
 - 建立 plugin-compatible 目录、项目级 agent 角色、分层 `AGENTS.md` 和仓库验证入口。
+- 增加 MIT License、贡献指南、安全策略、安装指南、工作流契约与 Agent 开发指南，形成公开仓库文档入口。
+- 补齐本机凭证、编辑器状态、Python 缓存、原始评估、构建测试产物和临时日志的 `.gitignore` 边界。
+- 将公开安装命令更新为 `itstarts/development-workflow`，并记录完整 Git 历史隐私审计要求。
 - 固定 validator 开发依赖并声明 Python 3.9/3.14 维护矩阵。
 - 仓库验证器忽略 Python 缓存和系统元数据，保持 skill 测试后的重复验证稳定。
 - plugin 文案扩展为 PRD → technical spec/plan → development prompt 三段式工作流；本地 staging 验证三个 skill 可单独或组合复制且拒绝覆盖已有目标。

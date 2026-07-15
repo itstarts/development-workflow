@@ -39,6 +39,14 @@
 - 不覆盖既有安装目录；更新前先安装到 staging 或临时 `CODEX_HOME`，验证并比较差异。
 - 不手工复制外部 skill 正文。可复用通用原则，但本仓库的行为与测试必须独立可维护。
 
+## Agent 配置与公开文档
+
+- `.codex/agents/` 只保存本仓库开发使用的只读评审角色。角色必须职责单一，不固定模型或 reasoning effort，不声称拥有运行时未暴露的权限，也不得包含本机路径、凭证或用户 task/thread 标识符。
+- 新增或修改角色时，必须同步检查触发范围、输入证据、批准条件、只读边界和外部状态限制，并更新 `docs/agent-development.md` 中的角色说明。
+- `README.md` 保持面向使用者的简明入口；安装细节、工作流契约和 Agent 开发流程分别维护在 `docs/install.md`、`docs/workflow.md` 和 `docs/agent-development.md`，避免把内部执行规则堆入 README。
+- 公开安装命令、仓库地址、许可证、版本状态或发布边界变化时，同步更新 README、相关 `docs/`、`CHANGELOG.md` 和 plugin manifest 中受影响的当前事实。
+- 发布前同时扫描当前树和完整 Git 历史中的本机路径、凭证、真实用户数据与 task/thread 标识符；只删除当前文件不能证明历史可公开。
+
 ## 文档交接契约
 
 - 默认 PRD 路径：`docs/requirements/YYYY-MM-DD-<topic>.md`。
