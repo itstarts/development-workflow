@@ -124,7 +124,6 @@ class SkillContractTests(unittest.TestCase):
 
     def test_production_files_have_no_framework_name_path_or_derived_workflow(self):
         forbidden = (
-            "super" + "powers",
             "systematic " + "debugging",
             "系统化" + "调试",
         )

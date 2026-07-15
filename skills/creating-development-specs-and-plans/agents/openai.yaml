@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Development Specs and Plans"
+  short_description: "Turn requirements into approved specs and reviewed plans"
+  default_prompt: "Use $creating-development-specs-and-plans to clarify this feature and produce an approved spec and reviewed implementation plan."

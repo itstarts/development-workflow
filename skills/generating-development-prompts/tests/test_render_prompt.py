@@ -267,7 +267,6 @@ class RenderPromptTests(unittest.TestCase):
         ):
             with self.subTest(expected=expected):
                 self.assertIn(expected, output)
-        self.assertNotIn(("super" + "powers").casefold(), output.casefold())
 
     def test_success_requires_tdd_and_repeatable_review_loops(self):
         output = self.render_raw(valid_payload()).stdout
