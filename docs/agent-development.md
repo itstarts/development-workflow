@@ -15,11 +15,11 @@
 
 | 路径 | 职责 |
 |---|---|
-| `skills/` | 可独立安装的三个 skill 及其运行时资源 |
+| `skills/` | 可独立安装的四个 skill 及其运行时资源 |
 | `tests/` | 仓库级契约和跨 skill 集成测试 |
 | `evaluations/` | 可版本化、已脱敏的 RED/GREEN 场景与结果 |
 | `.codex/agents/` | 仓库内只读评审角色 |
-| `.codex-plugin/plugin.json` | 三个 skill 的 plugin bundle 元数据 |
+| `.codex-plugin/plugin.json` | 四个 skill 的 plugin bundle 元数据 |
 | `work/` | 本地原始评估、trace 和临时材料；禁止提交 |
 
 ## Skill 修改流程
@@ -41,7 +41,7 @@
 
 - `skill-reviewer.toml`：检查单个 skill 的行为、TDD 证据、打包与跨 skill 契约。
 - `final-reviewer.toml`：检查一个已批准实施范围的整体完成门。
-- `workflow-final-reviewer.toml`：检查完整三-skill plugin 和发布证据。
+- `workflow-final-reviewer.toml`：检查完整四-skill plugin、两条工作流入口和发布证据。
 
 角色必须保持只读、职责单一，不固定模型或 reasoning effort，不声称拥有运行时未暴露的权限。新增或修改角色时需同步说明其触发范围、输入证据、批准条件和外部状态边界。
 
@@ -64,12 +64,15 @@
 .venv/bin/python -m unittest discover -s skills/creating-product-requirements/tests -v
 .venv/bin/python -m unittest discover -s skills/creating-development-specs-and-plans/tests -v
 .venv/bin/python -m unittest discover -s skills/generating-development-prompts/tests -v
+.venv/bin/python -m unittest discover -s skills/implementing-bounded-changes/tests -v
 .venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
   skills/creating-product-requirements
 .venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
   skills/creating-development-specs-and-plans
 .venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
   skills/generating-development-prompts
+.venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
+  skills/implementing-bounded-changes
 .venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/plugin-creator/scripts/validate_plugin.py" .
 git diff --check
 ```

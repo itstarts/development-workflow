@@ -11,14 +11,16 @@
 - `creating-product-requirements`：把产品意图澄清为单一稳定主题、经独立评审和用户批准的 PRD。
 - `creating-development-specs-and-plans`：只从已批准 PRD 生成经批准的技术 spec，再生成可执行 plan。
 - `generating-development-prompts`：读取已有 spec、plan 和仓库证据，生成可复制到新 Codex 会话的开发提示词。
+- `implementing-bounded-changes`：在用户明确批准后，以冻结范围、比例化 TDD、定向验证、相关文档更新和独立评审直接完成小改动或 Bug 修复。
 - `.codex-plugin/plugin.json`：把可用 skill 作为一个 plugin bundle 发布。
 
-三个 skill 必须保持职责独立，通过文档路径、评审状态和显式输出字段协作，不通过本机安装路径或插件缓存路径互相调用。
+四个 skill 必须保持职责独立。前三个 skill 通过文档路径、评审状态和显式输出字段协作；受控实施 skill 直接依据用户批准、当前范围和仓库证据执行。任何 skill 都不通过本机安装路径或插件缓存路径互相调用。
 
 ## 当前状态
 
 - `generating-development-prompts` 已有经过验证的实现，可以维护。
 - `creating-product-requirements` 和 `creating-development-specs-and-plans` 均已实现并完成独立评审；维护时仍须保留 RED 证据、GREEN 前向结果、仓库验证和独立评审门。
+- `implementing-bounded-changes` 已实现并完成无目标 baseline、GREEN 前向验证、仓库验证和独立评审；维护时继续保留范围控制、比例化 TDD、最终评审通过且不过度评审的合同。
 
 ## 开发流程
 
@@ -58,6 +60,7 @@
 - spec 必须经过独立评审和用户明确批准后才能作为 plan 的稳定输入。
 - plan 只有真实评审通过后才能记录 `review_status: approved`；不得预填或推断批准状态。
 - PRD skill 固定报告 requirements 八字段；specs/plans skill 必须校验并保留这些字段，再以十四字段报告 requirements、spec、plan 与双门状态；prompt skill 保留显式 spec/plan 路径与评审状态。
+- bounded implementation skill 不依赖上述文档链；必须保留用户推进批准、冻结范围、定向验证、相关文档更新和真实独立评审证据。
 
 ## Git
 
@@ -75,12 +78,15 @@
 .venv/bin/python -m unittest discover -s skills/creating-product-requirements/tests -v
 .venv/bin/python -m unittest discover -s skills/creating-development-specs-and-plans/tests -v
 .venv/bin/python -m unittest discover -s skills/generating-development-prompts/tests -v
+.venv/bin/python -m unittest discover -s skills/implementing-bounded-changes/tests -v
 .venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
   skills/creating-product-requirements
 .venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
   skills/creating-development-specs-and-plans
 .venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
   skills/generating-development-prompts
+.venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
+  skills/implementing-bounded-changes
 .venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/plugin-creator/scripts/validate_plugin.py" .
 ```
 
@@ -88,4 +94,4 @@
 
 ## 评审
 
-中等及以上变更必须由未参与实现的独立评审者检查 diff、skill 触发条件、TDD 证据、前向结果、plugin 打包、安装边界与文档契约。最终评审必须覆盖两个 authoring skill、未修改 prompt skill 的回归证据和完整三-skill plugin。评审发现的改动必须重新验证并复审到收敛。
+中等及以上变更必须由未参与实现的独立评审者检查 diff、skill 触发条件、TDD 证据、前向结果、plugin 打包、安装边界与文档契约。最终评审必须覆盖两个 authoring skill、prompt skill、bounded implementation skill 的回归或创建证据，以及完整四-skill plugin。评审发现的改动必须重新验证并复审到收敛。

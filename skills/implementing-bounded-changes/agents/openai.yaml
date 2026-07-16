@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implementing Bounded Changes"
+  short_description: "Execute approved changes without scope expansion"
+  default_prompt: "Use $implementing-bounded-changes to implement this approved change within the confirmed scope."

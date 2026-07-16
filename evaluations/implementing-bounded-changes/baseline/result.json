@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "evidence_role": "migration-baseline",
+  "target_skill_loaded": false,
+  "all_runs_valid": true,
+  "failures_observed": true,
+  "cases": [
+    {
+      "id": "01",
+      "valid": true,
+      "failed_criteria": ["proportional-tdd", "independent-review"]
+    },
+    {
+      "id": "02",
+      "valid": true,
+      "failed_criteria": ["proportional-tdd", "independent-review"]
+    },
+    {
+      "id": "03",
+      "valid": true,
+      "failed_criteria": []
+    },
+    {
+      "id": "04",
+      "valid": true,
+      "failed_criteria": ["independent-review"]
+    },
+    {
+      "id": "05",
+      "valid": true,
+      "failed_criteria": ["proportional-tdd", "bounded-delegation", "independent-review", "truthful-completion"]
+    }
+  ]
+}
