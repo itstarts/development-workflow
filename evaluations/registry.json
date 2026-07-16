@@ -15,6 +15,11 @@
       "evaluation_mode": "imported",
       "evidence_profile": "imported-reviewed",
       "stage": "review-approved"
+    },
+    "implementing-bounded-changes": {
+      "evaluation_mode": "managed",
+      "evidence_profile": "creation-only",
+      "stage": "review-approved"
     }
   }
 }

@@ -708,14 +708,16 @@ class RepositoryContractTests(unittest.TestCase):
             "technical specifications",
             "reviewed plans",
             "handoff prompts",
+            "bounded changes",
         ):
             self.assertIn(phrase, serialized)
 
-    def test_all_three_skills_are_complete_and_exposed(self):
+    def test_all_four_skills_are_complete_and_exposed(self):
         for skill_name in (
             "creating-product-requirements",
             "creating-development-specs-and-plans",
             "generating-development-prompts",
+            "implementing-bounded-changes",
         ):
             with self.subTest(skill_name=skill_name):
                 skill = ROOT / "skills" / skill_name
@@ -732,6 +734,9 @@ class RepositoryContractTests(unittest.TestCase):
         handoff = VALIDATOR.load_skill_frontmatter(
             ROOT / "skills" / "generating-development-prompts" / "SKILL.md"
         )["description"].casefold()
+        bounded = VALIDATOR.load_skill_frontmatter(
+            ROOT / "skills" / "implementing-bounded-changes" / "SKILL.md"
+        )["description"].casefold()
 
         self.assertIn("product requirements", requirements)
         self.assertIn("product scope", requirements)
@@ -744,6 +749,11 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertIn("new-session development prompt", handoff)
         self.assertIn("copyable codex development task instructions", handoff)
         self.assertNotIn("approved product requirements", handoff)
+        self.assertIn("explicitly approved implementation", bounded)
+        self.assertIn("bug fix", bounded)
+        self.assertIn("bounded change", bounded)
+        self.assertNotIn("product requirements", bounded)
+        self.assertNotIn("development prompt", bounded)
 
     def test_authoring_plan_template_preserves_handoff_review_states(self):
         template = (
@@ -977,6 +987,7 @@ class RepositoryContractTests(unittest.TestCase):
             ROOT / "skills" / "creating-product-requirements",
             ROOT / "skills" / "creating-development-specs-and-plans",
             ROOT / "skills" / "generating-development-prompts",
+            ROOT / "skills" / "implementing-bounded-changes",
         ]
 
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -985,12 +996,12 @@ class RepositoryContractTests(unittest.TestCase):
                 root / "requirements-home",
                 root / "authoring-home",
                 root / "handoff-home",
+                root / "bounded-home",
                 root / "combined-home",
             ]
-            VALIDATOR.stage_skill_payloads([skills[0]], homes[0])
-            VALIDATOR.stage_skill_payloads([skills[1]], homes[1])
-            VALIDATOR.stage_skill_payloads([skills[2]], homes[2])
-            VALIDATOR.stage_skill_payloads(skills, homes[3])
+            for index, skill in enumerate(skills):
+                VALIDATOR.stage_skill_payloads([skill], homes[index])
+            VALIDATOR.stage_skill_payloads(skills, homes[4])
 
             for index, skill in enumerate(skills):
                 expected = {
@@ -998,7 +1009,7 @@ class RepositoryContractTests(unittest.TestCase):
                     for path in VALIDATOR.production_files(skill)
                 }
                 independent = homes[index] / "skills" / skill.name
-                combined = homes[3] / "skills" / skill.name
+                combined = homes[4] / "skills" / skill.name
                 for staged in (independent, combined):
                     actual = {
                         str(path.relative_to(staged)): path.read_bytes()
@@ -1043,7 +1054,7 @@ class RepositoryContractTests(unittest.TestCase):
             "RED→GREEN→REFACTOR",
             "creating-product-requirements",
             "PRD",
-            "三个 skill",
+            "四个 skill",
             "不得依赖 `~/.codex/plugins/cache/`",
             "不得创建或操作用户可见 Codex task/thread",
         ]:
@@ -1071,7 +1082,7 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("repository validation passed", result.stdout)
 
-    def test_three_skill_workflow_docs_and_final_reviewer_are_current(self):
+    def test_four_skill_workflow_docs_and_final_reviewer_are_current(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         rules = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
@@ -1082,15 +1093,18 @@ class RepositoryContractTests(unittest.TestCase):
             "creating-product-requirements",
             "creating-development-specs-and-plans",
             "generating-development-prompts",
+            "implementing-bounded-changes",
         ):
             with self.subTest(skill_name=skill_name):
                 self.assertIn(skill_name, readme)
                 self.assertIn(skill_name, changelog)
         self.assertIn("PRD → technical spec/plan → development prompt", readme)
-        self.assertIn("三个 skill", rules)
+        self.assertIn("approved bounded change → implementation", readme)
+        self.assertIn("四个 skill", rules)
         self.assertIn("两个 authoring skill", reviewer)
         self.assertIn("prompt skill", reviewer)
-        self.assertIn("三-skill plugin", reviewer)
+        self.assertIn("bounded implementation skill", reviewer)
+        self.assertIn("四-skill plugin", reviewer)
 
     def test_repository_validator_passes_after_skill_test_cache_artifacts(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

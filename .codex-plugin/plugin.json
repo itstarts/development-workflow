@@ -1,18 +1,18 @@
 {
   "name": "development-workflow",
   "version": "0.1.0",
-  "description": "Create approved product requirements, technical specifications, and reviewed plans, then generate executable Codex handoff prompts.",
+  "description": "Create approved product requirements, technical specifications, and reviewed plans, generate executable handoff prompts, or implement explicitly approved bounded changes.",
   "author": {
     "name": "development-workflow maintainers"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Development Workflow (dw)",
-    "shortDescription": "Create PRDs, plans, and handoff prompts.",
-    "longDescription": "Create approved product requirements and technical specifications, produce independently reviewed plans, then generate self-contained development handoff prompts.",
+    "shortDescription": "Create PRDs, plans, prompts, and bounded changes.",
+    "longDescription": "Create approved product requirements and technical specifications, produce reviewed plans and self-contained handoff prompts, or implement explicitly approved bounded changes without scope expansion.",
     "developerName": "development-workflow maintainers",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "Create an approved PRD, turn it into an approved technical spec and reviewed plan, then generate a Codex handoff prompt."
+    "defaultPrompt": "Use the full PRD-to-prompt workflow, or implement an explicitly approved bounded change without expanding scope."
   }
 }

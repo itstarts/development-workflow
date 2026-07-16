@@ -4,7 +4,7 @@
 
 ## 接受的改动
 
-- 改善 PRD、technical spec/plan 或 development prompt 的稳定交接。
+- 改善 PRD、technical spec/plan、development prompt 或受控小改动实施的稳定流程。
 - 修复 skill 触发、批准门、路径优先级或错误处理问题。
 - 增强可复现测试、脱敏评估、plugin 打包或安装验证。
 - 改善公开文档和贡献体验。

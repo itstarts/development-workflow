@@ -1,8 +1,16 @@
 # Changelog
 
-本项目遵循语义化版本。三个 skill 共享 plugin 版本；每个版本分别记录 skill 与集成契约变化。
+本项目遵循语义化版本。四个 skill 共享 plugin 版本；每个版本分别记录 skill 与集成契约变化。
 
 ## 0.1.0 - Unreleased
+
+### implementing-bounded-changes
+
+- 新增用户明确批准后的受控实施入口，不要求为已确认的小改动创建 PRD、spec、plan 或开发提示词。
+- 实施前冻结目标、改动点、方案、非目标、验证范围和文档影响；任何实质范围或设计扩大都重新进入用户批准门。
+- 行为变化执行比例化 RED→GREEN，默认使用最小充分定向验证，允许边界清晰的 Sub Agent；最终完整 diff 必须由一位独立评审者评审，同一评审者复审到 `APPROVED` 后立即停止，不自我批准、伪造 Agent 证据或过度评审。
+- 把受影响的现有文档更新纳入完成条件，同时保留无关既有失败和未验证项的真实报告。
+- 通过无目标 skill baseline、5 个固定场景、官方 validator、plugin staging 和独立评审建立创建闭环。
 
 ### creating-product-requirements
 
@@ -40,4 +48,4 @@
 - 将公开安装命令更新为 `itstarts/development-workflow`，并记录完整 Git 历史隐私审计要求。
 - 固定 validator 开发依赖并声明 Python 3.9/3.14 维护矩阵。
 - 仓库验证器忽略 Python 缓存和系统元数据，保持 skill 测试后的重复验证稳定。
-- plugin 文案扩展为 PRD → technical spec/plan → development prompt 三段式工作流；本地 staging 验证三个 skill 可单独或组合复制且拒绝覆盖已有目标。
+- plugin 同时暴露 PRD → technical spec/plan → development prompt 完整交接链和 approved bounded change → implementation 受控实施入口；本地 staging 验证四个 skill 可单独或组合复制且拒绝覆盖已有目标。
