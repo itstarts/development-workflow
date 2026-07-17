@@ -18,14 +18,15 @@ Create a plan only when the PRD specification gate remains open, spec independen
 
 Apply the same Chinese user-facing document rule to the plan while preserving its frontmatter and technical identifiers.
 
-Each task is one independently testable deliverable a reviewer could reject without rejecting an unrelated task. Include:
+Each task is one independently testable execution slice. Task decomposition creates implementation and validation boundaries, not automatic independent-review gates. Include:
 
 - exact repository-relative create/modify/test files;
 - interfaces consumed and produced;
 - the testing approach required by the approved spec and repository rules; when they require TDD, include RED, Verify RED, GREEN, Verify GREEN, and REFACTOR steps;
 - executable commands, named tests, and observable expected results;
-- documentation synchronization;
-- a task-level independent review gate.
+- documentation synchronization.
+
+Define one implementation review strategy for the complete plan. By default, after all tasks are integrated and the relevant validation passes, one implementation-independent reviewer inspects the latest complete diff; in-scope findings are fixed, affected validation is rerun, and the same reviewer re-checks the updated diff until `APPROVED`, then review stops. Add an intermediate milestone review only when a task independently crosses a material public-contract, data, migration, permission, security, money, concurrency, transaction, or consistency boundary, or when later tasks depend on an otherwise unverified critical foundation. State each milestone's trigger, reason, and review scope. Never create per-task review gates merely because of task count.
 
 Include commit steps only when the user and repository rules authorize commits. Do not embed large final implementations; provide exact signatures, assertions, data shapes, boundaries, and locations needed to avoid design guesses.
 
