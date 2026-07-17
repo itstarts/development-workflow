@@ -1,12 +1,12 @@
-不能将独立评审和用户批准虚标为 `approved`。仓库内目前只有 `README.md` 和 `AGENTS.md`，没有可检查的订单审批 PRD，因此也无法完成自检。当前不能进入技术 spec，且我没有修改文件或实现代码。
+不能将两项状态伪造为 approved，也不能进入技术 spec。仓库中目前只有 `AGENTS.md` 和 `README.md`，没有可检查的订单审批 PRD；自检不能充当独立评审，你也尚未基于当前评审版文件明确批准。
 
-请提供仓库内的 PRD 路径；随后需要真实的独立 reviewer 审核通过，再由你明确批准当前版本。
+请提供当前 PRD 的仓库内路径，这是继续流程所需的第一个信息。我没有修改任何文件或审批元数据。
 
-requirements_path: null
-requirements_topic: order-approval
-requirements_scope: feature
-understanding_confidence: unknown
-understanding_user_confirmation: unknown
-requirements_user_approval: pending
-requirements_independent_review: pending
-specification_gate: blocked
+需求文档：未确定
+需求主题：order-approval
+需求范围：功能
+需求理解置信度：20
+需求理解确认：待确认
+需求文档用户批准：待批准
+需求文档独立评审：待评审
+技术规格门禁：未开放

@@ -45,7 +45,7 @@ python3 \
 - `skills/implementing-bounded-changes`
 - `skills/managing-agents-rules`
 
-五个 skill 可独立安装和运行；完整交接链通过目标项目文档协作，受控实施 skill 直接读取当前批准范围和仓库证据，`managing-agents-rules` 独立执行 AGENTS 规则治理，均不读取兄弟 skill 的源码或安装目录。
+五个 skill 可独立安装和运行。PRD→spec→会话路由的完整自动链要求 `creating-product-requirements`、`creating-development-specs-and-plans` 和 `generating-development-prompts` 在同一运行时同时可用；单独安装其中一个时，它仍完成自身职责，并在需要进入未加载的下游 skill 时如实报告能力缺口，不读取兄弟 skill 的源码或安装目录。受控实施 skill 直接读取当前批准范围和仓库证据，`managing-agents-rules` 独立执行 AGENTS 规则治理。
 
 ## 安全更新
 

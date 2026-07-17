@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -9,6 +10,33 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+CANONICAL_REQUIREMENTS_FIELDS = (
+    "requirements_path",
+    "requirements_topic",
+    "requirements_scope",
+    "understanding_confidence",
+    "understanding_user_confirmation",
+    "requirements_user_approval",
+    "requirements_independent_review",
+    "specification_gate",
+)
+CANONICAL_FOURTEEN_FIELDS = (
+    "requirements_path",
+    "requirements_topic",
+    "requirements_scope",
+    "requirements_understanding_confidence",
+    "requirements_understanding_confirmation",
+    "requirements_user_approval",
+    "requirements_independent_review",
+    "specification_gate",
+    "spec_path",
+    "spec_user_approval",
+    "spec_independent_review",
+    "plan_path",
+    "plan_review_status",
+    "implementation_gate",
+)
 
 
 def load_module(name: str, path: Path):
@@ -59,6 +87,29 @@ def run_repository_validator(
         capture_output=True,
         check=False,
     )
+
+
+def chinese_handoff_schema(relative_path: str) -> list[tuple[str, tuple[str, ...]]]:
+    text = (ROOT / relative_path).read_text(encoding="utf-8")
+    blocks = re.findall(r"```text\n(.*?)\n```", text, re.DOTALL)
+    assert len(blocks) >= 2
+    schema = []
+    known_values = {
+        "产品", "阶段", "功能", "未确定", "未知", "待确认", "已确认",
+        "待批准", "已批准", "待评审", "已通过", "未开放", "已开放",
+        "尚未创建", "未开始", "未通过",
+    }
+    for line in blocks[1].splitlines():
+        label, raw_values = line.split("：", 1)
+        raw_values = raw_values.strip()
+        if raw_values.startswith("<") and raw_values.endswith(">"):
+            raw_values = raw_values[1:-1]
+        values = []
+        for value in raw_values.split("|"):
+            normalized = value.strip().strip("<>")
+            values.append(normalized if normalized in known_values else "<dynamic>")
+        schema.append((label, tuple(values)))
+    return schema
 
 
 class RepositoryContractTests(unittest.TestCase):
@@ -378,6 +429,28 @@ class RepositoryContractTests(unittest.TestCase):
                 encoding="utf-8",
             )
             target = repository / "evaluations" / "creating-product-requirements"
+            rubric_path = target / "rubric.json"
+            rubric = json.loads(rubric_path.read_text(encoding="utf-8"))
+            for criterion in rubric["criteria"]:
+                criterion["applies_to"] = [
+                    case_id
+                    for case_id in criterion["applies_to"]
+                    if case_id not in {"09", "10"}
+                ]
+            rubric["criteria"] = [
+                criterion
+                for criterion in rubric["criteria"]
+                if criterion["applies_to"]
+            ]
+            rubric_path.write_text(
+                json.dumps(rubric, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            for case_name in (
+                "09-approved-auto-spec-transition.md",
+                "10-chinese-handoff-status.md",
+            ):
+                (target / "cases" / case_name).unlink()
             shutil.rmtree(target / "green")
             shutil.rmtree(repository / "skills" / "creating-product-requirements")
             authoring_green_path = (
@@ -639,6 +712,172 @@ class RepositoryContractTests(unittest.TestCase):
             result.stderr,
         )
 
+    def test_imported_current_red_profile_supports_evidence_and_review_gates(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            registry_path = repository / "evaluations" / "registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["skills"]["generating-development-prompts"] = {
+                "evaluation_mode": "imported",
+                "evidence_profile": "imported-plus-current-red",
+                "stage": "implemented",
+            }
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            evaluation = repository / "evaluations" / "generating-development-prompts"
+            if evaluation.exists():
+                shutil.rmtree(evaluation)
+            (evaluation / "cases").mkdir(parents=True)
+            (evaluation / "migration-red").mkdir()
+            (evaluation / "green").mkdir()
+            (evaluation / "rubric.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "criteria": [
+                            {
+                                "id": "routing",
+                                "applies_to": ["01"],
+                                "pass": "Routes.",
+                                "fail": "Does not route.",
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (evaluation / "cases" / "01-routing.md").write_text(
+                "route\n", encoding="utf-8"
+            )
+            (evaluation / "migration-red" / "01-output.md").write_text(
+                "red\n", encoding="utf-8"
+            )
+            (evaluation / "migration-red" / "result.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "evidence_role": "current-skill-red",
+                        "selected_case": "01",
+                        "valid": True,
+                        "red_observed": True,
+                        "failed_criteria": ["routing"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (evaluation / "green" / "01-output.md").write_text(
+                "green\n", encoding="utf-8"
+            )
+            (evaluation / "green" / "result.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "evidence_role": "green",
+                        "target_skill_loaded": True,
+                        "all_runs_valid": True,
+                        "all_required_passed": True,
+                        "review_status": "pending",
+                        "cases": [
+                            {
+                                "id": "01",
+                                "valid": True,
+                                "passed_criteria": ["routing"],
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            evidence = run_repository_validator(
+                repository, "--evidence-only", "generating-development-prompts"
+            )
+            strict = run_repository_validator(repository)
+
+        self.assertEqual(0, evidence.returncode, evidence.stdout + evidence.stderr)
+        self.assertEqual(1, strict.returncode)
+        self.assertIn("implemented evidence is not review-approved", strict.stderr)
+
+    def test_repository_validator_rejects_green_when_target_skill_was_not_loaded(self):
+        for target_skill_loaded in (False, None):
+            with self.subTest(target_skill_loaded=target_skill_loaded):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    repository = copy_repository(Path(temporary_directory))
+                    result_path = (
+                        repository
+                        / "evaluations"
+                        / "generating-development-prompts"
+                        / "green"
+                        / "result.json"
+                    )
+                    result = json.loads(result_path.read_text(encoding="utf-8"))
+                    if target_skill_loaded is None:
+                        result.pop("target_skill_loaded", None)
+                    else:
+                        result["target_skill_loaded"] = target_skill_loaded
+                    result_path.write_text(
+                        json.dumps(result, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8",
+                    )
+
+                    validation = run_repository_validator(
+                        repository,
+                        "--evidence-only",
+                        "generating-development-prompts",
+                    )
+
+                self.assertEqual(1, validation.returncode)
+                self.assertIn(
+                    "generating-development-prompts: green target skill must be loaded",
+                    validation.stderr,
+                )
+
+    def test_imported_current_red_profile_rejects_missing_selected_red_output(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            registry_path = repository / "evaluations" / "registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["skills"]["generating-development-prompts"] = {
+                "evaluation_mode": "imported",
+                "evidence_profile": "imported-plus-current-red",
+                "stage": "implemented",
+            }
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            evaluation = repository / "evaluations" / "generating-development-prompts"
+            if evaluation.exists():
+                shutil.rmtree(evaluation)
+            (evaluation / "cases").mkdir(parents=True)
+            (evaluation / "migration-red").mkdir()
+            (evaluation / "green").mkdir()
+            (evaluation / "rubric.json").write_text(
+                json.dumps(
+                    {"criteria": [{"id": "routing", "applies_to": ["01"]}]}
+                ),
+                encoding="utf-8",
+            )
+            (evaluation / "cases" / "01-routing.md").write_text("route\n", encoding="utf-8")
+            (evaluation / "migration-red" / "result.json").write_text(
+                json.dumps(
+                    {
+                        "evidence_role": "current-skill-red",
+                        "selected_case": "01",
+                        "valid": True,
+                        "red_observed": True,
+                        "failed_criteria": ["routing"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = run_repository_validator(
+                repository, "--evidence-only", "generating-development-prompts"
+            )
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("migration-red selected case evidence is incomplete", result.stderr)
+
     def test_repository_validator_rejects_unregistered_skill_and_orphan_evidence(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
@@ -675,20 +914,6 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual(1, result.returncode)
         self.assertIn("unsupported docs namespace", result.stderr)
 
-    def test_downstream_production_is_unchanged(self):
-        skill = ROOT / "skills" / "generating-development-prompts"
-        for path in VALIDATOR.production_files(skill):
-            relative = path.relative_to(ROOT)
-            committed = subprocess.run(
-                ["git", "show", f"HEAD:{relative}"],
-                cwd=ROOT,
-                capture_output=True,
-                check=False,
-            )
-            with self.subTest(path=relative):
-                self.assertEqual(0, committed.returncode, committed.stderr.decode())
-                self.assertEqual(committed.stdout, path.read_bytes())
-
     def test_required_repository_surfaces_exist(self):
         required = [
             ROOT / "AGENTS.md",
@@ -721,6 +946,195 @@ class RepositoryContractTests(unittest.TestCase):
             "agents rules",
         ):
             self.assertIn(phrase, serialized)
+        self.assertIn("automatically continue", serialized)
+        self.assertIn("session routing", serialized)
+        default_prompts = manifest["interface"]["defaultPrompt"]
+        self.assertIsInstance(default_prompts, list)
+        self.assertGreaterEqual(len(default_prompts), 1)
+        self.assertLessEqual(len(default_prompts), 3)
+        self.assertTrue(all(isinstance(prompt, str) for prompt in default_prompts))
+        self.assertTrue(all(len(prompt) <= 128 for prompt in default_prompts))
+
+    def test_public_workflow_defines_exact_automatic_handoff_mapping(self):
+        workflow = (ROOT / "docs" / "workflow.md").read_text(encoding="utf-8")
+        mapping = (
+            ("requirements_path", "requirements_path"),
+            ("requirements_topic", "requirements_topic"),
+            ("requirements_scope", "requirements_scope"),
+            ("understanding_confidence", "requirements_understanding_confidence"),
+            (
+                "understanding_user_confirmation",
+                "requirements_understanding_confirmation",
+            ),
+            ("requirements_user_approval", "requirements_user_approval"),
+            ("requirements_independent_review", "requirements_independent_review"),
+            ("specification_gate", "specification_gate"),
+        )
+        for upstream, downstream in mapping:
+            with self.subTest(upstream=upstream):
+                self.assertIn(f"| `{upstream}` | `{downstream}` |", workflow)
+        self.assertIn("进入下游前复验失败", workflow)
+        self.assertIn("不构造十四字段", workflow)
+        self.assertIn("进入下游后复验失败", workflow)
+        self.assertIn("仍输出完整十四字段", workflow)
+
+    def test_public_workflow_routes_verified_fourteen_fields_with_manual_compatibility(self):
+        workflow = (ROOT / "docs" / "workflow.md").read_text(encoding="utf-8")
+        self.assertIn("重新验证并冻结十四字段快照", workflow)
+        for route in ("current-session", "new-session", "blocked"):
+            self.assertIn(f"`{route}`", workflow)
+        self.assertIn("自动路由回复仍以同一中文十四字段视图结尾", workflow)
+        self.assertIn("手动提示词请求", workflow)
+        self.assertIn("不伪造 requirements 或双门状态", workflow)
+        self.assertIn("等待用户显式实施批准", workflow)
+        self.assertIn("英文 canonical", workflow)
+        self.assertIn("旧英文八字段和十四字段输入", workflow)
+        self.assertIn("映射失败", workflow)
+        self.assertIn("不附加状态块", workflow)
+        self.assertIn("renderer stdout", workflow)
+        self.assertIn("状态块位于动态代码框之外", workflow)
+
+    def test_three_skills_share_the_same_chinese_handoff_mapping(self):
+        requirements = chinese_handoff_schema(
+            "skills/creating-product-requirements/references/review-and-handoff.md"
+        )
+        specs = chinese_handoff_schema(
+            "skills/creating-development-specs-and-plans/references/review-and-handoff.md"
+        )
+        prompts = chinese_handoff_schema(
+            "skills/generating-development-prompts/references/session-routing-policy.md"
+        )
+        self.assertEqual(requirements, specs[:8])
+        self.assertEqual(specs, prompts)
+
+    def test_versioned_prd_handoff_is_unique_ordered_chinese_final_suffix(self):
+        output = (
+            ROOT / "evaluations" / "creating-product-requirements" / "green" / "10-output.md"
+        ).read_text(encoding="utf-8")
+        expected = [
+            "需求文档：/workspace/fixture/docs/requirements/2026-07-15-order-approval.md",
+            "需求主题：order-approval",
+            "需求范围：功能",
+            "需求理解置信度：97",
+            "需求理解确认：已确认",
+            "需求文档用户批准：已批准",
+            "需求文档独立评审：已通过",
+            "技术规格门禁：已开放",
+        ]
+        self.assertEqual(expected, output.rstrip().splitlines()[-8:])
+        for line in expected:
+            label = line.split("：", 1)[0]
+            with self.subTest(label=label):
+                self.assertEqual(1, len(re.findall(rf"(?m)^{re.escape(label)}：", output)))
+        for field in CANONICAL_REQUIREMENTS_FIELDS:
+            with self.subTest(hidden_field=field):
+                self.assertEqual(0, len(re.findall(rf"(?m)^{field}:", output)))
+
+    def test_versioned_fourteen_field_handoff_is_unique_ordered_final_suffix(self):
+        output = (
+            ROOT
+            / "evaluations"
+            / "creating-development-specs-and-plans"
+            / "green"
+            / "12-output.md"
+        ).read_text(encoding="utf-8")
+        expected = [
+            "需求文档：/workspace/fixture/docs/requirements/2026-07-12-order-approval.md",
+            "需求主题：order-approval",
+            "需求范围：功能",
+            "需求理解置信度：97",
+            "需求理解确认：已确认",
+            "需求文档用户批准：已批准",
+            "需求文档独立评审：已通过",
+            "技术规格门禁：已开放",
+            "技术规格：/workspace/fixture/docs/specs/2026-07-12-order-approval-design.md",
+            "技术规格用户批准：已批准",
+            "技术规格独立评审：已通过",
+            "实施计划：/workspace/fixture/docs/plans/2026-07-12-order-approval.md",
+            "计划评审状态：已通过",
+            "实施门禁：已开放",
+        ]
+        self.assertEqual(expected, output.rstrip().splitlines()[-14:])
+        for line in expected:
+            label = line.split("：", 1)[0]
+            with self.subTest(label=label):
+                self.assertEqual(1, len(re.findall(rf"(?m)^{re.escape(label)}：", output)))
+        for field in CANONICAL_FOURTEEN_FIELDS:
+            with self.subTest(hidden_field=field):
+                self.assertEqual(0, len(re.findall(rf"(?m)^{field}:", output)))
+
+    def test_versioned_prompt_routing_handoffs_use_unique_field_labels(self):
+        labels = (
+            "需求文档", "需求主题", "需求范围", "需求理解置信度", "需求理解确认",
+            "需求文档用户批准", "需求文档独立评审", "技术规格门禁", "技术规格",
+            "技术规格用户批准", "技术规格独立评审", "实施计划", "计划评审状态", "实施门禁",
+        )
+        green = ROOT / "evaluations" / "generating-development-prompts" / "green"
+        for case_id in ("01", "02", "03", "04"):
+            output = (green / f"{case_id}-output.md").read_text(encoding="utf-8")
+            suffix = output.rstrip().splitlines()[-14:]
+            with self.subTest(case_id=case_id, contract="suffix-order"):
+                self.assertEqual(list(labels), [line.split("：", 1)[0] for line in suffix])
+            for label in labels:
+                with self.subTest(case_id=case_id, label=label):
+                    self.assertEqual(
+                        1,
+                        len(re.findall(rf"(?m)^{re.escape(label)}：", output)),
+                    )
+            for field in CANONICAL_FOURTEEN_FIELDS:
+                with self.subTest(case_id=case_id, hidden_field=field):
+                    self.assertEqual(0, len(re.findall(rf"(?m)^{field}:", output)))
+
+    def test_prd_changelog_reports_all_current_green_scenarios(self):
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("10 个 GREEN 场景", changelog)
+
+    def test_authoring_templates_use_chinese_titles_and_sections(self):
+        expected = {
+            "skills/creating-product-requirements/assets/prd-template.md": (
+                "# <产品需求名称>",
+                "## 产品问题",
+                "## 验收标准",
+            ),
+            "skills/creating-development-specs-and-plans/assets/spec-template.md": (
+                "# <功能名称>技术规格",
+                "## 当前证据",
+                "## 测试与文档",
+            ),
+            "skills/creating-development-specs-and-plans/assets/plan-template.md": (
+                "# <功能名称>实施计划",
+                "## 全局约束",
+                "## 最终验证",
+            ),
+        }
+        for relative, headings in expected.items():
+            content = (ROOT / relative).read_text(encoding="utf-8")
+            with self.subTest(relative=relative):
+                for heading in headings:
+                    self.assertIn(heading, content)
+
+    def test_renderer_stdout_breaking_migration_is_publicly_documented(self):
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("renderer stdout", changelog)
+        self.assertIn("breaking contract change", changelog)
+        self.assertIn("提取唯一 Markdown 代码框内容", changelog)
+        self.assertIn("保持未发布 `0.1.0`", changelog)
+        self.assertIn("用户可见 handoff/status-block 回复后缀", changelog)
+        self.assertIn("英文 canonical", changelog)
+        self.assertIn("旧英文输入", changelog)
+        self.assertIn("状态块不进入 renderer stdout", changelog)
+
+    def test_project_reviewer_roles_have_explicit_retention_assessment(self):
+        guide = (ROOT / "docs" / "agent-development.md").read_text(encoding="utf-8")
+        for role in ("skill-reviewer", "final-reviewer", "workflow-final-reviewer"):
+            with self.subTest(role=role):
+                self.assertIn(f"| `{role}` |", guide)
+        for column in ("稳定可用性", "职责", "输入", "输出", "边界", "批准条件", "结论"):
+            self.assertIn(column, guide)
+        self.assertGreaterEqual(guide.count("保留"), 3)
+        self.assertIn("部分职责重叠", guide)
+        self.assertIn("项目专属证据范围", guide)
+        self.assertGreaterEqual(guide.count("不改变任何外部状态"), 3)
 
     def test_all_registered_skills_are_complete_and_exposed(self):
         self.assertEqual(5, len(registered_skill_names()))

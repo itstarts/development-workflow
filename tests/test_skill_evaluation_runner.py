@@ -19,6 +19,22 @@ MODULE_SPEC.loader.exec_module(RUNNER)
 
 
 class SkillEvaluationRunnerTests(unittest.TestCase):
+    def _write_skill(self, root: Path, name: str) -> Path:
+        skill = root / name
+        (skill / "references").mkdir(parents=True)
+        (skill / "SKILL.md").write_text(
+            f"---\nname: {name}\ndescription: Use when testing {name}.\n---\n",
+            encoding="utf-8",
+        )
+        (skill / "references" / "contract.md").write_text(
+            f"# {name}\n", encoding="utf-8"
+        )
+        (skill / "tests").mkdir()
+        (skill / "tests" / "test_contract.py").write_text(
+            "ignored\n", encoding="utf-8"
+        )
+        return skill
+
     def _scenario_root(self, root: Path, case_name: str = "01-case") -> tuple[Path, Path]:
         evaluation = root / "evaluations" / "fixture-skill"
         (evaluation / "fixtures" / "common").mkdir(parents=True)
@@ -389,6 +405,35 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
         for leaked in ("rubric", "expected output", "failure explanation"):
             self.assertNotIn(leaked, prompt.casefold())
 
+    def test_evaluation_prompt_allowlists_additional_skills_only_after_handoff(self):
+        target = Path("/tmp/codex-home/skills/creating-product-requirements")
+        additional = (
+            (
+                "creating-development-specs-and-plans",
+                Path(
+                    "/tmp/codex-home/skills/creating-development-specs-and-plans"
+                ),
+            ),
+            (
+                "generating-development-prompts",
+                Path("/tmp/codex-home/skills/generating-development-prompts"),
+            ),
+        )
+
+        prompt = RUNNER.build_evaluation_prompt(
+            "user request",
+            "creating-product-requirements",
+            target,
+            additional,
+        )
+
+        self.assertIn("Use $creating-product-requirements", prompt)
+        self.assertIn("$creating-development-specs-and-plans", prompt)
+        self.assertIn("$generating-development-prompts", prompt)
+        self.assertIn("only after the target workflow explicitly hands off", prompt)
+        self.assertIn("Do not search for, import, or modify sibling skill source", prompt)
+        self.assertTrue(prompt.endswith("user request"))
+
     def test_skill_name_selects_evaluation_root_and_matching_candidate(self):
         self.assertEqual(
             ROOT / "evaluations" / "creating-product-requirements",
@@ -407,6 +452,86 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
             with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "does not match"):
                 RUNNER.validate_phase_inputs(
                     "green", "creating-product-requirements", skill
+                )
+
+    def test_target_skill_directory_rejects_symlink(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = self._write_skill(
+                root / "source", "creating-product-requirements"
+            )
+            linked_root = root / "linked"
+            linked_root.mkdir()
+            alias = linked_root / "creating-product-requirements"
+            alias.symlink_to(source, target_is_directory=True)
+
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER.validate_phase_inputs(
+                    "green", "creating-product-requirements", alias
+                )
+
+    def test_target_and_additional_skill_directories_reject_symlinked_parent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            target = self._write_skill(
+                root / "target-source", "creating-product-requirements"
+            )
+            additional = self._write_skill(
+                root / "additional-source",
+                "creating-development-specs-and-plans",
+            )
+            linked_target_parent = root / "linked-target-parent"
+            linked_target_parent.symlink_to(target.parent, target_is_directory=True)
+            linked_additional_parent = root / "linked-additional-parent"
+            linked_additional_parent.symlink_to(
+                additional.parent, target_is_directory=True
+            )
+
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER.validate_phase_inputs(
+                    "green",
+                    "creating-product-requirements",
+                    linked_target_parent / target.name,
+                )
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER.validate_additional_skill_dirs(
+                    "creating-product-requirements",
+                    target,
+                    [linked_additional_parent / additional.name],
+                )
+
+    def test_target_and_additional_skill_directories_reject_symlink_dot_dot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            target_parent = root / "target-source"
+            additional_parent = root / "additional-source"
+            target = self._write_skill(
+                target_parent, "creating-product-requirements"
+            )
+            additional = self._write_skill(
+                additional_parent,
+                "creating-development-specs-and-plans",
+            )
+            target_child = target_parent / "child"
+            additional_child = additional_parent / "child"
+            target_child.mkdir()
+            additional_child.mkdir()
+            target_link = root / "target-link"
+            additional_link = root / "additional-link"
+            target_link.symlink_to(target_child, target_is_directory=True)
+            additional_link.symlink_to(additional_child, target_is_directory=True)
+            target_bypass = target_link / ".." / target.name
+            additional_bypass = additional_link / ".." / additional.name
+
+            self.assertTrue((target_bypass / "SKILL.md").is_file())
+            self.assertTrue((additional_bypass / "SKILL.md").is_file())
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER.validate_phase_inputs(
+                    "green", "creating-product-requirements", target_bypass
+                )
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER.validate_additional_skill_dirs(
+                    "creating-product-requirements", target, [additional_bypass]
                 )
 
     def test_case_must_belong_to_selected_skill_evaluation_root(self):
@@ -451,6 +576,63 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
                 "green", "creating-product-requirements", skill
             )
 
+    def test_additional_skill_inputs_reject_duplicates_conflicts_and_symlinks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = self._write_skill(root, "creating-product-requirements")
+            additional = self._write_skill(
+                root, "creating-development-specs-and-plans"
+            )
+
+            self.assertEqual(
+                (additional,),
+                RUNNER.validate_additional_skill_dirs(
+                    "creating-product-requirements", target, [additional]
+                ),
+            )
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "duplicate"):
+                RUNNER.validate_additional_skill_dirs(
+                    "creating-product-requirements",
+                    target,
+                    [additional, additional],
+                )
+
+            conflicting = root / "conflicting"
+            shutil.copytree(target, conflicting)
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "conflicts"):
+                RUNNER.validate_additional_skill_dirs(
+                    "creating-product-requirements", target, [conflicting]
+                )
+
+            alias = root / "linked-skill"
+            alias.symlink_to(additional, target_is_directory=True)
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER.validate_additional_skill_dirs(
+                    "creating-product-requirements", target, [alias]
+                )
+
+            linked_payload = self._write_skill(root, "linked-payload")
+            (linked_payload / "references" / "contract.md").unlink()
+            (linked_payload / "references" / "contract.md").symlink_to(
+                additional / "references" / "contract.md"
+            )
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER.validate_additional_skill_dirs(
+                    "creating-product-requirements", target, [linked_payload]
+                )
+
+    def test_additional_skill_inputs_reject_non_publishable_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = self._write_skill(root, "creating-product-requirements")
+            invalid = root / "missing-skill"
+            invalid.mkdir()
+
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "SKILL.md"):
+                RUNNER.validate_additional_skill_dirs(
+                    "creating-product-requirements", target, [invalid]
+                )
+
     def test_cli_requires_explicit_skill_name(self):
         with self.assertRaises(SystemExit):
             RUNNER.parse_args(
@@ -476,6 +658,35 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
             ]
         )
         self.assertEqual("creating-product-requirements", args.skill_name)
+        self.assertEqual([], args.additional_skill_dir)
+
+    def test_cli_accepts_repeated_additional_skill_directories(self):
+        args = RUNNER.parse_args(
+            [
+                "--skill-name",
+                "creating-product-requirements",
+                "--phase",
+                "green",
+                "--case",
+                "case.md",
+                "--skill-dir",
+                "skills/creating-product-requirements",
+                "--additional-skill-dir",
+                "skills/creating-development-specs-and-plans",
+                "--additional-skill-dir",
+                "skills/generating-development-prompts",
+                "--output-root",
+                "output",
+            ]
+        )
+
+        self.assertEqual(
+            [
+                Path("skills/creating-development-specs-and-plans"),
+                Path("skills/generating-development-prompts"),
+            ],
+            args.additional_skill_dir,
+        )
 
     def test_sandbox_profile_limits_writes_to_fixture_and_home(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -492,7 +703,7 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
             profile = RUNNER.build_sandbox_profile(
                 fixture,
                 codex_home,
-                staged_skill,
+                [staged_skill],
                 [
                     Path("/bin"),
                     Path("/usr"),
@@ -513,6 +724,38 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
             self.assertIn(str(fixture), profile)
             self.assertIn(str(codex_home), profile)
             self.assertIn(str(staged_skill), profile)
+            self.assertIn(
+                "(allow file-read* file-write*\n"
+                f'    (subpath "{fixture.resolve()}")\n'
+                f'    (subpath "{codex_home.resolve()}"))',
+                profile,
+            )
+
+    def test_sandbox_profile_denies_writes_to_every_staged_skill_root(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fixture = root / "fixture"
+            codex_home = root / "codex-home"
+            fixture.mkdir()
+            codex_home.mkdir()
+            staged = [
+                codex_home / "skills" / "creating-product-requirements",
+                codex_home / "skills" / "creating-development-specs-and-plans",
+                codex_home / "skills" / "generating-development-prompts",
+            ]
+            for skill in staged:
+                skill.mkdir(parents=True)
+
+            profile = RUNNER.build_sandbox_profile(
+                fixture, codex_home, staged, [Path("/bin"), Path("/usr")]
+            )
+
+            self.assertIn(str(fixture), profile)
+            self.assertIn(str(codex_home), profile)
+            for skill in staged:
+                self.assertIn(
+                    f'(deny file-write*\n    (subpath "{skill.resolve()}"))', profile
+                )
 
     def test_result_schema_keeps_only_operational_evidence(self):
         result = RUNNER.build_result(
@@ -537,6 +780,27 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
             result,
         )
         self.assertNotRegex(repr(result), r"sha256|digest|manifest")
+
+    def test_result_records_only_explicit_additional_skill_names(self):
+        result = RUNNER.build_result(
+            phase="green",
+            case_name="09-approved-auto-spec-transition.md",
+            exit_code=0,
+            contaminations=[],
+            warnings=[],
+            additional_skills=(
+                "creating-development-specs-and-plans",
+                "generating-development-prompts",
+            ),
+        )
+
+        self.assertEqual(
+            [
+                "creating-development-specs-and-plans",
+                "generating-development-prompts",
+            ],
+            result["additional_skills"],
+        )
 
     def test_codex_command_uses_an_isolated_persisted_thread_for_collaboration(self):
         command = RUNNER.build_codex_command(Path("/tmp/fixture"), Path("/tmp/final.md"))
@@ -710,6 +974,39 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
             self.assertTrue((staged / "agents" / "openai.yaml").is_file())
             self.assertFalse((staged / "tests").exists())
             self.assertNotIn("fixture-secret", repr(RUNNER.stage_codex_home))
+
+    def test_stage_codex_home_stages_multiple_publishable_skill_payloads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source_home = root / "source-home"
+            source_home.mkdir()
+            (source_home / "auth.json").write_text("{}\n", encoding="utf-8")
+            target = self._write_skill(root, "creating-product-requirements")
+            additional = (
+                self._write_skill(root, "creating-development-specs-and-plans"),
+                self._write_skill(root, "generating-development-prompts"),
+            )
+            codex_home = root / "codex-home"
+
+            RUNNER.stage_codex_home(
+                source_home, codex_home, target, additional
+            )
+
+            staged_names = {
+                path.name for path in (codex_home / "skills").iterdir()
+            }
+            self.assertEqual(
+                {
+                    "creating-product-requirements",
+                    "creating-development-specs-and-plans",
+                    "generating-development-prompts",
+                },
+                staged_names,
+            )
+            for name in staged_names:
+                staged = codex_home / "skills" / name
+                self.assertTrue((staged / "SKILL.md").is_file())
+                self.assertFalse((staged / "tests").exists())
 
     def test_stage_codex_home_blocks_when_auth_is_missing(self):
         with tempfile.TemporaryDirectory() as directory:

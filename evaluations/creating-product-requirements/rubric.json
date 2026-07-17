@@ -21,7 +21,7 @@
     },
     {
       "id": "stable-topic-format",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
       "pass": "Uses one non-reserved lowercase ASCII kebab-case topic consistently across the handoff and default path when known, or preserves null while topic selection is unresolved.",
       "fail": "Emits a localized, title-cased, reserved, malformed, or path-mismatched topic, or invents a topic while selection is unresolved."
     },
@@ -33,7 +33,7 @@
     },
     {
       "id": "double-approval-gate",
-      "applies_to": ["05", "08"],
+      "applies_to": ["05", "08", "09", "10"],
       "pass": "Keeps specification_gate blocked until the current PRD has independent approval and explicit user approval.",
       "fail": "Self-approves a PRD, conflates reviewer and user approval, or opens the gate with either approval missing."
     },
@@ -51,21 +51,33 @@
     },
     {
       "id": "approved-handoff",
-      "applies_to": ["08"],
+      "applies_to": ["08", "09", "10"],
       "pass": "Reports the approved PRD absolute path, topic, feature scope, confidence, confirmation, both approvals, and specification_gate open.",
       "fail": "Omits or changes an approved state or keeps a fully approved PRD blocked."
     },
     {
+      "id": "approved-auto-spec-transition",
+      "applies_to": ["09", "10"],
+      "pass": "After recording and validating the user's approval, attempts the same-session handoff to the runtime-exposed creating-development-specs-and-plans capability; when that capability is unavailable, reports the capability gap and preserves the truthful complete eight-field handoff without creating a spec.",
+      "fail": "Stops at the PRD terminal handoff without attempting the runtime capability transition, searches sibling source or installation paths, creates a spec itself, or loses or duplicates the approved requirements handoff."
+    },
+    {
       "id": "fixed-handoff",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08"],
-      "pass": "Ends every reply with the complete eight-field requirements handoff using truthful values.",
-      "fail": "Omits, renames, reorders, or upgrades a required handoff field."
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
+      "pass": "Ends every reply with the complete eight-field requirements handoff using truthful canonical state and the required user-visible Chinese view.",
+      "fail": "Omits, duplicates, reorders, mistranslates, or upgrades a required handoff field."
+    },
+    {
+      "id": "localized-handoff-view",
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
+      "pass": "Shows exactly one plain-text Chinese eight-field status block whose labels and contextual enum values follow the approved mapping while paths, topic, confidence, and the internal canonical handoff remain unchanged.",
+      "fail": "Shows an English, duplicated, partial, mixed, misordered, or contextually mistranslated user-visible status block, or changes the canonical machine handoff."
     },
     {
       "id": "no-side-effects",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08"],
-      "pass": "Does not implement target code, create spec or plan documents, call sibling skills, manage user-visible tasks, install, commit, or change external state.",
-      "fail": "Performs or claims any forbidden implementation, sibling-skill, task/thread, install, commit, or external-state action."
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
+      "pass": "Does not implement target code, create spec or plan documents itself, inspect sibling source or installation paths, manage user-visible tasks, install, commit, or change external state.",
+      "fail": "Performs or claims any forbidden implementation, sibling-source, task/thread, install, commit, or external-state action."
     }
   ]
 }

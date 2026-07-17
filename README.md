@@ -1,6 +1,6 @@
 # development-workflow
 
-`development-workflow`（简称 `dw`）是一组面向 Codex 的开发工作流 skill，提供完整文档交接、已批准小改动的受控实施和独立 AGENTS rule governance 三条入口：
+`development-workflow`（简称 `dw`）是一组面向 Codex 的开发工作流 skill，提供自动连续的文档交接、已批准小改动的受控实施和独立 AGENTS rule governance 三条入口：
 
 ```text
 PRD → technical spec/plan → development prompt
@@ -14,9 +14,9 @@ substantive development → AGENTS rule governance
 
 | Skill | 职责 |
 |---|---|
-| `creating-product-requirements` | 澄清产品范围、用户场景和验收标准，生成经独立评审和用户批准的单主题 PRD |
-| `creating-development-specs-and-plans` | 校验已批准 PRD，生成经批准的技术 spec 和经独立评审的实施计划 |
-| `generating-development-prompts` | 从已有 spec、plan 和仓库证据生成可复制的新会话开发提示词 |
+| `creating-product-requirements` | 澄清产品范围、用户场景和验收标准，生成经独立评审和用户批准的单主题 PRD；门禁打开后自动进入 spec workflow |
+| `creating-development-specs-and-plans` | 校验已批准 PRD，生成经批准的技术 spec 和经独立评审的实施计划；十四字段验证通过后自动进入会话路由 |
+| `generating-development-prompts` | 从已批准十四字段或显式请求判断当前会话、新会话或阻塞；仅在需要新会话时生成单一代码框中的可复制提示词 |
 | `implementing-bounded-changes` | 在用户明确批准后，以冻结范围、比例化 TDD、定向验证、文档同步和独立评审完成小改动或 Bug 修复 |
 | `managing-agents-rules` | 在实质性开发前检查项目根规则，并在任务完成时对有证据的项目级或全局 AGENTS 规则候选执行逐 diff 批准治理 |
 
@@ -41,9 +41,11 @@ python3 \
 
 ## 工作流
 
-1. `creating-product-requirements` 在理解置信度达到 95% 且用户确认摘要后创建 PRD；PRD 经过独立评审和用户批准才成为稳定输入。
-2. `creating-development-specs-and-plans` 校验 PRD，先生成并批准技术 spec，再生成经独立评审的 plan。
-3. `generating-development-prompts` 读取已选择的 spec、plan 和仓库事实，生成自包含的开发提示词；plan 未批准或状态未知时，提示词会保留实施阻断门。
+1. `creating-product-requirements` 在理解置信度达到 95% 且用户确认摘要后创建 PRD；PRD 经独立评审和用户批准后，验证 requirements 八字段并在同一会话自动进入 spec workflow。
+2. `creating-development-specs-and-plans` 复验 PRD，先生成并批准技术 spec，再生成经独立评审的 plan；双门打开后验证并冻结十四字段，自动进入会话路由。
+3. `generating-development-prompts` 基于已验证十四字段和当前会话证据输出 `current-session`、`new-session` 或 `blocked`；`current-session` 只建议继续并等待用户显式实施批准，不自动开始实施，只有 `new-session` 才生成单一代码框中的自包含提示词。显式手动请求仍可在 plan 未批准或状态未知时生成带实施阻断门的提示词。
+
+自动交接的用户可见状态块使用中文字段和语境化中文值；内部英文 canonical 字段、门禁计算与旧英文输入兼容性保持不变。完整契约见[工作流与文档契约](docs/workflow.md)。
 
 对于不需要 PRD、spec 和 plan 的已确认小改动，`implementing-bounded-changes` 在用户明确批准推进后冻结改动点、方案、非目标、验证和文档边界，再执行最小 TDD、定向验证、相关文档更新和独立评审；发现范围或设计必须扩大时停止并重新请求批准。
 

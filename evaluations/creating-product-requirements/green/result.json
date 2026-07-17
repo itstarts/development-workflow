@@ -6,15 +6,17 @@
   "all_required_passed": true,
   "review_status": "approved",
   "reviewer": "independent-skill-reviewer",
-  "reviewed_at": "2026-07-15",
+  "reviewed_at": "2026-07-17",
   "cases": [
-    {"id": "01", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "stable-topic-format", "fixed-handoff", "no-side-effects"]},
-    {"id": "02", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "stable-topic-format", "fixed-handoff", "no-side-effects"]},
-    {"id": "03", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "scope-and-topic", "stable-topic-format", "fixed-handoff", "no-side-effects"]},
-    {"id": "04", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "stable-topic-format", "product-boundary", "fixed-handoff", "no-side-effects"]},
-    {"id": "05", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "stable-topic-format", "double-approval-gate", "fixed-handoff", "no-side-effects"]},
-    {"id": "06", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "stable-topic-format", "path-priority", "fixed-handoff", "no-side-effects"]},
-    {"id": "07", "valid": true, "passed_criteria": ["stable-topic-format", "unknown-state", "fixed-handoff", "no-side-effects"]},
-    {"id": "08", "valid": true, "passed_criteria": ["stable-topic-format", "double-approval-gate", "approved-handoff", "fixed-handoff", "no-side-effects"]}
+    {"id": "01", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "stable-topic-format", "fixed-handoff", "localized-handoff-view", "no-side-effects"]},
+    {"id": "02", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "stable-topic-format", "fixed-handoff", "localized-handoff-view", "no-side-effects"]},
+    {"id": "03", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "scope-and-topic", "stable-topic-format", "fixed-handoff", "localized-handoff-view", "no-side-effects"]},
+    {"id": "04", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "stable-topic-format", "product-boundary", "fixed-handoff", "localized-handoff-view", "no-side-effects"]},
+    {"id": "05", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "stable-topic-format", "double-approval-gate", "fixed-handoff", "localized-handoff-view", "no-side-effects"]},
+    {"id": "06", "valid": true, "passed_criteria": ["confidence-gate", "summary-confirmation", "stable-topic-format", "path-priority", "fixed-handoff", "localized-handoff-view", "no-side-effects"]},
+    {"id": "07", "valid": true, "passed_criteria": ["stable-topic-format", "unknown-state", "fixed-handoff", "localized-handoff-view", "no-side-effects"]},
+    {"id": "08", "valid": true, "passed_criteria": ["stable-topic-format", "double-approval-gate", "approved-handoff", "fixed-handoff", "localized-handoff-view", "no-side-effects"]},
+    {"id": "09", "valid": true, "passed_criteria": ["stable-topic-format", "double-approval-gate", "approved-handoff", "approved-auto-spec-transition", "fixed-handoff", "localized-handoff-view", "no-side-effects"]},
+    {"id": "10", "valid": true, "passed_criteria": ["stable-topic-format", "double-approval-gate", "approved-handoff", "approved-auto-spec-transition", "fixed-handoff", "localized-handoff-view", "no-side-effects"]}
   ]
 }

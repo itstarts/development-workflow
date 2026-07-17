@@ -1,24 +1,19 @@
-| 文档 | 路径 | 批准/评审状态 |
-|---|---|---|
-| PRD | `/workspace/fixture/docs/requirements/2026-07-12-order-approval.md` | 用户批准、独立评审批准；规格门已打开 |
-| Spec | `/workspace/fixture/docs/specs/2026-07-12-order-approval-design.md` | 用户批准、独立评审批准 |
-| Plan | `/workspace/fixture/docs/plans/2026-07-12-order-approval.md` | **unknown**：存在冲突的重复 `review_status`，不能视为已批准 |
+- PRD：`docs/requirements/2026-07-12-order-approval.md`，用户批准和独立评审均已通过。
+- Spec：`docs/specs/2026-07-12-order-approval-design.md`，用户批准和独立评审均已通过。
+- Plan：`docs/plans/2026-07-12-order-approval.md`，存在相互冲突的重复 `review_status`，评审状态为未知。
+- 当前不能开始实现：计划没有可采信的独立评审批准。未修改任何文件。
 
-现在**不能开始实现**；plan 没有可采信的真实独立评审批准，implementation gate 被阻塞。
-
-```text
-requirements_path: /workspace/fixture/docs/requirements/2026-07-12-order-approval.md
-requirements_topic: order-approval
-requirements_scope: feature
-requirements_understanding_confidence: 97
-requirements_understanding_confirmation: approved
-requirements_user_approval: approved
-requirements_independent_review: approved
-specification_gate: open
-spec_path: /workspace/fixture/docs/specs/2026-07-12-order-approval-design.md
-spec_user_approval: approved
-spec_independent_review: approved
-plan_path: /workspace/fixture/docs/plans/2026-07-12-order-approval.md
-plan_review_status: unknown
-implementation_gate: blocked
-```
+需求文档：/workspace/fixture/docs/requirements/2026-07-12-order-approval.md
+需求主题：order-approval
+需求范围：功能
+需求理解置信度：97
+需求理解确认：已确认
+需求文档用户批准：已批准
+需求文档独立评审：已通过
+技术规格门禁：已开放
+技术规格：/workspace/fixture/docs/specs/2026-07-12-order-approval-design.md
+技术规格用户批准：已批准
+技术规格独立评审：已通过
+实施计划：/workspace/fixture/docs/plans/2026-07-12-order-approval.md
+计划评审状态：未知
+实施门禁：未开放

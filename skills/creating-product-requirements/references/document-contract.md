@@ -2,6 +2,8 @@
 
 Use `assets/prd-template.md`. Replace every angle-bracket slot with current evidence and remove instructional slot text from the finished document.
 
+Write the user-facing document title, section headings, explanatory prose, and template-derived content in Chinese by default. Keep YAML frontmatter keys, allowed values, paths, commands, API names, field names, protocols, filenames, and other technical identifiers in their established technical form.
+
 The `topic` value is the same non-reserved lowercase ASCII kebab-case topic confirmed in the current requirements-understanding summary and emitted in the handoff. Do not translate, localize, title-case, or independently rename it when writing the PRD.
 
 ## Required Product Content

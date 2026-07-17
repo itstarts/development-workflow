@@ -1,24 +1,24 @@
-检查完成，未修改任何文件。
+核验结果：三个文档状态完整且一致，文档侧门禁已满足，可以开始实现。本次未修改任何文档，也未实现代码。
 
-- [PRD](/workspace/fixture/docs/requirements/2026-07-12-order-approval.md)：已批准；理解置信度 97；理解确认、用户批准、独立评审均为 `approved`。
-- [Technical spec](/workspace/fixture/docs/specs/2026-07-12-order-approval-design.md)：用户批准和独立评审均为 `approved`。
-- [Implementation plan](/workspace/fixture/docs/plans/2026-07-12-order-approval.md)：独立评审状态为 `approved`。
+| 文档 | 路径 | 状态 |
+|---|---|---|
+| PRD | [2026-07-12-order-approval.md](/workspace/fixture/docs/requirements/2026-07-12-order-approval.md) | 检查器验证通过；用户已批准，独立评审已通过 |
+| 技术 spec | [2026-07-12-order-approval-design.md](/workspace/fixture/docs/specs/2026-07-12-order-approval-design.md) | 用户已批准，独立评审已通过 |
+| Plan | [2026-07-12-order-approval.md](/workspace/fixture/docs/plans/2026-07-12-order-approval.md) | 独立评审已通过 |
 
-引用链、topic `order-approval` 和 scope `feature` 均一致。因此实现门禁已开启，**现在可以开始实现**。
+当前会话未暴露技能规定的 `generating-development-prompts` 路由能力，因此未自动进入实现路由；这不影响文档已经具备开工条件的结论。
 
-```text
-requirements_path: /workspace/fixture/docs/requirements/2026-07-12-order-approval.md
-requirements_topic: order-approval
-requirements_scope: feature
-requirements_understanding_confidence: 97
-requirements_understanding_confirmation: approved
-requirements_user_approval: approved
-requirements_independent_review: approved
-specification_gate: open
-spec_path: /workspace/fixture/docs/specs/2026-07-12-order-approval-design.md
-spec_user_approval: approved
-spec_independent_review: approved
-plan_path: /workspace/fixture/docs/plans/2026-07-12-order-approval.md
-plan_review_status: approved
-implementation_gate: open
-```
+需求文档：/workspace/fixture/docs/requirements/2026-07-12-order-approval.md
+需求主题：order-approval
+需求范围：功能
+需求理解置信度：97
+需求理解确认：已确认
+需求文档用户批准：已批准
+需求文档独立评审：已通过
+技术规格门禁：已开放
+技术规格：/workspace/fixture/docs/specs/2026-07-12-order-approval-design.md
+技术规格用户批准：已批准
+技术规格独立评审：已通过
+实施计划：/workspace/fixture/docs/plans/2026-07-12-order-approval.md
+计划评审状态：已通过
+实施门禁：已开放

@@ -1,4 +1,4 @@
 interface:
-  display_name: "Generating Development Prompts"
-  short_description: "Generate execution-ready Codex development prompts"
-  default_prompt: "Use $generating-development-prompts to generate a new-session development prompt from the applicable spec and plan."
+  display_name: "Route Development Sessions"
+  short_description: "Route approved handoffs and generate copyable prompts"
+  default_prompt: "Use $generating-development-prompts to route this approved handoff and generate a copyable prompt only when a new session is appropriate."
