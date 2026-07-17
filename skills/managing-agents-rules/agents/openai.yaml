@@ -1,0 +1,4 @@
+interface:
+  display_name: "Managing AGENTS Rules"
+  short_description: "Govern project and global AGENTS rules"
+  default_prompt: "Use $managing-agents-rules to check and update AGENTS rules with explicit approval."

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_role": "green",
+  "target_skill_loaded": true,
+  "all_runs_valid": true,
+  "all_required_passed": true,
+  "review_status": "approved",
+  "reviewer": "independent-skill-reviewer",
+  "reviewed_at": "2026-07-17",
+  "cases": [
+    {"id": "01", "valid": true, "passed_criteria": ["substantive-trigger-and-project-root", "project-rule-state-handling", "no-candidate-zero-prompt", "truthful-state-and-completion"]},
+    {"id": "02", "valid": true, "passed_criteria": ["substantive-trigger-and-project-root", "project-rule-state-handling", "per-diff-explicit-approval", "approval-invalidation-and-write-verification", "truthful-state-and-completion"]},
+    {"id": "03", "valid": true, "passed_criteria": ["substantive-trigger-and-project-root", "project-rule-state-handling", "truthful-state-and-completion"]},
+    {"id": "04", "valid": true, "passed_criteria": ["substantive-trigger-and-project-root", "project-rule-state-handling", "git-init-separate-approval", "per-diff-explicit-approval", "truthful-state-and-completion"]},
+    {"id": "05", "valid": true, "passed_criteria": ["substantive-trigger-and-project-root", "project-rule-state-handling", "session-project-and-task-isolation", "session-state-memory-only", "candidate-evidence-and-scope", "per-diff-explicit-approval", "truthful-state-and-completion"]},
+    {"id": "06", "valid": true, "passed_criteria": ["candidate-evidence-and-scope", "project-rule-before-final-review", "per-diff-explicit-approval", "approval-invalidation-and-write-verification", "truthful-state-and-completion"]},
+    {"id": "07", "valid": true, "passed_criteria": ["candidate-evidence-and-scope", "global-base-and-override", "per-diff-explicit-approval", "approval-invalidation-and-write-verification", "forbidden-boundaries", "truthful-state-and-completion"]},
+    {"id": "08", "valid": true, "passed_criteria": ["substantive-trigger-and-project-root", "session-state-memory-only", "candidate-evidence-and-scope", "no-candidate-zero-prompt", "truthful-state-and-completion"]},
+    {"id": "09", "valid": true, "passed_criteria": ["per-diff-explicit-approval", "approval-invalidation-and-write-verification", "truthful-state-and-completion"]},
+    {"id": "10", "valid": true, "passed_criteria": ["substantive-trigger-and-project-root", "candidate-evidence-and-scope", "project-rule-before-final-review", "per-diff-explicit-approval", "approval-invalidation-and-write-verification", "forbidden-boundaries", "integration-role-boundary", "truthful-state-and-completion"]}
+  ]
+}

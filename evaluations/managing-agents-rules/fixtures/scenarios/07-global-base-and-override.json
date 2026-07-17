@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "repository_mode": "git",
+  "codex_home_files": {
+    "AGENTS.md": "evaluations/managing-agents-rules/fixtures/scenario-files/07-global-base-and-override/AGENTS.md",
+    "AGENTS.override.md": "evaluations/managing-agents-rules/fixtures/scenario-files/07-global-base-and-override/AGENTS.override.md"
+  }
+}

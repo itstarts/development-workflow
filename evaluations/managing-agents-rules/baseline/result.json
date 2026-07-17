@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "evidence_role": "migration-baseline",
+  "target_skill_loaded": false,
+  "all_runs_valid": true,
+  "failures_observed": true,
+  "cases": [
+    {"id": "01", "valid": true, "failed_criteria": ["no-candidate-zero-prompt"]},
+    {"id": "02", "valid": true, "failed_criteria": ["project-rule-state-handling", "per-diff-explicit-approval"]},
+    {"id": "03", "valid": true, "failed_criteria": ["project-rule-state-handling"]},
+    {"id": "04", "valid": true, "failed_criteria": ["per-diff-explicit-approval"]},
+    {"id": "05", "valid": true, "failed_criteria": ["session-state-memory-only"]},
+    {"id": "06", "valid": true, "failed_criteria": ["project-rule-before-final-review", "per-diff-explicit-approval"]},
+    {"id": "07", "valid": true, "failed_criteria": ["global-base-and-override", "per-diff-explicit-approval"]},
+    {"id": "08", "valid": true, "failed_criteria": ["session-state-memory-only", "no-candidate-zero-prompt"]},
+    {"id": "09", "valid": true, "failed_criteria": ["per-diff-explicit-approval", "approval-invalidation-and-write-verification"]},
+    {"id": "10", "valid": true, "failed_criteria": ["project-rule-before-final-review", "truthful-state-and-completion"]}
+  ]
+}

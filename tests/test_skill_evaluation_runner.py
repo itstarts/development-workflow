@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,360 @@ MODULE_SPEC.loader.exec_module(RUNNER)
 
 
 class SkillEvaluationRunnerTests(unittest.TestCase):
+    def _scenario_root(self, root: Path, case_name: str = "01-case") -> tuple[Path, Path]:
+        evaluation = root / "evaluations" / "fixture-skill"
+        (evaluation / "fixtures" / "common").mkdir(parents=True)
+        (evaluation / "fixtures" / "common" / "README.md").write_text(
+            "fixture\n", encoding="utf-8"
+        )
+        case = evaluation / "cases" / f"{case_name}.md"
+        case.parent.mkdir(parents=True)
+        case.write_text("request\n", encoding="utf-8")
+        return evaluation, case
+
+    def _write_scenario(
+        self, evaluation: Path, case: Path, payload: dict
+    ) -> Path:
+        path = evaluation / "fixtures" / "scenarios" / f"{case.stem}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path
+
+    def test_fixture_scenario_defaults_to_legacy_git_repository(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+
+            scenario = RUNNER.load_fixture_scenario(case, evaluation)
+
+            self.assertEqual("git", scenario.repository_mode)
+            self.assertEqual((), scenario.nested_git_roots)
+            self.assertEqual((), scenario.unreadable_paths)
+            self.assertEqual({}, scenario.codex_home_files)
+
+    def test_fixture_scenario_prepares_non_git_root_and_nested_git_roots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+            (evaluation / "fixtures" / "common" / "packages" / "nested").mkdir(
+                parents=True
+            )
+            self._write_scenario(
+                evaluation,
+                case,
+                {
+                    "schema_version": 1,
+                    "repository_mode": "non-git",
+                    "nested_git_roots": ["packages/nested"],
+                },
+            )
+            fixture = root / "fixture"
+            RUNNER._copy_fixture(case, fixture, evaluation)
+
+            scenario = RUNNER.load_fixture_scenario(case, evaluation)
+            RUNNER.prepare_fixture_repositories(fixture, scenario)
+
+            self.assertFalse((fixture / ".git").exists())
+            self.assertTrue((fixture / "packages" / "nested" / ".git").is_dir())
+
+    def test_fixture_scenario_applies_and_restores_unreadable_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+            locked = evaluation / "fixtures" / "common" / "AGENTS.md"
+            locked.write_text("rules\n", encoding="utf-8")
+            self._write_scenario(
+                evaluation,
+                case,
+                {
+                    "schema_version": 1,
+                    "repository_mode": "git",
+                    "unreadable_paths": ["AGENTS.md"],
+                },
+            )
+            fixture = root / "fixture"
+            RUNNER._copy_fixture(case, fixture, evaluation)
+            scenario = RUNNER.load_fixture_scenario(case, evaluation)
+
+            original_modes = RUNNER.apply_unreadable_paths(fixture, scenario)
+
+            self.assertEqual(0, stat.S_IMODE((fixture / "AGENTS.md").stat().st_mode))
+            RUNNER.restore_path_modes(original_modes)
+            self.assertEqual(0o644, stat.S_IMODE((fixture / "AGENTS.md").stat().st_mode))
+
+    def test_fixture_scenario_stages_only_allowlisted_codex_home_rule_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root, "07-global")
+            source_root = (
+                evaluation
+                / "fixtures"
+                / "scenario-files"
+                / case.stem
+            )
+            source_root.mkdir(parents=True)
+            (source_root / "AGENTS.md").write_text("base rules\n", encoding="utf-8")
+            (source_root / "AGENTS.override.md").write_text(
+                "temporary rules\n", encoding="utf-8"
+            )
+            self._write_scenario(
+                evaluation,
+                case,
+                {
+                    "schema_version": 1,
+                    "repository_mode": "git",
+                    "codex_home_files": {
+                        "AGENTS.md": str(
+                            source_root.relative_to(root) / "AGENTS.md"
+                        ),
+                        "AGENTS.override.md": str(
+                            source_root.relative_to(root) / "AGENTS.override.md"
+                        ),
+                    },
+                },
+            )
+            with mock.patch.object(RUNNER, "ROOT", root):
+                scenario = RUNNER.load_fixture_scenario(case, evaluation)
+                codex_home = root / "codex-home"
+                codex_home.mkdir()
+                RUNNER.stage_scenario_codex_home(codex_home, scenario)
+
+            self.assertEqual(
+                "base rules\n", (codex_home / "AGENTS.md").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                "temporary rules\n",
+                (codex_home / "AGENTS.override.md").read_text(encoding="utf-8"),
+            )
+            self.assertEqual(
+                {"AGENTS.md", "AGENTS.override.md"},
+                {path.name for path in codex_home.iterdir()},
+            )
+
+    def test_fixture_scenario_rejects_malformed_or_unknown_metadata(self):
+        invalid_payloads = (
+            {},
+            {"schema_version": 2, "repository_mode": "git"},
+            {"schema_version": 1},
+            {"schema_version": 1, "repository_mode": "checkout"},
+            {
+                "schema_version": 1,
+                "repository_mode": "git",
+                "nested_git_roots": "nested",
+            },
+            {
+                "schema_version": 1,
+                "repository_mode": "git",
+                "unknown": [],
+            },
+        )
+        for payload in invalid_payloads:
+            with self.subTest(payload=payload), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                evaluation, case = self._scenario_root(root)
+                self._write_scenario(evaluation, case, payload)
+                with self.assertRaises(RUNNER.EvaluationBlocked):
+                    RUNNER.load_fixture_scenario(case, evaluation)
+
+    def test_fixture_scenario_rejects_paths_outside_case_allowlists(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+            outside = root / "outside.md"
+            outside.write_text("outside\n", encoding="utf-8")
+            invalid_payloads = (
+                {
+                    "schema_version": 1,
+                    "repository_mode": "git",
+                    "nested_git_roots": ["../outside"],
+                },
+                {
+                    "schema_version": 1,
+                    "repository_mode": "git",
+                    "unreadable_paths": ["../outside.md"],
+                },
+                {
+                    "schema_version": 1,
+                    "repository_mode": "git",
+                    "codex_home_files": {"config.toml": "outside.md"},
+                },
+                {
+                    "schema_version": 1,
+                    "repository_mode": "git",
+                    "codex_home_files": {"AGENTS.md": "outside.md"},
+                },
+            )
+            for payload in invalid_payloads:
+                with self.subTest(payload=payload):
+                    self._write_scenario(evaluation, case, payload)
+                    with mock.patch.object(RUNNER, "ROOT", root):
+                        with self.assertRaises(RUNNER.EvaluationBlocked):
+                            RUNNER.load_fixture_scenario(case, evaluation)
+
+    def test_fixture_scenario_rejects_symlinks_in_allowlisted_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+            outside = root / "outside"
+            outside.mkdir()
+            linked = evaluation / "fixtures" / "common" / "linked"
+            linked.symlink_to(outside, target_is_directory=True)
+            self._write_scenario(
+                evaluation,
+                case,
+                {
+                    "schema_version": 1,
+                    "repository_mode": "git",
+                    "nested_git_roots": ["linked"],
+                },
+            )
+
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER.load_fixture_scenario(case, evaluation)
+
+    def test_copy_fixture_rejects_undeclared_symlinks_in_source_tree(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+            outside = root / "outside.md"
+            outside.write_text("outside\n", encoding="utf-8")
+            linked = evaluation / "fixtures" / "common" / "linked.md"
+            linked.symlink_to(outside)
+
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER._copy_fixture(case, root / "fixture", evaluation)
+
+    def test_copy_fixture_rejects_symlinked_fixtures_ancestor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+            external_fixtures = root / "external-fixtures"
+            shutil.copytree(evaluation / "fixtures", external_fixtures)
+            shutil.rmtree(evaluation / "fixtures")
+            (evaluation / "fixtures").symlink_to(
+                external_fixtures, target_is_directory=True
+            )
+
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER._copy_fixture(case, root / "fixture", evaluation)
+
+    def test_copy_fixture_rejects_symlinked_evaluations_ancestor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+            external_evaluations = root / "external-evaluations"
+            (root / "evaluations").rename(external_evaluations)
+            (root / "evaluations").symlink_to(
+                external_evaluations, target_is_directory=True
+            )
+
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER._copy_fixture(case, root / "fixture", evaluation)
+
+    def test_codex_home_allowlist_root_cannot_be_a_symlink(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root, "07-global")
+            outside = root / "outside"
+            outside.mkdir()
+            (outside / "AGENTS.md").write_text("rules\n", encoding="utf-8")
+            source_root = (
+                evaluation / "fixtures" / "scenario-files" / case.stem
+            )
+            source_root.parent.mkdir(parents=True)
+            source_root.symlink_to(outside, target_is_directory=True)
+            self._write_scenario(
+                evaluation,
+                case,
+                {
+                    "schema_version": 1,
+                    "repository_mode": "git",
+                    "codex_home_files": {
+                        "AGENTS.md": str(
+                            source_root.relative_to(root) / "AGENTS.md"
+                        )
+                    },
+                },
+            )
+
+            with mock.patch.object(RUNNER, "ROOT", root):
+                with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                    RUNNER.load_fixture_scenario(case, evaluation)
+
+    def test_codex_home_source_rejects_symlinked_fixtures_ancestor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root, "07-global")
+            source_root = (
+                evaluation / "fixtures" / "scenario-files" / case.stem
+            )
+            source_root.mkdir(parents=True)
+            (source_root / "AGENTS.md").write_text("rules\n", encoding="utf-8")
+            self._write_scenario(
+                evaluation,
+                case,
+                {
+                    "schema_version": 1,
+                    "repository_mode": "git",
+                    "codex_home_files": {
+                        "AGENTS.md": str(
+                            source_root.relative_to(root) / "AGENTS.md"
+                        )
+                    },
+                },
+            )
+            external_fixtures = root / "external-fixtures"
+            shutil.copytree(evaluation / "fixtures", external_fixtures)
+            shutil.rmtree(evaluation / "fixtures")
+            (evaluation / "fixtures").symlink_to(
+                external_fixtures, target_is_directory=True
+            )
+
+            with mock.patch.object(RUNNER, "ROOT", root):
+                with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                    RUNNER.load_fixture_scenario(case, evaluation)
+
+    def test_broken_fixture_scenario_symlink_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+            scenario = evaluation / "fixtures" / "scenarios" / f"{case.stem}.json"
+            scenario.parent.mkdir(parents=True)
+            scenario.symlink_to(root / "missing-scenario.json")
+
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER.load_fixture_scenario(case, evaluation)
+
+    def test_scenario_rejects_symlinked_evaluations_ancestor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+            self._write_scenario(
+                evaluation,
+                case,
+                {"schema_version": 1, "repository_mode": "git"},
+            )
+            external_evaluations = root / "external-evaluations"
+            (root / "evaluations").rename(external_evaluations)
+            (root / "evaluations").symlink_to(
+                external_evaluations, target_is_directory=True
+            )
+
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER.load_fixture_scenario(case, evaluation)
+
+    def test_case_overlay_symlink_to_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evaluation, case = self._scenario_root(root)
+            outside = root / "outside.md"
+            outside.write_text("outside\n", encoding="utf-8")
+            overlay = evaluation / "fixtures" / case.stem
+            overlay.symlink_to(outside)
+
+            with self.assertRaisesRegex(RUNNER.EvaluationBlocked, "symlink"):
+                RUNNER._copy_fixture(case, root / "fixture", evaluation)
+
     def test_evaluation_prompt_declares_fixture_root_without_expected_output(self):
         staged = Path("/tmp/codex-home/skills/creating-product-requirements")
         prompt = RUNNER.build_evaluation_prompt(
@@ -26,6 +381,8 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
 
         self.assertIn("current working directory is the fixture repository root", prompt)
         self.assertIn("Do not inspect or search any parent directory", prompt)
+        self.assertIn("scenario-staged AGENTS.md or AGENTS.override.md", prompt)
+        self.assertIn("Do not inspect any other Codex-home file", prompt)
         self.assertIn("Use $creating-product-requirements", prompt)
         self.assertNotIn("$creating-development-specs-and-plans", prompt)
         self.assertTrue(prompt.endswith("user request"))
@@ -181,13 +538,12 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
         )
         self.assertNotRegex(repr(result), r"sha256|digest|manifest")
 
-    def test_codex_command_uses_the_external_sandbox_boundary(self):
+    def test_codex_command_uses_an_isolated_persisted_thread_for_collaboration(self):
         command = RUNNER.build_codex_command(Path("/tmp/fixture"), Path("/tmp/final.md"))
 
         self.assertEqual("codex", command[0])
         self.assertEqual("exec", command[1])
         for value in (
-            "--ephemeral",
             "--ignore-user-config",
             "--skip-git-repo-check",
             "--json",
@@ -197,8 +553,29 @@ class SkillEvaluationRunnerTests(unittest.TestCase):
             "-",
         ):
             self.assertIn(value, command)
+        self.assertNotIn("--ephemeral", command)
         self.assertNotIn("read-only", command)
         self.assertNotIn("workspace-write", command)
+
+    def test_collaboration_session_count_exposes_no_identifiers_or_content(self):
+        with tempfile.TemporaryDirectory() as directory:
+            codex_home = Path(directory)
+            sessions = codex_home / "sessions" / "2026" / "07" / "17"
+            sessions.mkdir(parents=True)
+            (sessions / "parent.jsonl").write_text("parent secret\n", encoding="utf-8")
+            (sessions / "reviewer.jsonl").write_text(
+                "reviewer secret\n", encoding="utf-8"
+            )
+            (sessions / "ignored.txt").write_text("ignored\n", encoding="utf-8")
+
+            self.assertEqual(2, RUNNER.collaboration_session_count(codex_home))
+            output_root = codex_home / "raw-output"
+            copied = RUNNER.copy_isolated_session_records(codex_home, output_root)
+            self.assertEqual(2, copied)
+            records = sorted((output_root / "collaboration-sessions").iterdir())
+            self.assertEqual(["session-01.jsonl", "session-02.jsonl"], [p.name for p in records])
+            self.assertEqual("parent secret\n", records[0].read_text(encoding="utf-8"))
+            self.assertEqual("reviewer secret\n", records[1].read_text(encoding="utf-8"))
 
     def test_shell_environment_overrides_set_only_isolated_runtime_values(self):
         overrides = RUNNER.build_shell_environment_overrides(

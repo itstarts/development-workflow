@@ -29,6 +29,13 @@ REQUIRED_ROOT_FILES = (
     "CHANGELOG.md",
     "requirements-dev.txt",
 )
+PUBLIC_SKILL_DOCUMENTS = (
+    "README.md",
+    "docs/install.md",
+    "docs/workflow.md",
+    "docs/agent-development.md",
+    "CHANGELOG.md",
+)
 PRODUCTION_DIRS = ("agents", "assets", "references", "scripts")
 NON_PUBLISHABLE_DIR_NAMES = {"__pycache__"}
 NON_PUBLISHABLE_FILE_NAMES = {".DS_Store"}
@@ -162,7 +169,7 @@ def validate_managed_evaluation(
 ) -> None:
     evaluation_root = ROOT / "evaluations" / skill_name
     skill_root = ROOT / "skills" / skill_name
-    if stage == "baseline-only" and skill_root.exists():
+    if stage == "baseline-only" and (skill_root / "SKILL.md").is_file():
         errors.append(f"{skill_name}: baseline-only stage cannot expose a skill")
     if stage != "baseline-only" and not (skill_root / "SKILL.md").is_file():
         errors.append(f"{skill_name}: implemented stage requires the skill")
@@ -505,6 +512,21 @@ def validate(evidence_only: Optional[str] = None) -> list[str]:
         if entry["stage"] != "baseline-only" and name not in active_skill_names
     ):
         errors.append(f"{missing}: registered skill is missing")
+
+    review_approved_skill_names = sorted(
+        name for name, entry in registry.items() if entry["stage"] == "review-approved"
+    )
+    for relative in PUBLIC_SKILL_DOCUMENTS:
+        document = ROOT / relative
+        if not document.is_file():
+            errors.append(f"public skill document is missing: {relative}")
+            continue
+        text = document.read_text(encoding="utf-8")
+        for skill_name in review_approved_skill_names:
+            if skill_name not in text:
+                errors.append(
+                    f"{skill_name}: review-approved skill is missing from {relative}"
+                )
 
     for skill_root in active_skills:
         try:

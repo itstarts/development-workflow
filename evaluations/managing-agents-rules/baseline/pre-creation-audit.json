@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "evidence_role": "pre-creation-audit",
+  "chronology": "All selected no-target-skill runs completed before the target skill directory was initialized.",
+  "valid_red_cases": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
+  "cases": [
+    {"id": "01", "valid": true, "failed_criteria": ["no-candidate-zero-prompt"]},
+    {"id": "02", "valid": true, "failed_criteria": ["project-rule-state-handling", "per-diff-explicit-approval"]},
+    {"id": "03", "valid": true, "failed_criteria": ["project-rule-state-handling"]},
+    {"id": "04", "valid": true, "failed_criteria": ["per-diff-explicit-approval"]},
+    {"id": "05", "valid": true, "failed_criteria": ["session-state-memory-only"]},
+    {"id": "06", "valid": true, "failed_criteria": ["project-rule-before-final-review", "per-diff-explicit-approval"]},
+    {"id": "07", "valid": true, "failed_criteria": ["global-base-and-override", "per-diff-explicit-approval"]},
+    {"id": "08", "valid": true, "failed_criteria": ["session-state-memory-only", "no-candidate-zero-prompt"]},
+    {"id": "09", "valid": true, "failed_criteria": ["per-diff-explicit-approval", "approval-invalidation-and-write-verification"]},
+    {"id": "10", "valid": true, "failed_criteria": ["project-rule-before-final-review", "truthful-state-and-completion"]}
+  ],
+  "red_observed": true,
+  "limitations": "Raw trace and stderr, the separate unreadable-file preflight, and the pre-creation target-skill absence check remain in ignored local work evidence. Versioned output files are deterministic path-sanitized copies of the selected raw finals; this audit records the evidence-backed rubric conclusions."
+}

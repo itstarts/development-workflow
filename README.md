@@ -1,13 +1,14 @@
 # development-workflow
 
-`development-workflow`（简称 `dw`）是一组面向 Codex 的开发工作流 skill，提供完整文档交接和已批准小改动的受控实施两条入口：
+`development-workflow`（简称 `dw`）是一组面向 Codex 的开发工作流 skill，提供完整文档交接、已批准小改动的受控实施和独立 AGENTS rule governance 三条入口：
 
 ```text
 PRD → technical spec/plan → development prompt
 approved bounded change → implementation
+substantive development → AGENTS rule governance
 ```
 
-仓库同时提供 plugin-compatible 打包、可复现验证和脱敏后的评估证据。四个 skill 职责独立；完整交接链通过文档路径和批准状态协作，受控实施入口直接执行用户已批准的边界，不依赖本机安装路径或插件缓存。
+仓库同时提供 plugin-compatible 打包、可复现验证和脱敏后的评估证据。五个 skill 职责独立；完整交接链通过文档路径和批准状态协作，受控实施入口直接执行用户已批准的边界，规则治理入口只处理有证据且逐 diff 批准的长期规则，均不依赖本机安装路径或插件缓存。
 
 ## Skills
 
@@ -17,6 +18,7 @@ approved bounded change → implementation
 | `creating-development-specs-and-plans` | 校验已批准 PRD，生成经批准的技术 spec 和经独立评审的实施计划 |
 | `generating-development-prompts` | 从已有 spec、plan 和仓库证据生成可复制的新会话开发提示词 |
 | `implementing-bounded-changes` | 在用户明确批准后，以冻结范围、比例化 TDD、定向验证、文档同步和独立评审完成小改动或 Bug 修复 |
+| `managing-agents-rules` | 在实质性开发前检查项目根规则，并在任务完成时对有证据的项目级或全局 AGENTS 规则候选执行逐 diff 批准治理 |
 
 ## 快速安装
 
@@ -31,7 +33,8 @@ python3 \
     skills/creating-product-requirements \
     skills/creating-development-specs-and-plans \
     skills/generating-development-prompts \
-    skills/implementing-bounded-changes
+    skills/implementing-bounded-changes \
+    skills/managing-agents-rules
 ```
 
 也可以只安装一个 skill。安装器在目标目录已存在时会停止，不会静默覆盖。完整步骤和安全更新方式见 [安装指南](docs/install.md)。
@@ -43,6 +46,8 @@ python3 \
 3. `generating-development-prompts` 读取已选择的 spec、plan 和仓库事实，生成自包含的开发提示词；plan 未批准或状态未知时，提示词会保留实施阻断门。
 
 对于不需要 PRD、spec 和 plan 的已确认小改动，`implementing-bounded-changes` 在用户明确批准推进后冻结改动点、方案、非目标、验证和文档边界，再执行最小 TDD、定向验证、相关文档更新和独立评审；发现范围或设计必须扩大时停止并重新请求批准。
+
+`managing-agents-rules` 独立应用于实质性开发的前置检查和完成扫描。它不会调用其它 skill，也不会自动写规则；每个项目级或全局候选都必须有当前任务证据、明确目标和当前最小 diff，并取得只对该 diff 有效的批准。
 
 默认文档路径、批准门和交接字段见 [工作流与文档契约](docs/workflow.md)。
 
@@ -60,6 +65,7 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s skills/creating-development-specs-and-plans/tests -v
 .venv/bin/python -m unittest discover -s skills/generating-development-prompts/tests -v
 .venv/bin/python -m unittest discover -s skills/implementing-bounded-changes/tests -v
+.venv/bin/python -m unittest discover -s skills/managing-agents-rules/tests -v
 ```
 
 完整验证命令见 [Agent 开发指南](docs/agent-development.md#发布前验证)。支持 Python 3.9 及以上；维护矩阵至少覆盖 Python 3.9 和 Python 3.14。
