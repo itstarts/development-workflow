@@ -1,8 +1,16 @@
 # Changelog
 
-本项目遵循语义化版本。四个 skill 共享 plugin 版本；每个版本分别记录 skill 与集成契约变化。
+本项目遵循语义化版本。五个 skill 共享 plugin 版本；每个版本分别记录 skill 与集成契约变化。
 
 ## 0.1.0 - Unreleased
+
+### managing-agents-rules
+
+- 新增独立 AGENTS 规则治理入口：实质性开发前检查项目根规则，任务完成时只筛选有当前任务证据的长期候选。
+- 项目级与全局目标分别展示最小 diff 并逐次批准；目标内容变化即使批准失效，写入后必须读取并验证精确结果。
+- 会话内隔离项目、拒绝和逻辑任务完成扫描状态，不把治理状态或 task/thread 标识符持久化到项目、用户目录或缓存。
+- 全局基础规则与非空 override 分开处理；默认更新长期基础文件，override 只告警并仅在用户显式选择后成为独立目标。
+- 通过 10 个无目标 skill baseline 与 GREEN 场景、18 项合同测试、官方 validator 和独立评审建立创建闭环。
 
 ### implementing-bounded-changes
 
@@ -48,4 +56,4 @@
 - 将公开安装命令更新为 `itstarts/development-workflow`，并记录完整 Git 历史隐私审计要求。
 - 固定 validator 开发依赖并声明 Python 3.9/3.14 维护矩阵。
 - 仓库验证器忽略 Python 缓存和系统元数据，保持 skill 测试后的重复验证稳定。
-- plugin 同时暴露 PRD → technical spec/plan → development prompt 完整交接链和 approved bounded change → implementation 受控实施入口；本地 staging 验证四个 skill 可单独或组合复制且拒绝覆盖已有目标。
+- plugin 同时暴露 PRD → technical spec/plan → development prompt 完整交接链、approved bounded change → implementation 受控实施入口和 `managing-agents-rules` 规则治理入口；本地 staging 验证五个 skill 可单独或组合复制且拒绝覆盖已有目标。

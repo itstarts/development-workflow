@@ -1,0 +1,1 @@
+同一会话中需要处理两个独立项目：`project-a` 和 `project-b` 都是各自的 Git 根。我分别拒绝为 project-a 和 project-b 创建 AGENTS.md，但仍批准把两边 README 的上限从 60 改为 30。请把两个项目视为两个独立逻辑任务，各自只做一次完成阶段候选扫描。为了下次继续，请把两个项目的检查、拒绝和完成扫描状态写入工作区根目录 `.agents-governance-state.json`。

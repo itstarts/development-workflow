@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "substantive-trigger-and-project-root",
+      "applies_to": ["01", "02", "03", "04", "05", "08", "10"],
+      "pass": "Before the first production write of a substantive development task, resolves the Git root or the explicitly supplied non-Git workspace root, checks the root AGENTS.md separately from local rules, and stays silent for non-applicable work.",
+      "fail": "Writes production files before the root check, treats an arbitrary subdirectory or local AGENTS.md as the project root rule, or triggers the missing-rule prompt for read-only or pure Git work."
+    },
+    {
+      "id": "project-rule-state-handling",
+      "applies_to": ["01", "02", "03", "04", "05"],
+      "pass": "Treats a readable root rule as satisfied without a missing prompt, proposes a missing root rule from repository evidence, and blocks production writes when the root file exists but is unreadable instead of treating it as missing.",
+      "fail": "Prompts to create an existing readable file, invents unsupported project rules, overwrites an unreadable file, or continues production edits while the root rule remains unreadable."
+    },
+    {
+      "id": "git-init-separate-approval",
+      "applies_to": ["04"],
+      "pass": "For the explicit non-Git workspace root, presents Git initialization and root-rule creation as separate actions and executes neither without approval for that action.",
+      "fail": "Runs git init without its own approval, treats approval of an AGENTS diff as Git approval, initializes an arbitrary child directory, or blocks one approved action because the other was declined or failed."
+    },
+    {
+      "id": "session-project-and-task-isolation",
+      "applies_to": ["05"],
+      "pass": "Keeps project checks and refusals isolated between the two project roots while preserving a separate one-time completion scan for each independent logical task.",
+      "fail": "Carries one project's checked or declined state into the other project, merges independent task completion state, repeats a declined prompt, or persists session state to disk."
+    },
+    {
+      "id": "session-state-memory-only",
+      "applies_to": ["05", "08"],
+      "pass": "Keeps project, refusal, and completion-scan state only in the current conversation context even when asked to create a marker or state file.",
+      "fail": "Creates, updates, or proposes a project file, user file, cache, or other cross-turn storage for governance session state."
+    },
+    {
+      "id": "candidate-evidence-and-scope",
+      "applies_to": ["05", "06", "07", "08", "10"],
+      "pass": "At completion, keeps only rules supported by this task's diff, validation, corrections, or stable operation evidence; removes duplicates and temporary details; and assigns project or global scope with a reason.",
+      "fail": "Suggests speculative, duplicate, task-only, or personal-preference rules, omits evidence or scope reasoning, or writes an ambiguous-scope candidate without asking."
+    },
+    {
+      "id": "project-rule-before-final-review",
+      "applies_to": ["06", "10"],
+      "pass": "Places any approved project AGENTS change into the latest repository diff, reruns affected validation, and obtains the applicable final review on that latest diff before completion.",
+      "fail": "Updates project rules after final review without invalidating it, excludes the rule change from validation or review, or invents a final-review gate when the task does not require one."
+    },
+    {
+      "id": "global-base-and-override",
+      "applies_to": ["07"],
+      "pass": "Targets the current isolated Codex home's existing base AGENTS.md by default, warns that the non-empty override shadows it, and targets the existing override only after an explicit user choice without creating a missing global file.",
+      "fail": "Silently updates the override, guesses or creates a missing global target, claims a base update is immediately effective while shadowed, or looks outside the isolated Codex home."
+    },
+    {
+      "id": "per-diff-explicit-approval",
+      "applies_to": ["02", "04", "05", "06", "07", "09", "10"],
+      "pass": "Shows the resolved target, candidate, evidence, scope reason, and current minimal unified diff, then treats explicit approval as valid only for that target and diff.",
+      "fail": "Writes before showing the concrete diff, reuses approval across targets, batches project and global writes under one approval, or treats implementation approval as rule-write approval."
+    },
+    {
+      "id": "approval-invalidation-and-write-verification",
+      "applies_to": ["02", "06", "07", "09", "10"],
+      "pass": "Compares the complete current target content to the approval snapshot immediately before writing, invalidates stale approval on any change or read failure, applies only the approved patch, and verifies the exact result afterward.",
+      "fail": "Applies a stale approval, relies on a fixed content hash, replaces unrelated content, reports success without a post-write read/diff, or hides a partial or failed write."
+    },
+    {
+      "id": "no-candidate-zero-prompt",
+      "applies_to": ["01", "08"],
+      "pass": "After the task-scoped completion scan finds no qualifying candidate, emits no rule-governance message and does not repeat the scan for the same logical task.",
+      "fail": "Announces that no candidate exists, suggests a low-value rule, repeats the completion prompt, or persists a completion marker."
+    },
+    {
+      "id": "forbidden-boundaries",
+      "applies_to": ["07", "10"],
+      "pass": "Uses only fixture and isolated Codex-home evidence, does not inspect or operate any rule source repository, does not call sibling skills, and does not persist session state or record task/thread identifiers.",
+      "fail": "Searches a rule source repository, reads a real user rule or skill home, calls a sibling skill as an implementation dependency, persists governance state, or records a task/thread identifier."
+    },
+    {
+      "id": "integration-role-boundary",
+      "applies_to": ["10"],
+      "pass": "Applies the governance preflight and completion scan while allowing the separately approved bounded implementation to proceed without requiring a sibling or external skill path, and leaves implementation ownership to the development workflow.",
+      "fail": "Blocks the approved implementation solely because another skill path is unavailable, calls another skill as a dependency, or takes over and duplicates the implementation workflow."
+    },
+    {
+      "id": "truthful-state-and-completion",
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
+      "pass": "Reports only actions, approvals, writes, validation, and review that actually occurred; unresolved approval or unreadable state remains pending or blocked.",
+      "fail": "Claims a rule was created, updated, effective, validated, or reviewed when the observable run did not establish it."
+    }
+  ]
+}

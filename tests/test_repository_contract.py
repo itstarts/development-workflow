@@ -21,6 +21,15 @@ def load_module(name: str, path: Path):
 
 
 VALIDATOR = load_module("repository_validator_contract", ROOT / "scripts" / "validate_repo.py")
+
+
+def registered_skill_names() -> tuple[str, ...]:
+    registry = json.loads(
+        (ROOT / "evaluations" / "registry.json").read_text(encoding="utf-8")
+    )
+    return tuple(sorted(registry["skills"]))
+
+
 def copy_repository(destination: Path) -> Path:
     repository = destination / "repository"
     shutil.copytree(
@@ -330,7 +339,7 @@ class RepositoryContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
             requirements = repository / "docs" / "requirements"
-            requirements.mkdir(parents=True)
+            requirements.mkdir(parents=True, exist_ok=True)
             (requirements / "2026-07-15-order.md").write_text(
                 "# Order requirements\n", encoding="utf-8"
             )
@@ -709,16 +718,13 @@ class RepositoryContractTests(unittest.TestCase):
             "reviewed plans",
             "handoff prompts",
             "bounded changes",
+            "agents rules",
         ):
             self.assertIn(phrase, serialized)
 
-    def test_all_four_skills_are_complete_and_exposed(self):
-        for skill_name in (
-            "creating-product-requirements",
-            "creating-development-specs-and-plans",
-            "generating-development-prompts",
-            "implementing-bounded-changes",
-        ):
+    def test_all_registered_skills_are_complete_and_exposed(self):
+        self.assertEqual(5, len(registered_skill_names()))
+        for skill_name in registered_skill_names():
             with self.subTest(skill_name=skill_name):
                 skill = ROOT / "skills" / skill_name
                 self.assertTrue((skill / "SKILL.md").is_file())
@@ -737,6 +743,11 @@ class RepositoryContractTests(unittest.TestCase):
         bounded = VALIDATOR.load_skill_frontmatter(
             ROOT / "skills" / "implementing-bounded-changes" / "SKILL.md"
         )["description"].casefold()
+        governance_path = ROOT / "skills" / "managing-agents-rules" / "SKILL.md"
+        self.assertTrue(governance_path.is_file())
+        governance = VALIDATOR.load_skill_frontmatter(governance_path)[
+            "description"
+        ].casefold()
 
         self.assertIn("product requirements", requirements)
         self.assertIn("product scope", requirements)
@@ -754,6 +765,11 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertIn("bounded change", bounded)
         self.assertNotIn("product requirements", bounded)
         self.assertNotIn("development prompt", bounded)
+        self.assertIn("agents rules", governance)
+        self.assertIn("substantive development", governance)
+        self.assertIn("completion", governance)
+        self.assertNotIn("product requirements", governance)
+        self.assertNotIn("bounded change", governance)
 
     def test_authoring_plan_template_preserves_handoff_review_states(self):
         template = (
@@ -983,25 +999,19 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
     def test_skill_payloads_stage_independently_and_together(self):
-        skills = [
-            ROOT / "skills" / "creating-product-requirements",
-            ROOT / "skills" / "creating-development-specs-and-plans",
-            ROOT / "skills" / "generating-development-prompts",
-            ROOT / "skills" / "implementing-bounded-changes",
-        ]
+        skills = [ROOT / "skills" / name for name in registered_skill_names()]
+        self.assertEqual(
+            [],
+            [skill.name for skill in skills if not (skill / "SKILL.md").is_file()],
+        )
 
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
-            homes = [
-                root / "requirements-home",
-                root / "authoring-home",
-                root / "handoff-home",
-                root / "bounded-home",
-                root / "combined-home",
-            ]
+            homes = [root / f"skill-{index}-home" for index in range(len(skills))]
+            combined_home = root / "combined-home"
             for index, skill in enumerate(skills):
                 VALIDATOR.stage_skill_payloads([skill], homes[index])
-            VALIDATOR.stage_skill_payloads(skills, homes[4])
+            VALIDATOR.stage_skill_payloads(skills, combined_home)
 
             for index, skill in enumerate(skills):
                 expected = {
@@ -1009,7 +1019,7 @@ class RepositoryContractTests(unittest.TestCase):
                     for path in VALIDATOR.production_files(skill)
                 }
                 independent = homes[index] / "skills" / skill.name
-                combined = homes[4] / "skills" / skill.name
+                combined = combined_home / "skills" / skill.name
                 for staged in (independent, combined):
                     actual = {
                         str(path.relative_to(staged)): path.read_bytes()
@@ -1054,7 +1064,8 @@ class RepositoryContractTests(unittest.TestCase):
             "RED→GREEN→REFACTOR",
             "creating-product-requirements",
             "PRD",
-            "四个 skill",
+            "五个 skill",
+            "managing-agents-rules",
             "不得依赖 `~/.codex/plugins/cache/`",
             "不得创建或操作用户可见 Codex task/thread",
         ]:
@@ -1072,53 +1083,89 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertIn("真实 task/thread 标识符", evidence_rules)
 
     def test_repository_validator_passes_current_tree(self):
-        result = subprocess.run(
-            [sys.executable, str(ROOT / "scripts" / "validate_repo.py")],
-            cwd=ROOT,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            result = run_repository_validator(repository)
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("repository validation passed", result.stdout)
 
-    def test_four_skill_workflow_docs_and_final_reviewer_are_current(self):
+    def test_five_skill_workflow_docs_and_final_reviewer_are_current(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         rules = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         reviewer = (
             ROOT / ".codex" / "agents" / "workflow-final-reviewer.toml"
         ).read_text(encoding="utf-8")
-        for skill_name in (
-            "creating-product-requirements",
-            "creating-development-specs-and-plans",
-            "generating-development-prompts",
-            "implementing-bounded-changes",
-        ):
+        for skill_name in registered_skill_names():
             with self.subTest(skill_name=skill_name):
                 self.assertIn(skill_name, readme)
                 self.assertIn(skill_name, changelog)
         self.assertIn("PRD → technical spec/plan → development prompt", readme)
         self.assertIn("approved bounded change → implementation", readme)
-        self.assertIn("四个 skill", rules)
+        self.assertIn("AGENTS rule governance", readme)
+        self.assertIn("五个 skill", rules)
         self.assertIn("两个 authoring skill", reviewer)
         self.assertIn("prompt skill", reviewer)
         self.assertIn("bounded implementation skill", reviewer)
-        self.assertIn("四-skill plugin", reviewer)
+        self.assertIn("managing-agents-rules", reviewer)
+        self.assertIn("五-skill plugin", reviewer)
+
+    def test_repository_validator_dynamically_requires_public_skill_discovery(self):
+        public_documents = (
+            "README.md",
+            "docs/install.md",
+            "docs/workflow.md",
+            "docs/agent-development.md",
+            "CHANGELOG.md",
+        )
+        review_approved = next(
+            name
+            for name, entry in json.loads(
+                (ROOT / "evaluations" / "registry.json").read_text(encoding="utf-8")
+            )["skills"].items()
+            if entry["stage"] == "review-approved"
+        )
+        for relative in public_documents:
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as directory:
+                repository = copy_repository(Path(directory))
+                document = repository / relative
+                document.write_text(
+                    document.read_text(encoding="utf-8").replace(
+                        review_approved, "omitted-skill"
+                    ),
+                    encoding="utf-8",
+                )
+
+                result = run_repository_validator(repository)
+
+                self.assertEqual(1, result.returncode)
+                self.assertIn("review-approved skill is missing from", result.stderr)
+
+            with self.subTest(relative=relative, stage="baseline-only"), tempfile.TemporaryDirectory() as directory:
+                repository = copy_repository(Path(directory))
+                registry_path = repository / "evaluations" / "registry.json"
+                registry = json.loads(registry_path.read_text(encoding="utf-8"))
+                registry["skills"][review_approved]["stage"] = "baseline-only"
+                registry_path.write_text(
+                    json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                shutil.rmtree(repository / "skills" / review_approved)
+                document = repository / relative
+                document.write_text(
+                    document.read_text(encoding="utf-8").replace(
+                        review_approved, "omitted-skill"
+                    ),
+                    encoding="utf-8",
+                )
+
+                result = run_repository_validator(repository)
+
+                self.assertNotIn("review-approved skill is missing from", result.stderr)
 
     def test_repository_validator_passes_after_skill_test_cache_artifacts(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
-            repository = Path(temporary_directory) / "repository"
-            shutil.copytree(
-                ROOT,
-                repository,
-                ignore=shutil.ignore_patterns(
-                    ".git",
-                    ".venv",
-                    "__pycache__",
-                    "work",
-                ),
-            )
+            repository = copy_repository(Path(temporary_directory))
             scripts = (
                 repository
                 / "skills"

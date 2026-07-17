@@ -20,6 +20,11 @@
       "evaluation_mode": "managed",
       "evidence_profile": "creation-only",
       "stage": "review-approved"
+    },
+    "managing-agents-rules": {
+      "evaluation_mode": "managed",
+      "evidence_profile": "creation-only",
+      "stage": "review-approved"
     }
   }
 }

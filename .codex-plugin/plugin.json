@@ -1,18 +1,18 @@
 {
   "name": "development-workflow",
   "version": "0.1.0",
-  "description": "Create approved product requirements, technical specifications, and reviewed plans, generate executable handoff prompts, or implement explicitly approved bounded changes.",
+  "description": "Create approved product requirements, technical specifications, and reviewed plans, generate executable handoff prompts, implement explicitly approved bounded changes, or govern AGENTS rules with per-diff approval.",
   "author": {
     "name": "development-workflow maintainers"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Development Workflow (dw)",
-    "shortDescription": "Create PRDs, plans, prompts, and bounded changes.",
-    "longDescription": "Create approved product requirements and technical specifications, produce reviewed plans and self-contained handoff prompts, or implement explicitly approved bounded changes without scope expansion.",
+    "shortDescription": "Create PRDs, plans, prompts, bounded changes, and AGENTS rules.",
+    "longDescription": "Create approved product requirements and technical specifications, produce reviewed plans and self-contained handoff prompts, implement explicitly approved bounded changes, or govern evidence-backed AGENTS rules with explicit per-diff approval.",
     "developerName": "development-workflow maintainers",
     "category": "Productivity",
     "capabilities": [],
-    "defaultPrompt": "Use the full PRD-to-prompt workflow, or implement an explicitly approved bounded change without expanding scope."
+    "defaultPrompt": "Use the full PRD-to-prompt workflow, implement an explicitly approved bounded change without expanding scope, or govern evidence-backed AGENTS rules with explicit per-diff approval."
   }
 }

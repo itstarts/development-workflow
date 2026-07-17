@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "repository_mode": "git",
+  "unreadable_paths": ["AGENTS.md"]
+}

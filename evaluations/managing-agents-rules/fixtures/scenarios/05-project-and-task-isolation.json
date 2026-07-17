@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "repository_mode": "non-git",
+  "nested_git_roots": ["project-a", "project-b"]
+}
