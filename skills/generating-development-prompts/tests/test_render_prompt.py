@@ -1,4 +1,6 @@
+import importlib.util
 import json
+import re
 import subprocess
 import sys
 import unittest
@@ -7,6 +9,27 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "render_prompt.py"
+MODULE_SPEC = importlib.util.spec_from_file_location("render_prompt_under_test", SCRIPT)
+assert MODULE_SPEC is not None and MODULE_SPEC.loader is not None
+RENDER_PROMPT = importlib.util.module_from_spec(MODULE_SPEC)
+MODULE_SPEC.loader.exec_module(RENDER_PROMPT)
+
+
+COPY_STRESS_BODY = """开发目标：验证 Codex 客户端能够完整复制 renderer 生成的长提示词正文。
+
+这是 Unicode 压力样本：中文、English、café、naïve、Δ、🚀、全角标点「交接」。
+
+连续反引号压力片段如下，必须作为正文保留，不能提前闭合外层代码框：
+``````
+
+正文完整性段落：请逐字保留路径 docs/specs/2026-07-17-example-design.md、状态 current-session | new-session | blocked，以及 implementation_gate: open。复制结果不得增加外层 fence、语言标记、前导空格或末尾解释。
+
+长文本段落一：工作流先验证 requirements 八字段，再映射为 spec/plan 十四字段，最后依据当前会话、仓库、权限、工具与 Agent 能力执行三态路由。任何阶段都不能凭聊天记忆补造批准状态，也不能把能力缺口伪装为已完成交接。
+
+长文本段落二：当路由结果为 current-session 时，必须等待用户显式实施批准；当结果为 new-session 时，才提供一个可复制代码框；当结果为 blocked 时，必须报告确定性阻塞。无论哪种自动路由结果，十四字段快照都保持不变并位于回复末尾。
+
+长文本段落三：此客户端验证只测试显示与复制，不创建新任务、不安装 skill、不修改真实 CODEX_HOME、不提交、不发布，也不向外部服务发送剪贴板内容。
+"""
 
 
 def valid_payload() -> dict:
@@ -69,6 +92,15 @@ class RenderPromptTests(unittest.TestCase):
         self.assertEqual("", completed.stdout)
         self.assertTrue(completed.stderr)
         return completed
+
+    def prompt_body(self, output: str) -> str:
+        opening = re.match(r"\A(`{3,})text\n", output)
+        self.assertIsNotNone(opening, output)
+        fence = opening.group(1)
+        self.assertTrue(output.endswith(f"{fence}\n"))
+        body = output[opening.end() : -len(fence) - 1]
+        self.assertEqual(f"{fence}text\n{body}{fence}\n", output)
+        return body
 
     def test_empty_object_is_rejected_without_partial_stdout(self):
         self.assert_rejected({}, "invalid_input")
@@ -162,21 +194,24 @@ class RenderPromptTests(unittest.TestCase):
         completed = self.render_raw(payload)
         self.assertEqual(0, completed.returncode, completed.stderr)
         self.assertEqual("", completed.stderr)
-        self.assertIn("派生", completed.stdout)
-        self.assertIn("main", completed.stdout)
-        self.assertIn("master", completed.stdout)
+        body = self.prompt_body(completed.stdout)
+        self.assertIn("派生", body)
+        self.assertIn("main", body)
+        self.assertIn("master", body)
 
     def test_success_omits_new_session_advice_and_effort(self):
         completed = self.render_raw(valid_payload())
 
         self.assertEqual(0, completed.returncode, completed.stderr)
-        self.assertNotIn("新会话建议", completed.stdout)
-        self.assertNotIn("effort", completed.stdout.casefold())
+        body = self.prompt_body(completed.stdout)
+        self.assertNotIn("新会话建议", body)
+        self.assertNotIn("effort", body.casefold())
 
     def test_repository_section_contains_only_implementation_gates(self):
         completed = self.render_raw(valid_payload())
         self.assertEqual(0, completed.returncode, completed.stderr)
-        section = completed.stdout.split("仓库与分支状态\n", 1)[1].split(
+        body = self.prompt_body(completed.stdout)
+        section = body.split("仓库与分支状态\n", 1)[1].split(
             "\n\n规则与文档优先级", 1
         )[0]
 
@@ -198,7 +233,7 @@ class RenderPromptTests(unittest.TestCase):
     def test_prompt_prefers_matching_global_custom_agents(self):
         completed = self.render_raw(valid_payload())
         self.assertEqual(0, completed.returncode, completed.stderr)
-        output = completed.stdout
+        output = self.prompt_body(completed.stdout)
 
         self.assertIn("全局子代理选择", output)
         for expected in (
@@ -214,16 +249,19 @@ class RenderPromptTests(unittest.TestCase):
             with self.subTest(expected=expected):
                 self.assertIn(expected, output)
 
-    def test_success_is_prompt_only_with_seven_ordered_sections(self):
+    def test_success_is_one_copyable_code_block_with_seven_ordered_sections(self):
         completed = self.render_raw(valid_payload())
         self.assertEqual(0, completed.returncode, completed.stderr)
-        output = completed.stdout
+        wrapped = completed.stdout
+        output = self.prompt_body(wrapped)
         self.assertEqual("", completed.stderr)
         self.assertTrue(output.startswith("开发目标：实现安全的登录流程"))
         self.assertNotIn("以下是", output)
         self.assertNotIn("发现结果", output)
         self.assertNotIn("```", output)
         self.assertFalse(any(line.startswith("#") for line in output.splitlines()))
+        fence = re.match(r"\A(`{3,})text\n", wrapped).group(1)
+        self.assertEqual(2, wrapped.count(fence))
         markers = (
             "开发目标与来源文档",
             "仓库与分支状态",
@@ -238,7 +276,7 @@ class RenderPromptTests(unittest.TestCase):
         self.assertEqual(sorted(positions), positions)
 
     def test_success_contains_context_permissions_and_execution_contract(self):
-        output = self.render_raw(valid_payload()).stdout
+        output = self.prompt_body(self.render_raw(valid_payload()).stdout)
         for expected in (
             "/workspace/example/docs/spec.md",
             "/workspace/example/docs/plan.md",
@@ -255,7 +293,7 @@ class RenderPromptTests(unittest.TestCase):
                 self.assertIn(expected, output)
 
     def test_success_requires_generic_independent_review_and_final_rereview(self):
-        output = self.render_raw(valid_payload()).stdout
+        output = self.prompt_body(self.render_raw(valid_payload()).stdout)
 
         for expected in (
             "未参与实现的独立评审者",
@@ -269,7 +307,7 @@ class RenderPromptTests(unittest.TestCase):
                 self.assertIn(expected, output)
 
     def test_success_requires_tdd_and_repeatable_review_loops(self):
-        output = self.render_raw(valid_payload()).stdout
+        output = self.prompt_body(self.render_raw(valid_payload()).stdout)
 
         for expected in (
             "先写并运行失败测试",
@@ -284,7 +322,7 @@ class RenderPromptTests(unittest.TestCase):
                 self.assertIn(expected, output)
 
     def test_success_omits_removed_framework_derived_workflow(self):
-        output = self.render_raw(valid_payload()).stdout
+        output = self.prompt_body(self.render_raw(valid_payload()).stdout)
 
         for removed in (
             "系统化" + "调试",
@@ -298,9 +336,10 @@ class RenderPromptTests(unittest.TestCase):
         payload["documents"]["spec"]["path"] = "/tmp/spec; echo unsafe.md"
         completed = self.render_raw(payload)
         self.assertEqual(0, completed.returncode, completed.stderr)
-        self.assertIn("$(touch /tmp/never-run)", completed.stdout)
-        self.assertIn("${HOME}", completed.stdout)
-        self.assertIn("/tmp/spec; echo unsafe.md", completed.stdout)
+        body = self.prompt_body(completed.stdout)
+        self.assertIn("$(touch /tmp/never-run)", body)
+        self.assertIn("${HOME}", body)
+        self.assertIn("/tmp/spec; echo unsafe.md", body)
 
     def test_external_strings_are_reversibly_rendered_on_one_line(self):
         payload = valid_payload()
@@ -320,7 +359,7 @@ class RenderPromptTests(unittest.TestCase):
         completed = self.render_raw(payload)
 
         self.assertEqual(0, completed.returncode, completed.stderr)
-        output = completed.stdout
+        output = self.prompt_body(completed.stdout)
         self.assertTrue(output.startswith("开发目标：普通中文"))
         self.assertNotIn("\n# injected", output)
         self.assertNotIn("```", output)
@@ -330,7 +369,7 @@ class RenderPromptTests(unittest.TestCase):
         self.assertFalse(any(line.startswith("#") for line in output.splitlines()))
 
     def test_default_permission_matrix_is_complete(self):
-        output = self.render_raw(valid_payload()).stdout
+        output = self.prompt_body(self.render_raw(valid_payload()).stdout)
         for operation in (
             "create-development-branch-or-worktree",
             "create-local-commit",
@@ -358,7 +397,7 @@ class RenderPromptTests(unittest.TestCase):
             "forbidden": [],
             "source": "explicit",
         }
-        output = self.render_raw(payload).stdout
+        output = self.prompt_body(self.render_raw(payload).stdout)
         allowed_line = next(line for line in output.splitlines() if line.startswith("允许："))
         self.assertIn("run-local-benchmark", allowed_line)
         self.assertIn("create-local-commit", allowed_line)
@@ -370,7 +409,7 @@ class RenderPromptTests(unittest.TestCase):
             "forbidden": ["create-local-commit"],
             "source": "explicit",
         }
-        output = self.render_raw(payload).stdout
+        output = self.prompt_body(self.render_raw(payload).stdout)
         allowed_line = next(line for line in output.splitlines() if line.startswith("允许："))
         forbidden_line = next(line for line in output.splitlines() if line.startswith("禁止："))
         self.assertNotIn("create-local-commit", allowed_line)
@@ -383,7 +422,7 @@ class RenderPromptTests(unittest.TestCase):
             "forbidden": [],
             "source": "explicit",
         }
-        output = self.render_raw(payload).stdout
+        output = self.prompt_body(self.render_raw(payload).stdout)
         allowed_line = next(line for line in output.splitlines() if line.startswith("允许："))
         forbidden_line = next(line for line in output.splitlines() if line.startswith("禁止："))
         self.assertIn("push", allowed_line)
@@ -414,6 +453,52 @@ class RenderPromptTests(unittest.TestCase):
                 mutate(payload)
                 self.assert_rejected(payload, "invalid_input")
 
+    def test_dynamic_fence_is_longer_than_every_body_backtick_run(self):
+        body = "中文 start ``` middle `````` end\n"
+
+        output = RENDER_PROMPT.wrap_prompt(body)
+
+        self.assertTrue(output.startswith("```````text\n"))
+        self.assertTrue(output.endswith("```````\n"))
+        self.assertEqual(body, self.prompt_body(output))
+
+    def test_copy_stress_body_is_extracted_byte_for_byte_with_dynamic_fence(self):
+        output = RENDER_PROMPT.wrap_prompt(COPY_STRESS_BODY)
+
+        self.assertTrue(output.startswith("```````text\n"))
+        self.assertTrue(output.endswith("```````\n"))
+        self.assertEqual(COPY_STRESS_BODY, self.prompt_body(output))
+        self.assertIn("中文、English、café、naïve、Δ、🚀、全角标点「交接」", self.prompt_body(output))
+        self.assertIn("\n``````\n", self.prompt_body(output))
+
+    def test_cli_copy_stress_body_matches_rendered_body_with_reversible_inert_text(self):
+        payload = valid_payload()
+        payload["request"]["goal"] = (
+            "保留 中文、English、café、naïve、Δ、🚀、全角标点「交接」、"
+            "docs/specs/2026-07-17-example-design.md 与六个反引号 ``````"
+        )
+
+        completed = self.render_raw(payload)
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        expected_body = RENDER_PROMPT.render(payload)
+        actual_body = self.prompt_body(completed.stdout)
+        self.assertEqual(expected_body, actual_body)
+        self.assertIn(r"\u0060\u0060\u0060\u0060\u0060\u0060", actual_body)
+        self.assertNotIn("``````", actual_body)
+        self.assertIn("docs/specs/2026-07-17-example-design.md", actual_body)
+
+    def test_success_output_is_deterministic_and_preserves_unicode_body(self):
+        payload = valid_payload()
+        payload["request"]["goal"] = "实现中文与 emoji ✅"
+
+        first = self.render_raw(payload)
+        second = self.render_raw(payload)
+
+        self.assertEqual(0, first.returncode, first.stderr)
+        self.assertEqual(first.stdout, second.stdout)
+        self.assertIn("中文与 emoji ✅", self.prompt_body(first.stdout))
+
     def test_unknown_repository_state_generates_only_the_repository_gate(self):
         payload = valid_payload()
         payload["repository"].update(
@@ -421,10 +506,11 @@ class RenderPromptTests(unittest.TestCase):
         )
         completed = self.render_raw(payload)
         self.assertEqual(0, completed.returncode, completed.stderr)
-        self.assertIn("实施前停止", completed.stdout)
-        self.assertIn("Git 仓库", completed.stdout)
-        self.assertNotIn("工作区状态：", completed.stdout)
-        self.assertNotIn("HEAD：", completed.stdout)
+        body = self.prompt_body(completed.stdout)
+        self.assertIn("实施前停止", body)
+        self.assertIn("Git 仓库", body)
+        self.assertNotIn("工作区状态：", body)
+        self.assertNotIn("HEAD：", body)
 
 
 if __name__ == "__main__":

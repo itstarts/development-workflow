@@ -2,6 +2,7 @@
 """Validate discovered context and render one development prompt to stdout."""
 
 import json
+import re
 import sys
 from pathlib import Path
 from string import Template
@@ -244,6 +245,13 @@ def render(payload: Dict[str, Any]) -> str:
     return template.substitute(values).rstrip() + "\n"
 
 
+def wrap_prompt(body: str) -> str:
+    """Wrap one complete prompt in a fence that cannot occur inside its body."""
+    longest = max((len(run) for run in re.findall(r"`+", body)), default=0)
+    fence = "`" * max(3, longest + 1)
+    return f"{fence}text\n{body}{fence}\n"
+
+
 def fail(error: InputError) -> int:
     sys.stderr.write(json.dumps({"code": error.code, "errors": error.errors}, ensure_ascii=False) + "\n")
     return 2
@@ -261,7 +269,7 @@ def main() -> int:
                 [f"JSON nesting exceeds the supported limit of {MAX_JSON_NESTING}"],
             )
         validate(payload)
-        output = render(payload)
+        output = wrap_prompt(render(payload))
         sys.stdout.write(output)
         return 0
     except InputError as error:

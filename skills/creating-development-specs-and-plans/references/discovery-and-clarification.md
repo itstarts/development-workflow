@@ -4,7 +4,7 @@
 
 1. Read every session-supplied rule. Discover filesystem `AGENTS.md` or `CLAUDE.md` from the repository root to the working directory, outermost to innermost. Never recursively search above the repository root.
 2. Inspect repository status, relevant documentation, existing implementations, tests, and recent history. Do not infer behavior from filenames.
-3. Read the explicit approved product requirements handoff. Require `requirements_path`, expected topic, and expected scope as independent inputs; do not infer them from PRD contents or its filename. The expected topic must be a non-empty, non-reserved kebab-case stable topic; `null`, `unknown`, and `pending` are invalid inputs and block the gate.
+3. Read the explicit eight-field handoff from the approved product requirements workflow when supplied. Require `requirements_path`, expected topic, and expected scope as independent inputs; do not infer them from PRD contents or its filename. The expected topic must be a non-empty, non-reserved kebab-case stable topic; `null`, `unknown`, and `pending` are invalid inputs and block the gate.
 4. Run `python3 <this-skill-directory>/scripts/inspect_product_requirements.py --repo-root <repository-root> --requirements <requirements-path> --expected-topic <expected-topic> --expected-scope <expected-scope>`. Treat a nonzero exit or unparseable JSON as unknown.
 5. Classify the technical work using the repository's task grading rules. Split independent technical subsystems into separate spec → plan cycles only within the single approved PRD topic.
 6. Separate repository-answerable technical facts from choices only the user can make.
@@ -26,6 +26,7 @@ When a real design choice exists, present two or three viable approaches with im
 - An explicit user path wins when it is valid. Resolve a relative explicit path against the working directory.
 - Otherwise use `docs/specs/YYYY-MM-DD-<topic>-design.md` and `docs/plans/YYYY-MM-DD-<topic>.md`.
 - Use the expected stable topic from the approved requirements handoff. Never derive it from a PRD filename or silently replace it.
+- Preserve each reliable default absolute path in the handoff before the spec or plan exists. Use `null` only when a single path cannot be selected reliably.
 - Do not overwrite an existing document without explicit authorization. Resume it only when the user identifies it as the current document.
 - Keep links written inside versioned documents repository-relative. Report selected documents with normalized absolute paths in the handoff.
 

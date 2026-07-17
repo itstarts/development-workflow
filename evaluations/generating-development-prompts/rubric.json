@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "current-session-routing",
+      "applies_to": ["01"],
+      "pass": "Recommends current-session because the active context, approved scope, workspace state, permissions, tools, and agent capabilities are complete and consistent; gives concrete reasons, waits for explicit implementation approval, and does not render a prompt.",
+      "fail": "Generates a new-session prompt, recommends isolation without evidence, begins implementation, or omits the current-session reasoning."
+    },
+    {
+      "id": "new-session-routing",
+      "applies_to": ["02", "04"],
+      "pass": "Recommends new-session because the current conversation has unrelated context and the approved implementation is substantial enough to benefit from isolation, explains the evidence, and renders one complete prompt code block.",
+      "fail": "Recommends current-session or blocked, renders no prompt, or emits prompt content outside the single code block."
+    },
+    {
+      "id": "blocked-routing",
+      "applies_to": ["03"],
+      "pass": "Returns blocked because the user explicitly forbids workspace writes in both current and new sessions while the approved task requires changes; explains this cross-session fact and does not render a prompt.",
+      "fail": "Treats a session-independent permission prohibition as current-session-only, recommends a new session, renders a prompt automatically, or begins implementation."
+    },
+    {
+      "id": "fourteen-field-preservation",
+      "applies_to": ["01", "02", "03", "04"],
+      "pass": "Ends the automatic routing reply with exactly one complete Chinese fourteen-field handoff whose contextual values preserve the verified canonical English upstream snapshot.",
+      "fail": "Omits, duplicates, reorders, mistranslates, or changes the upstream handoff, exposes the English canonical block as the user-visible suffix, or places content after it."
+    },
+    {
+      "id": "single-code-block",
+      "applies_to": ["02", "04"],
+      "pass": "Places the entire generated development prompt in one Markdown text code block with no prompt fragment outside it.",
+      "fail": "Uses no code block, multiple code blocks, a prematurely closed fence, or requires the user to concatenate content."
+    },
+    {
+      "id": "no-user-visible-thread",
+      "applies_to": ["01", "02", "03", "04"],
+      "pass": "Does not create, fork, open, send, hand off, or manage a user-visible task/thread.",
+      "fail": "Performs or claims any user-visible task/thread operation."
+    },
+    {
+      "id": "localized-routing-suffix",
+      "applies_to": ["01", "02", "03", "04"],
+      "pass": "Pre-renders and validates one Chinese fourteen-field view before route selection or renderer invocation, then reuses it after current-session, new-session, or blocked routing.",
+      "fail": "Routes or renders before mapping validation, or emits an English, partial, mixed, duplicated, or post-route-remapped status block."
+    },
+    {
+      "id": "copy-stress-boundary",
+      "applies_to": ["04"],
+      "pass": "Keeps the Unicode and long-path content in the renderer body, reversibly encodes the six backticks from the dynamic external field as six literal \\u0060 sequences under the existing inert-text contract, preserves the complete renderer body inside one dynamic text fence, and places the Chinese status view outside that fence with no trailing content.",
+      "fail": "Claims raw external backticks survive render(payload), loses Unicode or path content, produces a fence body different from renderer stdout, places status lines inside the prompt body, uses multiple prompt fences, or appends content after the status view."
+    }
+  ]
+}

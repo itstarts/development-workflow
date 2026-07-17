@@ -21,6 +21,13 @@ def parse_frontmatter(text: str) -> dict[str, str]:
     return result
 
 
+def fenced_text_blocks(text: str) -> list[list[str]]:
+    return [
+        match.group(1).splitlines()
+        for match in re.finditer(r"```text\n(.*?)\n```", text, re.DOTALL)
+    ]
+
+
 def production_files() -> tuple[Path, ...]:
     paths = [ROOT / "SKILL.md"]
     for directory_name in ("agents", "assets", "references", "scripts"):
@@ -49,6 +56,8 @@ class SkillContractTests(unittest.TestCase):
             ("main agent", "主代理"),
             ("subagents", "subagent", "子代理"),
             ("copyable codex development task instructions", "可复制的 codex 开发任务指令"),
+            ("approved fourteen-field handoff", "已批准十四字段交接"),
+            ("session routing", "会话路由"),
         )
         for equivalents in trigger_phrases:
             with self.subTest(equivalents=equivalents):
@@ -65,6 +74,7 @@ class SkillContractTests(unittest.TestCase):
             "assets/development-prompt.md",
             "references/discovery-policy.md",
             "references/permission-policy.md",
+            "references/session-routing-policy.md",
         ):
             with self.subTest(relative_path=relative_path):
                 self.assertTrue(
@@ -73,19 +83,127 @@ class SkillContractTests(unittest.TestCase):
                 )
                 self.assertIn(relative_path, skill)
 
-    def test_success_contract_requires_prompt_only(self):
-        skill = read("SKILL.md").lower()
-        self.assertIn("return the renderer stdout verbatim", skill)
+    def test_success_contract_routes_before_rendering(self):
+        policy_path = ROOT / "references" / "session-routing-policy.md"
+        policy = policy_path.read_text(encoding="utf-8").casefold() if policy_path.is_file() else ""
+        skill = read("SKILL.md").casefold()
+        combined = skill + policy
+        for required in (
+            "current-session",
+            "new-session",
+            "blocked",
+            "evidence is insufficient",
+            "current session lacks",
+            "do not infer that a new session has the same limitation",
+            "implementation_gate: open",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, combined)
+        self.assertIn("render only for `new-session`", combined)
         self.assertIn("do not create a task or thread", skill)
         self.assertIn("blocking clarification", skill)
 
-    def test_success_contract_keeps_renderer_stdout_as_complete_reply_when_wrapper_requested(self):
+    def test_success_contract_requires_single_renderer_code_fence(self):
         skill = read("SKILL.md").lower()
-        self.assertIn(
-            "renderer stdout remains the complete reply even when the user requests a presentation wrapper",
-            skill,
+        self.assertIn("single markdown code fence", skill)
+        self.assertIn("dynamic backtick fence", skill)
+        self.assertIn("renderer stdout verbatim", skill)
+
+    def test_manual_prompt_request_keeps_unapproved_plan_compatibility(self):
+        policy_path = ROOT / "references" / "session-routing-policy.md"
+        policy = policy_path.read_text(encoding="utf-8").casefold() if policy_path.is_file() else ""
+        combined = read("SKILL.md").casefold() + policy
+        for required in (
+            "explicit prompt request",
+            "not-approved",
+            "unknown",
+            "implementation gate",
+            "do not fabricate",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, combined)
+
+    def test_automatic_routing_preserves_upstream_fourteen_field_suffix(self):
+        policy_path = ROOT / "references" / "session-routing-policy.md"
+        policy = policy_path.read_text(encoding="utf-8").casefold() if policy_path.is_file() else ""
+        combined = read("SKILL.md").casefold() + policy
+        for required in (
+            "fourteen-field snapshot",
+            "same snapshot",
+            "end with",
+            "do not change document approval",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, combined)
+
+    def test_automatic_handoff_suffix_is_plain_text_not_a_code_fence(self):
+        policy_path = ROOT / "references" / "session-routing-policy.md"
+        policy = policy_path.read_text(encoding="utf-8").casefold() if policy_path.is_file() else ""
+        for required in (
+            "handoff is plain text",
+            "never wrap the handoff in a code fence",
+            "final non-empty line is `实施门禁",
+            "do not repeat any fixed handoff field label",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, policy)
+
+    def test_automatic_routes_share_one_prevalidated_chinese_suffix(self):
+        combined = read("SKILL.md") + read("references/session-routing-policy.md")
+        lowered = combined.casefold()
+        for required in (
+            "canonical english snapshot",
+            "pre-render",
+            "before choosing a route",
+            "before invoking the renderer",
+            "same prevalidated chinese view",
+            "renderer stdout before the chinese view",
+            "outside the dynamic fence",
+            "do not reverse-parse",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, lowered)
+        for route in ("current-session", "new-session", "blocked"):
+            with self.subTest(route=route):
+                self.assertIn(route, lowered)
+
+    def test_user_visible_chinese_handoff_has_exact_fourteen_field_order(self):
+        blocks = fenced_text_blocks(read("references/session-routing-policy.md"))
+        self.assertGreaterEqual(len(blocks), 2)
+        labels = (
+            "需求文档",
+            "需求主题",
+            "需求范围",
+            "需求理解置信度",
+            "需求理解确认",
+            "需求文档用户批准",
+            "需求文档独立评审",
+            "技术规格门禁",
+            "技术规格",
+            "技术规格用户批准",
+            "技术规格独立评审",
+            "实施计划",
+            "计划评审状态",
+            "实施门禁",
         )
-        self.assertIn("markdown code fence", skill)
+        self.assertEqual(list(labels), [line.split("：", 1)[0] for line in blocks[1]])
+        self.assertTrue(all("：" in line and not line.startswith(" ") for line in blocks[1]))
+
+    def test_mapping_failure_stops_routing_and_manual_request_stays_compatible(self):
+        combined = (read("SKILL.md") + read("references/session-routing-policy.md")).casefold()
+        for required in (
+            "field count",
+            "field order",
+            "mapping is complete and unique",
+            "only explicit exception",
+            "deterministic chinese blocker",
+            "does not append a status view",
+            "do not invoke the renderer",
+            "stop the current automatic routing",
+            "manual prompt request without a verified upstream snapshot returns renderer stdout verbatim",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, combined)
 
     def test_production_files_have_no_effort_contract(self):
         forbidden = (

@@ -8,48 +8,48 @@ user_approval: pending
 independent_review: pending
 ---
 
-# <Product Requirement Name>
+# <产品需求名称>
 
-## Product Problem
+## 产品问题
 
-<Describe the user or business problem with current evidence.>
+<描述已有证据支持的用户问题或业务问题。>
 
-## Goals and Success Measures
+## 目标与成功指标
 
-<State observable outcomes and how success will be assessed.>
+<说明可观察的目标结果以及衡量成功的方式。>
 
-## Non-goals
+## 非目标
 
-<State the product boundaries excluded from this topic.>
+<说明本主题明确排除的产品边界。>
 
-## Target Users
+## 目标用户
 
-<Identify users or roles and their needs.>
+<识别目标用户或角色及其需求。>
 
-## User Scenarios
+## 用户场景
 
-<Describe core scenarios with preconditions, actions, and product-visible results.>
+<描述核心场景的前置条件、用户操作与产品可见结果。>
 
-## Scope and Product Requirements
+## 范围与产品需求
 
-<Define observable behavior without architecture, API, database, code files, or implementation tasks.>
+<定义可观察行为，不包含架构、API、数据库、代码文件或实施任务。>
 
-## Business Rules and Product-visible Errors
+## 业务规则与产品可见错误
 
-<Define decisions, states, validation, and user-visible failure behavior.>
+<定义决策、状态、校验和用户可见的失败行为。>
 
-## Acceptance Criteria
+## 验收标准
 
-<List independently verifiable product outcomes.>
+<列出可独立验证的产品结果。>
 
-## Non-functional Requirements
+## 非功能需求
 
-<Include only product-visible constraints such as performance, compatibility, privacy, accessibility, or availability when relevant.>
+<仅在相关时包含性能、兼容性、隐私、可访问性或可用性等产品可见约束。>
 
-## Dependencies, Risks, and Assumptions
+## 依赖、风险与假设
 
-<Record product dependencies, risks, confirmed assumptions, and non-material open items.>
+<记录产品依赖、风险、已确认假设和非关键开放项。>
 
-## Technical Specification Handoff
+## 技术规格交接
 
-<List product constraints the downstream technical specification must preserve without selecting the implementation.>
+<列出下游技术规格必须保留的产品约束，不选择具体实现。>

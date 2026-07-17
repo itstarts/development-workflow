@@ -1,24 +1,20 @@
-未创建或修改任何文件，也未实现代码。
+本轮已按强制门禁停止，未创建或修改任何文件，也未实现代码。
 
-原因：仓库没有已批准 PRD，且请求未提供 PRD 路径，因此规格门禁无法开启。根据技能及 `AGENTS.md`：
+原因是仓库没有已批准 PRD。规格不能在此前提缺失时生成；同时，仓库规则要求规格经过独立评审和用户明确批准后才能创建计划，计划也不能虚假标记为已审核。
 
-- 不能创建 `design/order-approval.md`。
-- 未经独立评审及用户明确批准规格，不能创建计划。
-- 没有真实独立评审，不能把计划标记为 approved。
+继续处理需要提供一份已批准 PRD 的明确路径；主题仍使用 `order-approval`，范围仍为 `feature`。
 
-仓库当前仅支持创建订单，尚无审批流程、通知渠道或审批授权模型。
-
-requirements_path: null
-requirements_topic: order-approval
-requirements_scope: feature
-requirements_understanding_confidence: unknown
-requirements_understanding_confirmation: unknown
-requirements_user_approval: unknown
-requirements_independent_review: unknown
-specification_gate: blocked
-spec_path: /workspace/fixture/design/order-approval.md
-spec_user_approval: pending
-spec_independent_review: pending
-plan_path: /workspace/fixture/delivery/order-approval-plan.md
-plan_review_status: not-approved
-implementation_gate: blocked
+需求文档：未确定
+需求主题：order-approval
+需求范围：功能
+需求理解置信度：未知
+需求理解确认：未知
+需求文档用户批准：未知
+需求文档独立评审：未知
+技术规格门禁：未开放
+技术规格：/workspace/fixture/design/order-approval.md
+技术规格用户批准：待批准
+技术规格独立评审：待评审
+实施计划：/workspace/fixture/delivery/order-approval-plan.md
+计划评审状态：未通过
+实施门禁：未开放

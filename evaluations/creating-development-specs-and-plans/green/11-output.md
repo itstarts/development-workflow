@@ -1,6 +1,8 @@
-已创建一份未经评审的技术 spec 草案：[2026-07-15-order-approval-design.md](/workspace/fixture/docs/specs/2026-07-15-order-approval-design.md)。未执行自审或独立评审，未创建 plan，未实现代码。
+已创建未评审的技术规格草案：[2026-07-17-order-approval-design.md](/workspace/fixture/docs/specs/2026-07-17-order-approval-design.md)。
 
-完整 spec 正文：
+未执行自审或独立评审，未创建计划，未实现或提交代码。两项规格审批状态均保持 `pending`。
+
+完整规格正文如下：
 
 ```markdown
 ---
@@ -18,301 +20,223 @@ user_approval: pending
 independent_review: pending
 ---
 
-# Order Approval Design Specification
+# 订单审批技术规格
 
-## Goals
+## 目标
 
-- 为已建立身份且具备订单审批权限的调用方提供明确的服务 API，使其只能对处于 `pending` 状态的订单作出一次 `approve` 或 `reject` 决策。
-- 保留订单与不可变审批记录之间可审计的一对多关系，并能够区分同一订单被驳回后再次提交形成的审批轮次。
-- 定义订单从创建、提交、驳回、重新提交到批准的完整状态迁移，以及无效迁移的稳定失败语义。
-- 使用关系型事务语义保证订单状态、审批记录与通知发件箱事件的一致提交，并在并发审批时确保每个审批轮次最多产生一个有效决策。
-- 在决策成功提交后向订单所有者产生一次应用内通知，且命令重试不得产生重复审批记录或重复通知。
-- 保持设计与具体 Web 框架和关系型数据库产品无关。
+- 为单个订单提供可审计的提交审批、批准和拒绝能力；只有授权审批人可以对处于待审批状态的订单作出决定。
+- 允许被拒绝的订单重新提交，并以新的审批记录保留每次提交和决定的完整历史。
+- 在审批决定持久化后，为订单所有者可靠地产生站内通知。
+- 在重复请求和并发决定下，保证一个审批轮次至多产生一个有效决定，且订单状态、审批记录和通知事件保持一致。
 
-## Non-goals
+## 非目标
 
-- 不定义审批人资格的管理界面、角色授予流程或组织层级；本功能只消费宿主服务提供的身份与授权判定能力。
-- 不引入多级审批、会签、委托审批、自动审批、撤销已批准订单或修改审批历史。
-- 不规定应用内通知的 UI、推送协议或已读状态，只定义可靠地产生通知所需的事务边界和载荷。
-- 不改变订单创建的产品行为，也不规定批准后履约、支付或取消等后续流程。
-- 不绑定具体路由库、ORM、消息中间件或数据库专有锁语法。
+- 不选择具体 Web 框架、关系型数据库产品、ORM、消息代理或站内通知 UI 技术。
+- 不定义审批人名单的管理、角色配置或订单写权限规则；本规格只定义调用既有或注入式授权策略的边界。
+- 不支持批量审批、多级会签、撤回决定、已批准订单重新开启或跨订单事务。
+- 不改变已批准产品需求中的用户范围，也不在本功能内设计通知偏好和已读状态。
 
-## Current Evidence
+## 当前证据
 
-- `docs/requirements/2026-07-12-order-approval.md` 已批准，要求授权审批人能够批准或驳回待审批订单、驳回订单可以重新提交，并在决策后向订单所有者发送应用内通知。
-- `README.md` 明确当前服务只创建订单，尚无审批工作流、通知通道或审批授权模型。
-- `src/orders.py` 的当前订单表示仅包含 `id`、`owner` 和初始状态 `created`；仓库中没有持久化映射或事务实现可供沿用。
-- `tests/test_orders.py` 只验证新订单状态为 `created`，未建立其他状态或错误行为。
-- `AGENTS.md` 要求 spec 在生成 plan 前通过独立评审并获得用户明确批准。本草案的两项审批元数据均保持 `pending`，且不创建 plan。
+- `docs/requirements/2026-07-12-order-approval.md` 已批准并通过独立评审，要求授权审批人批准或拒绝待审批订单、被拒订单可重新提交，并在决定后通知订单所有者。
+- `src/orders.py` 仅提供 `create_order(order_id, owner)`，新订单状态为 `created`；当前没有持久化仓储、审批、授权或通知实现。
+- `tests/test_orders.py` 只验证新订单状态为 `created`，没有审批或并发行为覆盖。
+- `README.md` 明确当前服务尚无审批工作流、通知通道和审批授权模型。
+- `AGENTS.md` 要求规格经独立评审且由用户明确批准后才能生成计划；本草案的两项批准状态均保持 `pending`。
 
-## Behavior and Boundaries
+## 行为与边界
 
-### Aggregate invariants
+订单状态集合为 `created`、`pending`、`approved`、`rejected`。合法转换仅为：
 
-- 订单是审批流程的一致性聚合根。每个订单保存当前 `status`、当前 `submission_revision` 和用于并发控制的单调递增 `version`。
-- `created` 订单第一次提交后进入 `pending`；`rejected` 订单可重新提交并再次进入 `pending`；`approved` 是本功能范围内的终态。
-- 每次从 `created` 或 `rejected` 进入 `pending` 时，`submission_revision` 增加 1。每个 revision 最多关联一个已提交的审批决策。
-- 审批决策一旦提交即不可修改或删除。后续重新提交创建新的 revision，不覆盖此前的驳回记录。
-- 审批命令中的操作者身份来自经过认证的服务上下文，客户端不能通过请求正文指定 `decided_by`。
-- 批准与驳回均要求授权策略对“操作者、目标订单、审批动作”返回允许。授权策略的具体角色存储不属于本功能，但调用该策略是决策事务开始前的强制边界。
+- `created -> pending`：首次提交审批；
+- `rejected -> pending`：重新提交，创建新的审批轮次；
+- `pending -> approved`：授权审批人批准当前轮次；
+- `pending -> rejected`：授权审批人拒绝当前轮次。
 
-### Submission behavior
+`approved` 在本功能内为终态。任何未列出的转换都失败且不产生持久化副作用。每次从 `created` 或 `rejected` 进入 `pending` 都创建一条新的 `ApprovalRecord`；历史记录不覆盖、不删除。订单在任意时刻至多有一个当前待审批记录。
 
-- 订单所有者可以提交自己的 `created` 订单，也可以重新提交自己的 `rejected` 订单。
-- 提交成功后订单变为 `pending`，revision 和 version 各增加 1。
-- 对 `pending` 或 `approved` 订单提交会失败且不改变持久化状态。
-- 本功能不定义提交时修改订单内容；调用方必须在提交前通过既有订单能力完成修改。
+决定成功后立即向调用方返回已提交的订单和审批快照。站内通知采用最终一致投递：决定事务提交即代表业务决定成功，通知通道暂时不可用不会回滚决定；持久化待投递事件会持续重试，直到通知子系统确认接收。通知消费者以事件标识去重，因此允许传输层至少一次投递但用户侧只生成一条决定通知。
 
-### Decision behavior
+所有写入命令都要求已认证的 `actor_id`、非空幂等键和调用方读取到的 `expected_order_version`。同一操作与幂等键使用相同请求参数重试时返回原结果；复用该键但参数不同则失败。时间戳使用 UTC，服务端生成的标识在其实体范围内唯一。
 
-- `approve` 将当前订单从 `pending` 迁移为 `approved`；`reject` 将其迁移为 `rejected`。
-- 成功决策会原子地写入一条审批记录、更新订单状态与 version，并写入一条通知发件箱记录。
-- 相同 `decision_command_id` 与相同语义的重试返回首次已提交结果，不新增审批记录或通知。相同 ID 携带不同订单、revision 或 decision 时返回冲突。
-- 迟到请求、重复但未使用相同命令 ID 的请求，以及基于过期订单 version 的请求均不得覆盖已提交决定。
+## 组件与控制流
 
-### Visibility and consistency
+1. 服务 API 校验命令结构、幂等键和预期版本，并读取既有幂等结果；命中同参数结果时直接返回。
+2. 提交审批时，`OrderWriteAuthorization` 判断操作者是否具有订单写权限；作出决定时，`ApprovalAuthorization` 判断操作者是否是该订单的授权审批人。授权策略是注入式端口，具体角色或名单存储不属于本规格。
+3. 应用服务开启关系型事务，锁定或以条件更新保护目标订单，重新检查版本、当前状态和当前审批记录。
+4. 提交命令创建新的 `ApprovalRecord` 并把订单切换为 `pending`；决定命令原子更新当前记录、订单状态和版本，同时写入通知发件箱事件。
+5. 同一事务记录幂等回执并提交。任何事务内步骤失败都整体回滚。
+6. 独立的发件箱投递器读取已提交事件，调用站内通知端口；成功后记录投递完成，失败则按可观测的退避策略重试。该投递器不修改订单或审批决定。
 
-- 决策 API 返回成功时，订单新状态和审批记录已经在同一关系型事务中持久化，可被后续一致性读取观察到。
-- 应用内通知投递可以是异步的，因此相对于订单状态是最终一致；但已提交的 outbox 记录保证该通知进入可重试投递流程。
-- 对同一审批记录，通知投递必须以 `approval_decision_id` 作为去重键，实现至少一次投递下的单一用户可见通知效果。
+核心职责边界如下：
 
-## Components and Control Flow
+- `OrderApprovalService`：编排授权、状态机、事务、幂等和返回结果；
+- `OrderRepository` 与 `ApprovalRecordRepository`：在同一关系型事务上下文内读写实体；
+- `OrderWriteAuthorization` 与 `ApprovalAuthorization`：返回明确的允许或拒绝结果，依赖不可用时采取拒绝写入的失败关闭策略；
+- `NotificationOutbox`：与决定原子写入待投递事件；
+- `InAppNotificationPort`：接收稳定事件标识和通知载荷，负责用户可见通知及消费去重。
 
-1. API 适配层解析命令、认证上下文和 `expected_order_version`，完成结构校验，但不持有业务状态。
-2. `OrderSubmissionService` 加载订单、验证所有权和合法状态，并通过事务性条件更新完成提交或重新提交。
-3. `OrderApprovalService` 调用 `ApprovalAuthorizationPolicy` 判定当前操作者是否能审批目标订单，然后进入决策事务。
-4. 决策事务按一致的订单主键顺序取得排他写入权，重新读取订单并验证 `pending`、revision、预期 version 和命令幂等性。
-5. 服务插入不可变 `ApprovalDecision`，更新 `Order`，并插入引用该决策的 `NotificationOutbox`。任一步失败都会回滚全部三项写入。
-6. 事务提交后 API 返回新的订单 version 与决策表示。
-7. 独立的 `InAppNotificationDispatcher` 读取已提交的 outbox 项，调用宿主通知端口为订单所有者创建通知；成功后标记已投递，暂时失败则保留并重试。
+## API 与技术接口
 
-组件端口保持框架无关：服务层接收值对象和认证主体，持久化端口暴露事务、条件更新和唯一约束冲突，通知端口接收稳定的通知载荷。HTTP 仅是下述外部接口的一种承载方式，业务服务不依赖 HTTP 类型。
+以下是与传输协议和框架无关的服务契约；适配层可映射为 HTTP、RPC 或进程内调用，但不得改变字段语义和错误码。
 
-## API and Technical Interfaces
+### 提交或重新提交审批
 
-### Submit or resubmit an order
+`submit_for_approval(command) -> ApprovalSubmissionResult`
 
-`POST /orders/{order_id}/submissions`
+输入：
 
-认证：必须提供订单所有者的已认证主体。
+- `order_id: string`：目标订单；
+- `actor_id: string`：已认证操作者；
+- `expected_order_version: integer`：调用方读取到的订单版本；
+- `idempotency_key: string`：调用方生成的非空稳定键。
 
-请求：
+输出：
 
-```json
-{
-  "expected_order_version": 3
-}
+- `order_id`、`order_status: pending`、`order_version`；
+- `approval_id`、`attempt_number`、`approval_status: pending`、`submitted_by`、`submitted_at`。
+
+该操作仅接受 `created` 或 `rejected` 订单。首次提交和拒绝后重新提交使用同一契约；服务通过递增的 `attempt_number` 区分轮次。
+
+### 作出审批决定
+
+`decide_approval(command) -> ApprovalDecisionResult`
+
+输入：
+
+- `order_id: string` 与 `approval_id: string`：必须共同指向该订单的当前待审批记录；
+- `actor_id: string`：已认证且经授权策略允许的审批人；
+- `decision: approved | rejected`；
+- `reason: string | null`：可选说明，适配层应执行长度上限等基础校验；
+- `expected_order_version: integer`；
+- `idempotency_key: string`。
+
+输出：
+
+- `order_id`、`order_status`、`order_version`；
+- `approval_id`、`attempt_number`、`approval_status`、`decided_by`、`decided_at`、`reason`；
+- `notification_event_id`，用于关联决定后的可靠通知。
+
+### 查询审批历史
+
+`get_approval_history(order_id, actor_id, page_token, page_size) -> ApprovalHistoryPage`
+
+结果按 `attempt_number` 降序返回审批记录及稳定的下一页游标。读取权限沿用订单读取授权端口；查询不改变状态，也不等待通知投递。页面大小必须有服务端上限。
+
+### 稳定错误契约
+
+- `NOT_FOUND`：订单或指定审批记录不存在；
+- `FORBIDDEN`：操作者未获相应写入、审批或读取授权；
+- `INVALID_TRANSITION`：订单状态不允许提交、重新提交或决定；
+- `VERSION_CONFLICT`：当前订单版本与预期版本不同；
+- `APPROVAL_CONFLICT`：审批记录不是当前轮次、已被决定，或并发请求已先完成转换；
+- `IDEMPOTENCY_KEY_REUSED`：同一操作的幂等键对应不同请求指纹；
+- `VALIDATION_ERROR`：字段缺失、枚举非法或超出稳定限制；
+- `DEPENDENCY_UNAVAILABLE`：授权等同步依赖无法给出可靠结果。
+
+失败响应不得包含部分成功结果。适配层可将这些错误映射到协议状态，但领域错误码保持不变。
+
+## 数据模型与实体关系
+
+### `Order`
+
+- 既有字段：`id`、`owner_id`、`status`；
+- 新增持久化字段：`version`（每次状态写入递增）、`current_approval_id`（可空，指向当前待审批记录）；
+- 不变量：`status = pending` 时 `current_approval_id` 必须指向一条属于该订单且状态为 `pending` 的记录；其他状态下该字段必须为空。
+
+### `ApprovalRecord`
+
+- `id`：主键；
+- `order_id`：非空外键，形成 `Order 1:N ApprovalRecord`；订单拥有审批历史，记录不得改挂到另一订单；
+- `attempt_number`：同一订单内从 1 单调递增，与 `order_id` 组成唯一业务键；
+- `status: pending | approved | rejected`；
+- `submitted_by`、`submitted_at`；
+- `decided_by`、`decided_at`、`reason`：待审批时为空，完成决定时一次性写入；
+- `created_order_version` 与 `decided_order_version`：记录轮次关联的订单版本，便于审计和诊断。
+
+审批记录的提交字段和已完成决定字段不可变。订单删除策略必须保留审批审计历史；若现有系统允许物理删除订单，迁移后应改为受限删除或等效的保留策略，不能级联删除审批记录。
+
+### `CommandReceipt`
+
+- 以 `operation + idempotency_key` 为唯一键；
+- 保存请求指纹、处理结果引用及创建时间；
+- 与对应业务写入同事务提交。历史保留期必须不短于客户端可能重试的约定窗口；清理不得影响审批记录。
+
+### `NotificationOutboxEvent`
+
+- `event_id`：主键及通知消费去重键；
+- `event_type: order_approval_decided`；
+- `order_id`、`approval_id`、`owner_id`、`decision`、`decided_at`；
+- `delivery_status`、`attempt_count`、`next_attempt_at`、`delivered_at`；
+- 每条已完成审批记录至多关联一条该事件类型，通过关系型唯一约束保证。
+
+`ApprovalRecord` 与 `NotificationOutboxEvent` 为 `1:0..1`：待审批记录没有决定事件，完成决定的记录在事务提交时必须有且仅有一个事件。
+
+## 状态转换、迁移边界与一致性
+
+持久化迁移采用向前兼容的分阶段边界：
+
+1. 以可空或带安全默认值的方式增加订单版本和当前审批引用，创建审批记录、幂等回执和通知发件箱结构及必要索引；此阶段不改变现有创建行为。
+2. 将既有订单的 `version` 回填为确定的初始值，并校验既有状态；既有 `created` 订单保留 `created`，不自动生成审批记录或通知。
+3. 部署能够同时理解旧订单行与新结构的应用写路径，再启用非空、外键、唯一性和状态检查等关系型约束。若某种约束无法跨数据库产品统一表达，必须由事务内条件写入保证，并以迁移校验查询证明无违规数据后再收紧。
+4. 最后启用审批 API 和发件箱投递器。回滚应用版本时不得删除新表或审批历史；需要先停止新审批写入，并保持旧版本不会误解新增状态。
+
+每个命令使用单个本地关系型事务，不引入分布式事务。事务通过行级串行化效果实现，可由悲观锁或带 `version` 条件的原子更新提供，但实现必须满足相同行为：
+
+- 状态检查、审批记录变更、订单版本递增、幂等回执以及决定事件写入要么全部提交，要么全部回滚；
+- 两个不同幂等键并发决定同一 `approval_id` 时，只有一个事务可从 `pending` 转换成功；失败方返回 `APPROVAL_CONFLICT` 或在版本先失效时返回 `VERSION_CONFLICT`，不得覆盖胜者；
+- 相同幂等键的并发重试只产生一份业务结果、一条决定和一条发件箱事件；
+- 提交审批与决定、两次重新提交或订单其他版本化写入发生竞争时，版本检查保证陈旧命令不会基于旧状态提交；
+- 数据库提交成功后，订单与审批查询必须立即读到同一决定；通知仅保证最终一致，发件箱积压必须可观测和重试。
+
+## 错误与不确定性
+
+- 授权检查必须在写事务提交前完成，并在依赖无响应时拒绝变更；授权拒绝不得创建审批记录、回执或通知事件。
+- API 适配层负责认证并传入不可伪造的主体标识；领域服务不得信任客户端自行声明的审批角色。
+- `reason` 可能进入审计记录和站内通知，必须按普通用户输入处理：限制长度、保留原始语义并在展示层转义，不记录认证凭据或其他敏感上下文。
+- 发件箱投递失败不改变已经提交的审批结果。达到重试告警阈值时进入人工可观测的失败队列或告警状态，但不得静默丢弃事件。
+- 仓库尚无持久化、授权和通知抽象；具体实现必须选择能满足上述端口及事务语义的组件，但不得借此改变本规格的公开契约。
+- 产品需求未规定谁可以提交或重新提交；本规格明确沿用订单写权限端口，而不在审批功能中发明新的业务角色。若后续产品决定改变该权限，这是需要重新批准的需求变更。
+
+## 测试与文档
+
+自动化测试至少覆盖：
+
+- 状态机单元测试：四条合法转换、所有非法转换、批准终态和每次重新提交生成新轮次；
+- 授权测试：授权审批人可决定，未授权或授权依赖不可用时无任何写入；订单写权限同样约束提交和重新提交；
+- 仓储集成测试：订单、审批记录、幂等回执和发件箱事件在同一事务中提交或回滚，外键与唯一性不变量有效；
+- 幂等测试：同键同参数重试返回原结果，同键异参数失败，重试不重复创建记录或事件；
+- 并发测试：用同步屏障同时发出两个相反决定，断言仅一个成功、最终状态匹配胜者且只有一条事件；并发重新提交和陈旧版本写入也必须冲突；
+- 通知测试：决定提交后即使通知端口首次失败，发件箱仍保留并可重试；重复投递只生成一条用户通知；
+- 迁移测试：从仅含既有 `created` 订单的数据集升级，确认回填、约束校验和旧数据可读，且不会凭空产生审批历史。
+
+文档需同步服务 API 契约、状态图、稳定错误码、数据关系、迁移/回滚顺序、通知最终一致性说明，以及发件箱积压和失败的运维观测方式。不得把某一框架或数据库产品的调用形式写成规范性接口。
+
+## 验收标准
+
+- 对 `created` 订单提交审批后，订单成为 `pending`，出现且仅出现一条当前审批记录，订单版本递增。
+- 对 `rejected` 订单重新提交后，旧审批记录保持不变，新记录的轮次号递增并成为唯一当前待审批记录。
+- 授权审批人可批准或拒绝当前轮次；订单状态、审批记录、决定审计字段、幂等回执和通知事件在一个关系型事务中原子提交。
+- 未授权主体、非法状态、错误审批轮次、陈旧版本和冲突幂等键都返回稳定错误且不产生部分写入。
+- 两个并发决定最多一个成功；相同请求的并发重试只产生一个决定结果和一个通知事件。
+- 决定提交后，订单所有者最终收到一条包含订单、决定和时间的站内通知；通知通道短暂失败不会丢失事件或回滚决定。
+- 审批历史查询按轮次稳定分页，并保留所有拒绝、重新提交和最终决定记录。
+- 迁移可从当前只有 `created` 订单的仓库状态安全升级，既有订单不被自动提交或通知，回滚边界不会删除审计数据。
+- 自动化测试可独立证明状态迁移、授权、事务原子性、幂等、并发一致性、通知重试和迁移边界。
+- 规格不绑定具体 Web 框架或数据库产品，且 `user_approval` 与 `independent_review` 在本次交接中均保持 `pending`。
 ```
 
-成功响应 `200`：
-
-```json
-{
-  "order_id": "o-1",
-  "status": "pending",
-  "submission_revision": 2,
-  "order_version": 4
-}
-```
-
-该命令仅接受 `created` 或 `rejected` 状态。`expected_order_version` 必须与事务内当前 version 相同。
-
-### Decide a pending order
-
-`POST /orders/{order_id}/approval-decisions`
-
-认证：必须提供已认证主体；服务通过 `ApprovalAuthorizationPolicy` 校验其对目标订单的审批权限。
-
-请求：
-
-```json
-{
-  "decision_command_id": "01J...",
-  "decision": "approve",
-  "expected_submission_revision": 2,
-  "expected_order_version": 4,
-  "comment": "optional plain text"
-}
-```
-
-- `decision_command_id` 是调用方为一次逻辑决策生成的全局唯一、不透明标识，用于安全重试。
-- `decision` 只能是 `approve` 或 `reject`。
-- `expected_submission_revision` 与 `expected_order_version` 都必须和事务内订单一致。
-- `comment` 可省略；本功能不把审批意见设为批准或驳回的产品前置条件。实现应设置有限长度并按普通文本存储和展示。
-
-首次成功响应 `201`，相同命令的幂等重放响应 `200`：
-
-```json
-{
-  "approval_decision_id": "ad-1",
-  "order_id": "o-1",
-  "submission_revision": 2,
-  "decision": "approve",
-  "decided_by": "user-9",
-  "decided_at": "2026-07-15T10:00:00Z",
-  "order_status": "approved",
-  "order_version": 5
-}
-```
-
-### Error contract
-
-- `400 invalid_request`：JSON 或字段形状无效。
-- `401 unauthenticated`：缺少有效认证主体。
-- `403 approval_forbidden`：主体存在但无审批权限；所有者提交权限不足时使用 `order_submission_forbidden`。
-- `404 order_not_found`：订单不存在。
-- `409 invalid_order_transition`：当前状态不允许该命令。
-- `409 stale_order_version`：`expected_order_version` 不是当前 version；响应可返回当前 version，但不得泄露调用方无权读取的信息。
-- `409 stale_submission_revision`：决策针对的 revision 已不是当前 revision。
-- `409 decision_already_recorded`：当前 revision 已存在另一条有效决策。
-- `409 idempotency_conflict`：既有 `decision_command_id` 的语义与本次请求不同。
-- `422 invalid_decision`：decision 不在允许枚举中，或 comment 超出约束。
-- `503 decision_temporarily_unavailable`：事务或持久化依赖在安全重试后仍不可用；不得报告业务成功。
-
-授权失败、校验失败、状态冲突和事务失败均不写审批记录、订单状态或 outbox。服务内部返回稳定的领域错误码，由传输适配层映射为上述状态。
-
-## Data Model and Entity Relationships
-
-### Order
-
-- `id`：主键。
-- `owner_id`：订单所有者标识，非空。
-- `status`：`created | pending | approved | rejected`，非空。
-- `submission_revision`：非负整数；创建时为 0，每次进入 `pending` 增加 1。
-- `version`：非负整数；每次本功能引起的状态变更增加 1，用于乐观并发检查。
-- `updated_at`：最近状态变更时间。
-
-### ApprovalDecision
-
-- `id`：主键。
-- `order_id`：引用 `Order.id` 的非空外键；订单与审批记录为一对多关系。
-- `submission_revision`：决策对应的审批轮次，正整数。
-- `decision`：`approve | reject`，非空。
-- `decided_by`：经认证的审批人主体标识，非空。
-- `decided_at`：服务端生成的 UTC 时间，非空。
-- `comment`：可空的受限长度普通文本。
-- `decision_command_id`：非空幂等键。
-- `order_version_before`、`order_version_after`：记录决策前后聚合 version，便于审计和冲突诊断。
-
-关系与约束：
-
-- `UNIQUE(order_id, submission_revision)` 保证每个审批轮次最多一个有效决策。
-- `UNIQUE(decision_command_id)` 保证同一逻辑决策只落库一次；重放时必须比较订单、revision 和 decision 后才能返回既有结果。
-- 审批记录不得级联删除。订单删除策略必须保留审计关系；若宿主服务支持订单硬删除，实施前需要改为受限删除或等价的审计保留机制。
-
-### NotificationOutbox
-
-- `id`：主键。
-- `approval_decision_id`：引用 `ApprovalDecision.id` 的非空外键且唯一。
-- `recipient_id`：决策事务内从 `Order.owner_id` 复制，非空。
-- `notification_type`：固定为 `order_approval_decided`。
-- `payload`：包含 `order_id`、`submission_revision`、`decision`、`decided_at`，不包含审批人的授权凭据或其他敏感上下文。
-- `created_at`、`delivered_at`、`attempt_count`、`next_attempt_at`：支持提交后投递和可观测重试。
-
-`Order 1 ── * ApprovalDecision 1 ── 1 NotificationOutbox`。订单保存当前快照，审批记录保存历史事实，outbox 只负责可靠传递事实，不作为订单状态真相来源。
-
-## State Transitions, Migration Boundaries, and Consistency
-
-### State machine
-
-| Current state | Command | Next state | Additional effect |
-| --- | --- | --- | --- |
-| `created` | submit | `pending` | revision + 1, version + 1 |
-| `rejected` | resubmit | `pending` | revision + 1, version + 1 |
-| `pending` | approve | `approved` | insert decision and outbox, version + 1 |
-| `pending` | reject | `rejected` | insert decision and outbox, version + 1 |
-
-表中未列出的迁移均返回 `invalid_order_transition`。`approved` 在本功能内没有出向迁移。读取、授权失败和命令幂等重放不增加 version。
-
-### Decision transaction
-
-一次审批决策必须位于单个关系型事务中：
-
-1. 根据 `order_id` 获取订单的排他写入权，或执行语义等价的带 version 条件更新。
-2. 检查状态为 `pending`、revision 和 version 与请求一致，并检查 `decision_command_id` 是否已存在。
-3. 插入 `ApprovalDecision`。
-4. 以 `WHERE id = ? AND version = ? AND status = 'pending'` 的等价条件更新订单状态与 version，并要求恰好影响一行。
-5. 插入引用决策的 `NotificationOutbox`。
-6. 提交事务；任何唯一约束冲突、条件更新失败或 outbox 插入失败均整体回滚并映射为稳定冲突或暂时不可用错误。
-
-并发的批准与驳回请求都可能通过事务前校验，但只有首先取得写入权并成功提交的请求能改变订单。后续请求在锁内重检、条件更新或唯一约束处失败，不能产生第二条有效记录。实现可使用悲观行锁或带 version 的原子条件更新，但必须同时保留数据库唯一约束作为最终一致性防线；不得依赖进程内互斥锁。
-
-### Submission transaction
-
-提交或重新提交使用单个事务和带当前 version、允许源状态的条件更新。成功时同时更新 status、revision、version 和时间戳。与审批决策并发时，只有一个命令能匹配原始 version 和状态，另一命令返回冲突并允许调用方读取后决定是否重试。
-
-### Persistence migration boundary
-
-仓库当前没有关系型 schema，因此本 spec 定义迁移结果和顺序，不规定产品专有 DDL：
-
-1. 扩展阶段：为订单持久化模型加入 `status`、`submission_revision`、`version` 和 `updated_at`；新建审批记录与通知 outbox 关系表、外键、检查约束、唯一约束和查询索引。若现有生产表已有 `status`，迁移应扩展其允许值而非建立第二个状态源。
-2. 回填阶段：现有订单映射为 `created`、revision `0`、稳定的初始 version，并分批回填所有非空字段。回填期间代码不得把空值解释为可审批的 `pending`。
-3. 收紧阶段：仅在回填验证完成后设置非空与枚举/检查约束。审批表按 `(order_id, submission_revision)` 建唯一约束，outbox 按 `approval_decision_id` 建唯一约束，并为未投递扫描建立不依赖具体数据库语法的等价索引。
-4. 启用阶段：部署能够读取新字段并执行新事务的服务后再开放审批 API。旧代码若不能维持 version 和状态不变量，不得与写入新流程的版本长期并行。
-5. 清理阶段：本功能不要求破坏性列删除。任何旧状态字段或旧写路径的移除应在兼容窗口和观测验证后作为单独迁移处理。
-
-迁移必须可回滚到“API 未开放”的状态，但一旦产生审批记录，不得通过回滚删除或改写审计事实。若应用版本需要回退，应停止新审批写入，同时保留新表和数据。
-
-### Consistency guarantees
-
-- 订单状态与对应审批记录：强一致、同事务提交。
-- 审批记录与通知 outbox：强一致、同事务提交。
-- outbox 与用户可见应用内通知：最终一致、可重试、以审批记录去重。
-- 跨订单操作：无全局事务或顺序保证；一致性范围是单一订单聚合。
-
-## Errors and Uncertainty
-
-- 仓库尚未提供认证主体类型和审批授权存储。实现必须提供 `ApprovalAuthorizationPolicy.can_decide(actor_id, order_id) -> allow | deny` 的宿主适配，并默认拒绝无法确定的授权；在该策略有可靠来源前不能开放审批 API。
-- 仓库尚未提供关系型 schema、事务抽象或通知系统。实现计划需在 spec 获得独立评审和用户批准后，基于当时仓库证据确定文件位置和适配器，但不能弱化本 spec 的事务与去重保证。
-- 所有者提交权限是为使“驳回后可重新提交”形成闭环而采用的边界：只允许 `Order.owner_id` 对自己的订单提交或重新提交。若产品要支持代理提交，属于权限合同的实质变更，需要更新 PRD 或取得明确产品确认后再修改本 spec。
-- comment 可能包含用户输入，输出到 UI 时必须按普通文本编码，不得解释为标记或可执行内容；日志不得记录认证凭据或完整敏感上下文。
-- 服务端时间用于 `decided_at` 和 outbox 时间，客户端时间不参与顺序或冲突判断。
-- 持久化暂时失败时不得猜测成功。调用方在响应丢失后应使用同一 `decision_command_id` 重试，服务返回已提交结果或安全执行一次。
-
-## Testing and Documentation
-
-自动化测试应覆盖：
-
-- `created -> pending`、`rejected -> pending`、`pending -> approved` 和 `pending -> rejected` 的成功迁移及 version/revision 变化。
-- 所有未允许状态迁移均失败且无持久化副作用。
-- 未认证、非所有者提交、未授权审批均返回对应错误，且授权未知时默认拒绝。
-- 每个 revision 只产生一个不可变审批记录；驳回后重新提交产生新 revision 并保留旧记录。
-- 相同决策命令重放返回同一记录；同一命令 ID 的语义冲突返回 `idempotency_conflict`。
-- 两个并发批准请求以及批准/驳回竞态中只有一个事务成功，订单状态与唯一审批记录一致。
-- 在审批记录、订单更新或 outbox 插入任一步注入失败时，事务全部回滚。
-- 决策提交必有且只有一条 outbox；dispatcher 重试不会创建第二个用户可见通知。
-- 通知暂时失败不回滚已提交决策，最终成功后记录 delivered 状态。
-- 迁移回填将现有订单稳定映射为 `created`、revision `0`，且约束验证无空值、孤儿外键或重复 revision。
-
-集成测试应使用支持真实事务隔离和唯一约束的关系型测试环境验证竞态，不能仅以 mock 仓库证明并发正确性。框架无关的领域单元测试负责状态机和错误映射，API 契约测试负责请求、响应和稳定错误码。
-
-文档需同步：服务 API 参考、订单状态说明、审批权限接入说明、迁移和回滚运行手册、outbox 投递与积压监控说明。由于仓库目前只有 README，具体文档文件在后续获准的 implementation plan 中按仓库届时结构确定。
-
-## Acceptance Criteria
-
-- 授权审批人使用正确 revision 和 version 对 `pending` 订单批准或驳回后，API 返回持久化决策、订单新状态和新 version。
-- 未授权主体不能作出决策，失败请求不改变订单、不写审批记录且不产生通知 outbox。
-- 同一订单每个 submission revision 最多存在一条审批记录；并发批准/驳回测试稳定证明只有一个胜者。
-- 驳回订单可由所有者重新提交为新的 `pending` revision，旧驳回记录保持不可变并可继续关联原 revision。
-- 一个成功决策在同一事务内更新订单、写审批记录和写唯一 outbox；任何一步失败时三者均不部分提交。
-- 决策 API 以 `decision_command_id` 支持安全重试，重复请求不产生重复记录或重复用户可见通知。
-- 订单所有者最终收到包含订单、revision 和决策结果的应用内通知，通知故障不会篡改或丢失已提交审批事实。
-- 现有订单经兼容迁移后保持 `created` 语义，只有完成回填和约束验证后审批 API 才可开放。
-- 实现不依赖特定 Web 框架、ORM 或数据库产品，同时在所选关系型存储上通过真实事务和并发集成测试。
-- spec 的 `user_approval` 与 `independent_review` 在实际完成相应门禁前保持 `pending`；本草案不产生 implementation plan。
-```
-
-requirements_path: /workspace/fixture/docs/requirements/2026-07-12-order-approval.md
-requirements_topic: order-approval
-requirements_scope: feature
-requirements_understanding_confidence: 97
-requirements_understanding_confirmation: approved
-requirements_user_approval: approved
-requirements_independent_review: approved
-specification_gate: open
-spec_path: /workspace/fixture/docs/specs/2026-07-15-order-approval-design.md
-spec_user_approval: pending
-spec_independent_review: pending
-plan_path: null
-plan_review_status: not-approved
-implementation_gate: blocked
+需求文档：/workspace/fixture/docs/requirements/2026-07-12-order-approval.md
+需求主题：order-approval
+需求范围：功能
+需求理解置信度：97
+需求理解确认：已确认
+需求文档用户批准：已批准
+需求文档独立评审：已通过
+技术规格门禁：已开放
+技术规格：/workspace/fixture/docs/specs/2026-07-17-order-approval-design.md
+技术规格用户批准：待批准
+技术规格独立评审：待评审
+实施计划：尚未创建
+计划评审状态：未开始
+实施门禁：未开放

@@ -26,7 +26,9 @@
 - 只有需求理解置信度至少 95 且用户明确确认当前摘要后才创建 PRD；Agent 自评不能替代用户确认。
 - PRD 聚焦产品范围、用户场景和验收标准，不包含 API、数据模型、迁移或实现任务。
 - 固定 PRD 独立评审、用户批准、实质修改失效和 requirements 八字段交接门禁。
-- 通过无目标 skill baseline、8 个 GREEN 场景、官方 validator 和独立评审完成创建闭环。
+- 已批准 PRD 写入并验证八字段后，主 Agent 在同一会话自动进入可用的 spec workflow；下游不可用时保留真实八字段并报告能力缺口。
+- PRD 模板的标题、章节和说明默认使用中文，frontmatter 与八字段公共契约不变。
+- 通过无目标 skill baseline、当前 10 个 GREEN 场景、官方 validator 和独立评审完成创建与维护闭环。
 
 ### generating-development-prompts
 
@@ -36,6 +38,9 @@
 - 仓库与分支状态段只保留实施门，不再展开工作目录、分支、HEAD 或 worktree 状态。
 - 委派任务时优先使用职责匹配的个人全局 custom agent，并显式处理无法按名称启动的能力缺口。
 - 默认自动发现目录改为 `docs/specs` 与 `docs/plans`；生成提示词不绑定外部开发方法或固定评审 skill，并以自包含合同要求任务级 TDD、独立评审循环和集成后的整体评审循环。
+- 已批准十四字段触发 `current-session`、`new-session`、`blocked` 三态会话路由；手动提示词请求继续兼容未批准或状态未知的 plan，并保留实施阻断门。
+- `renderer stdout` 从裸提示词正文改为单一 Markdown 代码框，属于 `breaking contract change`。把 stdout 当作裸正文的调用方必须改为提取唯一 Markdown 代码框内容；不提供并行 raw 模式。
+- 自动路由在选择三态或调用 renderer 前验证中文十四字段视图，三条成功路径复用该视图；状态块不进入 renderer stdout，并始终位于可复制代码框之外。
 
 ### creating-development-specs-and-plans
 
@@ -47,6 +52,8 @@
 - 评估证据收敛为场景、有效性和判据结果，移除文件哈希、候选 manifest 与逐次 attempt 审计。
 - spec 的安全、权限和敏感数据设计改为仅在目标需求真实涉及对应边界时展开。
 - 保持运行时自包含，不实现目标代码、不调用兄弟 skill，也不创建用户可见 task/thread 或改变外部状态。
+- 接收上游显式 requirements 八字段并逐值映射为十四字段前缀；进入下游后的 PRD 复验失败仍返回完整十四字段并关闭双门。
+- spec 与 plan 模板的标题、章节和说明默认使用中文；plan 评审通过并重新验证十四字段后，主 Agent 自动进入会话路由。
 
 ### Repository
 
@@ -57,3 +64,5 @@
 - 固定 validator 开发依赖并声明 Python 3.9/3.14 维护矩阵。
 - 仓库验证器忽略 Python 缓存和系统元数据，保持 skill 测试后的重复验证稳定。
 - plugin 同时暴露 PRD → technical spec/plan → development prompt 完整交接链、approved bounded change → implementation 受控实施入口和 `managing-agents-rules` 规则治理入口；本地 staging 验证五个 skill 可单独或组合复制且拒绝覆盖已有目标。
+- 公开文档记录 PRD→spec 与 plan→三态路由的两段自动衔接、单一最终 handoff 和单 skill 能力缺口；plugin 保持未发布 `0.1.0`，本次不发布。
+- 用户可见 handoff/status-block 回复后缀从英文字段和值改为语境化中文，属于 `breaking contract change`；英文 canonical 机器字段、门禁计算、skill 间传递、旧英文输入和 renderer stdout 字节合同保持兼容。映射失败时停止本次自动交接且不输出残缺、混合或英文 fallback 状态块。

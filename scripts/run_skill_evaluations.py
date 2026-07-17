@@ -104,11 +104,83 @@ def validate_phase_inputs(
     ):
         raise EvaluationBlocked(f"{phase} requires a candidate skill directory")
     if skill_dir is not None:
-        candidate_name = _candidate_skill_name(skill_dir)
+        candidate_name = _validate_publishable_skill_dir(skill_dir)
         if skill_dir.name != skill_name or candidate_name != skill_name:
             raise EvaluationBlocked(
                 f"candidate skill {skill_dir.name}/{candidate_name} does not match {skill_name}"
             )
+
+
+def _reject_input_path_symlinks(path: Path, label: str) -> None:
+    """Reject explicit path symlinks without rejecting macOS root aliases."""
+    if ".." in path.parts:
+        raise EvaluationBlocked(
+            f"{label} cannot use symlink traversal or '..' components"
+        )
+    input_path = Path(os.path.abspath(path))
+    current = input_path
+    filesystem_root = Path(input_path.anchor)
+    while current != current.parent:
+        if current.is_symlink() and (
+            current == input_path or current.parent != filesystem_root
+        ):
+            raise EvaluationBlocked(f"{label} cannot use a symlink")
+        current = current.parent
+
+
+def _validate_publishable_skill_dir(skill_dir: Path) -> str:
+    """Validate one explicit skill source without following payload symlinks."""
+    _reject_input_path_symlinks(skill_dir, "skill directory")
+    if not skill_dir.is_dir():
+        raise EvaluationBlocked("candidate skill directory is unavailable")
+    skill_name = _candidate_skill_name(skill_dir)
+    for entry_name in PUBLISHABLE_ENTRIES:
+        source = skill_dir / entry_name
+        if not source.exists() and not source.is_symlink():
+            continue
+        if source.is_symlink():
+            raise EvaluationBlocked(
+                f"skill payload contains symlink: {entry_name}"
+            )
+        if source.is_dir():
+            _reject_tree_symlinks(source, "skill payload")
+    return skill_name
+
+
+def validate_additional_skill_dirs(
+    skill_name: str,
+    skill_dir: Optional[Path],
+    additional_skill_dirs: Sequence[Path],
+) -> tuple[Path, ...]:
+    """Validate explicitly allowlisted auxiliary skills and reject ambiguity."""
+    if not additional_skill_dirs:
+        return ()
+    if skill_dir is None:
+        raise EvaluationBlocked("additional skills require a target skill directory")
+
+    resolved_target = skill_dir.resolve()
+    seen_paths: set[Path] = set()
+    seen_names: set[str] = set()
+    validated: list[Path] = []
+    for skill in additional_skill_dirs:
+        candidate_name = _validate_publishable_skill_dir(skill)
+        resolved = skill.resolve()
+        if candidate_name == skill_name or resolved == resolved_target:
+            raise EvaluationBlocked(
+                f"additional skill {candidate_name} conflicts with target skill"
+            )
+        if resolved in seen_paths or candidate_name in seen_names:
+            raise EvaluationBlocked(
+                f"duplicate additional skill: {candidate_name}"
+            )
+        if skill.name != candidate_name:
+            raise EvaluationBlocked(
+                f"additional skill {skill.name}/{candidate_name} does not match"
+            )
+        seen_paths.add(resolved)
+        seen_names.add(candidate_name)
+        validated.append(skill)
+    return tuple(validated)
 
 
 def _sandbox_quote(path: Path) -> str:
@@ -134,19 +206,20 @@ def _xcrun_cache_rules() -> str:
 def build_sandbox_profile(
     fixture_root: Path,
     codex_home: Path,
-    skill_root: Optional[Path],
+    skill_roots: Sequence[Path],
     runtime_read_roots: Sequence[Path],
 ) -> str:
     """Build a deny-by-default macOS sandbox profile for an evaluation agent."""
     read_rules = _subpath_rules(runtime_read_roots)
-    read_only_skill = ""
-    if skill_root is not None:
-        read_only_skill = (
+    read_only_skills = "".join(
+        (
             "\n(allow file-read*\n"
             f'    (subpath "{_sandbox_quote(skill_root)}"))\n'
             "(deny file-write*\n"
             f'    (subpath "{_sandbox_quote(skill_root)}"))'
         )
+        for skill_root in skill_roots
+    )
     return (
         "(version 1)\n"
         "(deny default)\n"
@@ -165,7 +238,7 @@ def build_sandbox_profile(
         '(allow file-write* (literal "/dev/null"))\n'
         "(allow file-read* file-write*\n"
         f"{_xcrun_cache_rules()})"
-        f"{read_only_skill}\n"
+        f"{read_only_skills}\n"
     )
 
 
@@ -187,7 +260,10 @@ def build_codex_command(fixture_root: Path, output_path: Path) -> list[str]:
 
 
 def build_evaluation_prompt(
-    case_text: str, skill_name: str, staged_skill: Optional[Path]
+    case_text: str,
+    skill_name: str,
+    staged_skill: Optional[Path],
+    additional_skills: Sequence[tuple[str, Path]] = (),
 ) -> str:
     """Add only isolation boundaries and the optional staged-skill invocation."""
     parts = [
@@ -202,6 +278,17 @@ def build_evaluation_prompt(
         parts.append(
             f"Use ${skill_name} at "
             f"{staged_skill} to handle this request."
+        )
+    if additional_skills:
+        allowlist = "\n".join(
+            f"- ${name} at {path}" for name, path in additional_skills
+        )
+        parts.append(
+            "Additional staged skills are available only after the target workflow "
+            "explicitly hands off to one by name:\n"
+            f"{allowlist}\n"
+            "Do not search for, import, or modify sibling skill source. Use only the "
+            "allowlisted staged path after that handoff."
         )
     parts.append(case_text)
     return "\n\n".join(parts)
@@ -355,7 +442,10 @@ def _copy_publishable_skill(skill_dir: Path, destination: Path) -> None:
 
 
 def stage_codex_home(
-    source_home: Path, target_home: Path, skill_dir: Optional[Path]
+    source_home: Path,
+    target_home: Path,
+    skill_dir: Optional[Path],
+    additional_skill_dirs: Sequence[Path] = (),
 ) -> None:
     """Create a minimal isolated Codex home without exposing credential contents."""
     auth_source = source_home / "auth.json"
@@ -368,6 +458,11 @@ def stage_codex_home(
     if skill_dir is not None:
         _copy_publishable_skill(
             skill_dir.resolve(), target_home / "skills" / skill_dir.name
+        )
+    for additional_skill in additional_skill_dirs:
+        _copy_publishable_skill(
+            additional_skill.resolve(),
+            target_home / "skills" / additional_skill.name,
         )
 
 
@@ -766,10 +861,11 @@ def build_result(
     exit_code: int,
     contaminations: Sequence[str],
     warnings: Sequence[str],
+    additional_skills: Sequence[str] = (),
 ) -> dict[str, Any]:
     """Build the minimum operational record needed to accept or reject a run."""
     unique_contaminations = sorted(set(contaminations))
-    return {
+    result = {
         "schema_version": 1,
         "phase": phase,
         "evidence_role": phase,
@@ -779,6 +875,9 @@ def build_result(
         "contaminations": unique_contaminations,
         "warnings": list(warnings),
     }
+    if additional_skills:
+        result["additional_skills"] = list(additional_skills)
+    return result
 
 
 def run_evaluation(
@@ -787,8 +886,12 @@ def run_evaluation(
     case_path: Path,
     output_root: Path,
     skill_dir: Optional[Path],
+    additional_skill_dirs: Sequence[Path] = (),
 ) -> int:
     validate_phase_inputs(phase, skill_name, skill_dir)
+    validated_additional = validate_additional_skill_dirs(
+        skill_name, skill_dir, additional_skill_dirs
+    )
     selected_evaluation_root = evaluation_root(skill_name)
     sandbox_exec = Path("/usr/bin/sandbox-exec")
     codex = shutil.which("codex")
@@ -807,22 +910,37 @@ def run_evaluation(
         _copy_fixture(case_path, fixture_root, selected_evaluation_root)
         scenario = load_fixture_scenario(case_path, selected_evaluation_root)
         prepare_fixture_repositories(fixture_root, scenario)
-        stage_codex_home(source_home, codex_home, skill_dir)
+        stage_codex_home(source_home, codex_home, skill_dir, validated_additional)
         stage_scenario_codex_home(codex_home, scenario)
         runtime_bin = stage_runtime_shims(codex_home)
         (codex_home / "tmp").mkdir()
         staged_skill = (
             codex_home / "skills" / skill_dir.name if skill_dir is not None else None
         )
+        staged_additional = tuple(
+            (skill.name, codex_home / "skills" / skill.name)
+            for skill in validated_additional
+        )
+        staged_roots = tuple(
+            path
+            for path in (
+                staged_skill,
+                *(path for _, path in staged_additional),
+            )
+            if path is not None
+        )
         final_path = codex_home / "final.md"
         profile = build_sandbox_profile(
             fixture_root,
             codex_home,
-            staged_skill,
+            staged_roots,
             _runtime_read_roots(Path(codex)),
         )
         prompt = build_evaluation_prompt(
-            case_path.read_text(encoding="utf-8"), skill_name, staged_skill
+            case_path.read_text(encoding="utf-8"),
+            skill_name,
+            staged_skill,
+            staged_additional,
         )
         command = build_codex_command(fixture_root, final_path)
         provider_overrides = load_provider_overrides(source_home / "config.toml")
@@ -876,6 +994,7 @@ def run_evaluation(
             exit_code=completed.returncode,
             contaminations=contaminations,
             warnings=warnings,
+            additional_skills=tuple(name for name, _ in staged_additional),
         )
         _write_local_result(
             output_root,
@@ -897,6 +1016,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--phase", required=True, choices=EVIDENCE_ROLES)
     parser.add_argument("--case", required=True, type=Path)
     parser.add_argument("--skill-dir", type=Path)
+    parser.add_argument(
+        "--additional-skill-dir", type=Path, action="append", default=[]
+    )
     parser.add_argument("--output-root", required=True, type=Path)
     return parser.parse_args(argv)
 
@@ -905,7 +1027,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     try:
         return run_evaluation(
-            args.skill_name, args.phase, args.case, args.output_root, args.skill_dir
+            args.skill_name,
+            args.phase,
+            args.case,
+            args.output_root,
+            args.skill_dir,
+            args.additional_skill_dir,
         )
     except EvaluationBlocked as error:
         _write_local_result(

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "evidence_role": "current-skill-red",
+  "selected_case": "04",
+  "valid": true,
+  "red_observed": true,
+  "failed_criteria": [
+    "localized-routing-suffix"
+  ],
+  "warnings": [
+    "one recovered diagnostic command failure"
+  ],
+  "output": "migration-red/04-output.md",
+  "sanitization": "The ephemeral fixture prefix was replaced with /workspace/fixture in the selected versioned output."
+}

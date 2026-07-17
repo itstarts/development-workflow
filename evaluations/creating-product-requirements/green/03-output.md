@@ -1,18 +1,16 @@
-当前需求包含三个独立层级，不能合并为一份 PRD：
+这三项分别属于产品级、阶段级和功能级，不能直接合并成一份 PRD。建议优先处理最有时限的“本季度订单审批版本”，库存预警另立功能 PRD，完整商家后台另立产品 PRD。
 
-- `product`：完整商家后台
-- `phase`：本季度订单审批版本
-- `feature`：库存预警
+请确认先整理哪一项：
 
-为最快推进，我建议先选 `phase`，主题定为“本季度订单审批版本”；库存预警和完整商家后台另立 PRD。
+A. 本季度订单审批版本（推荐）
+B. 完整商家后台产品
+C. 库存预警功能
 
-请确认：是否按这个建议，先只整理“本季度订单审批版本”？
-
-requirements_path: null
-requirements_topic: null
-requirements_scope: null
-understanding_confidence: 45
-understanding_user_confirmation: pending
-requirements_user_approval: pending
-requirements_independent_review: pending
-specification_gate: blocked
+需求文档：未确定
+需求主题：未确定
+需求范围：未确定
+需求理解置信度：30
+需求理解确认：待确认
+需求文档用户批准：待批准
+需求文档独立评审：待评审
+技术规格门禁：未开放

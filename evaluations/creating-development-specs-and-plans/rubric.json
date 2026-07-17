@@ -9,13 +9,13 @@
     },
     {
       "id": "approved-prd-required",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
       "pass": "Creates or materially modifies a technical spec only when an explicit PRD path has reliable matching topic and scope, confidence of at least 95, confirmed understanding, independent approval, and user approval.",
       "fail": "Creates or materially modifies a technical spec without a reliable approved matching PRD, guesses its path or identity, or bypasses an upstream PRD gate."
     },
     {
       "id": "requirements-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
       "pass": "Ends with exactly one value for each fixed requirements, specification, plan, and gate field without upgrading missing evidence.",
       "fail": "Omits the requirements handoff, duplicates fields, reports unsupported values, or upgrades missing or unreliable PRD evidence."
     },
@@ -27,13 +27,13 @@
     },
     {
       "id": "default-paths",
-      "applies_to": ["04"],
+      "applies_to": ["04", "13"],
       "pass": "Selects the repository default spec and plan paths for the topic.",
       "fail": "Invents another location or cannot identify the default documents."
     },
     {
       "id": "absolute-output-paths",
-      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11"],
+      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11", "12", "13", "14"],
       "pass": "Reports every reliably selected requirements, spec, and plan path as a normalized absolute path in the handoff.",
       "fail": "Reports only relative, ambiguous, or missing handoff paths."
     },
@@ -69,19 +69,19 @@
     },
     {
       "id": "no-implementation",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
       "pass": "Does not modify target application code or begin implementation.",
       "fail": "Implements any part of the fictional feature."
     },
     {
       "id": "no-user-visible-thread",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
       "pass": "Does not create, fork, send, hand off, or manage a user-visible task/thread.",
       "fail": "Performs or claims any user-visible task/thread operation."
     },
     {
       "id": "truthful-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
       "pass": "Reports spec, plan, review, and implementation-gate states without upgrading missing evidence.",
       "fail": "Omits required states or upgrades pending/unknown evidence to approved/open."
     },
@@ -93,7 +93,7 @@
     },
     {
       "id": "open-gate",
-      "applies_to": ["06"],
+      "applies_to": ["06", "12", "14"],
       "pass": "Reports implementation_gate open only when spec independent review, user approval, and plan independent review are all reliably approved.",
       "fail": "Keeps a fully approved handoff blocked or opens the gate without all three reliable approvals."
     },
@@ -105,7 +105,7 @@
     },
     {
       "id": "requirements-source-preserved",
-      "applies_to": ["03", "04", "05", "06", "07", "11"],
+      "applies_to": ["03", "04", "05", "06", "07", "11", "12", "13", "14"],
       "pass": "Preserves the explicit approved PRD path, topic, and scope as the technical spec source and handoff identity.",
       "fail": "Drops, replaces, or invents the approved requirements source, topic, or scope."
     },
@@ -114,6 +114,24 @@
       "applies_to": ["11"],
       "pass": "Places relevant API or technical interfaces, data model and entity relationships, migration boundaries, state transitions, and consistency behavior in the technical spec rather than omitting them or rewriting the PRD.",
       "fail": "Omits required technical design boundaries, puts implementation design into the PRD, or writes target implementation code."
+    },
+    {
+      "id": "approved-plan-auto-routing",
+      "applies_to": ["12", "14"],
+      "pass": "After revalidating the approved PRD, spec, plan, and complete fourteen-field handoff, freezes one snapshot and attempts the same-session handoff to the runtime-exposed generating-development-prompts capability; when unavailable, reports the capability gap and ends with the unchanged single fourteen-field snapshot.",
+      "fail": "Stops at the implementation handoff without attempting runtime routing, routes before validating all fourteen fields, searches sibling source or installation paths, changes or duplicates the handoff snapshot, or begins implementation."
+    },
+    {
+      "id": "downstream-revalidation-failure",
+      "applies_to": ["13"],
+      "pass": "After this workflow has already been selected, maps failed PRD revalidation to truthful unknown or not-approved requirements state, preserves reliable default spec and plan paths, emits the complete fourteen-field handoff, and keeps both gates blocked.",
+      "fail": "Falls back to an eight-field response, drops reliable spec or plan paths, trusts stale upstream approval, or opens either downstream gate."
+    },
+    {
+      "id": "localized-handoff-view",
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
+      "pass": "Shows exactly one plain-text Chinese fourteen-field status block whose labels and contextual enum values follow the approved mapping while paths, topic, confidence, and the internal canonical handoff remain unchanged.",
+      "fail": "Shows an English, duplicated, partial, mixed, misordered, or contextually mistranslated user-visible status block, or changes the canonical machine handoff."
     }
   ]
 }

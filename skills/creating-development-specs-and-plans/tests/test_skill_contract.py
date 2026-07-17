@@ -22,6 +22,13 @@ def parse_frontmatter(text: str) -> dict[str, str]:
     return result
 
 
+def fenced_text_blocks(text: str) -> list[list[str]]:
+    return [
+        match.group(1).splitlines()
+        for match in re.finditer(r"```text\n(.*?)\n```", text, re.DOTALL)
+    ]
+
+
 class CreatingSpecsAndPlansContractTests(unittest.TestCase):
     def test_default_paths_are_neutral(self):
         text = read("references/discovery-and-clarification.md")
@@ -143,11 +150,110 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, text)
 
+    def test_spec_and_plan_templates_use_chinese_user_facing_content(self):
+        spec_template = read("assets/spec-template.md")
+        plan_template = read("assets/plan-template.md")
+        for required in (
+            "# <功能名称>技术规格",
+            "## 目标",
+            "## 非目标",
+            "## 当前证据",
+            "## 行为与边界",
+            "## 组件与控制流",
+            "## API 与技术接口",
+            "## 数据模型与实体关系",
+            "## 状态转换、迁移边界与一致性",
+            "## 错误与不确定性",
+            "## 测试与文档",
+            "## 验收标准",
+            "<说明",
+        ):
+            with self.subTest(template="spec", required=required):
+                self.assertIn(required, spec_template)
+        for required in (
+            "# <功能名称>实施计划",
+            "**目标：**",
+            "**架构：**",
+            "**技术栈：**",
+            "## 全局约束",
+            "### Task <编号>: <可独立测试的交付项>",
+            "**精确文件：**",
+            "**接口：**",
+            "**测试方式：**",
+            "文档同步",
+            "任务级独立评审",
+            "## 最终验证",
+        ):
+            with self.subTest(template="plan", required=required):
+                self.assertIn(required, plan_template)
+        self.assertNotIn("## Goals", spec_template)
+        self.assertNotIn("**Goal:**", plan_template)
+
+    def test_approved_upstream_handoff_preserves_reliable_default_paths(self):
+        text = (
+            read("SKILL.md")
+            + read("references/discovery-and-clarification.md")
+            + read("references/review-and-handoff.md")
+        ).casefold()
+        for required in (
+            "explicit eight-field handoff",
+            "requirements_path",
+            "requirements_topic",
+            "requirements_scope",
+            "before the spec or plan exists",
+            "reliable default absolute path",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+
+    def test_approved_plan_validates_snapshot_before_session_routing(self):
+        text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
+        for required in (
+            "implementation_gate",
+            "validate the complete fourteen-field handoff",
+            "freeze one snapshot",
+            "generating-development-prompts",
+            "runtime-exposed skill capability",
+            "same session",
+            "capability gap",
+            "same fourteen-field snapshot",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+        self.assertIn("do not route when", text)
+
+    def test_downstream_prd_revalidation_failure_keeps_full_handoff(self):
+        text = read("references/review-and-handoff.md").casefold()
+        for required in (
+            "after this workflow has been selected",
+            "revalidation fails",
+            "complete fourteen-field handoff",
+            "requirements_independent_review",
+            "unknown",
+            "reliably selected spec and plan paths",
+            "implementation_gate: blocked",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+
+    def test_routing_does_not_depend_on_sibling_source_or_installation_paths(self):
+        text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
+        for required in (
+            "do not read sibling skill source",
+            "do not inspect sibling skill installation",
+            "runtime-exposed skill capability",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+
     def test_handoff_record_emits_one_value_per_field(self):
         text = read("references/review-and-handoff.md").casefold()
         self.assertIn("reference-only alternatives", text)
         self.assertIn("emit exactly one allowed value", text)
         self.assertIn("never copy the `|`", text)
+        self.assertIn("do not repeat any fixed handoff field label", text)
+        self.assertIn("plain text, not a markdown code fence", text)
+        self.assertIn("last non-empty line", text)
 
     def test_material_ambiguity_stops_before_document_or_review_work(self):
         text = (
@@ -165,7 +271,6 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
         text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
         for required in (
             "do not implement target code",
-            "do not call sibling skills",
             "do not create or manage a user-visible task/thread",
             "do not commit",
             "do not push",
@@ -250,6 +355,99 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             lines[10],
         )
 
+    def test_user_visible_chinese_handoff_has_exact_fourteen_field_order(self):
+        blocks = fenced_text_blocks(read("references/review-and-handoff.md"))
+        self.assertGreaterEqual(len(blocks), 2)
+        labels = (
+            "需求文档",
+            "需求主题",
+            "需求范围",
+            "需求理解置信度",
+            "需求理解确认",
+            "需求文档用户批准",
+            "需求文档独立评审",
+            "技术规格门禁",
+            "技术规格",
+            "技术规格用户批准",
+            "技术规格独立评审",
+            "实施计划",
+            "计划评审状态",
+            "实施门禁",
+        )
+        self.assertEqual(list(labels), [line.split("：", 1)[0] for line in blocks[1]])
+        self.assertTrue(all("：" in line and not line.startswith(" ") for line in blocks[1]))
+        text = read("references/review-and-handoff.md").casefold()
+        self.assertIn("one authoritative chinese fourteen-field view", text)
+        self.assertIn("last non-empty line", text)
+
+    def test_user_visible_values_cover_unknown_and_plan_context_without_changing_spec_schema(self):
+        text = read("references/review-and-handoff.md")
+        for required in (
+            "`product` → `产品`",
+            "`phase` → `阶段`",
+            "`feature` → `功能`",
+            "`pending` → `待确认`",
+            "`approved` → `已确认`",
+            "`pending` → `待批准`",
+            "`approved` → `已批准`",
+            "`pending` → `待评审`",
+            "`approved` → `已通过`",
+            "`blocked` → `未开放`",
+            "`open` → `已开放`",
+            "`plan_path: null` + `plan_review_status: not-approved` → `计划评审状态：未开始`",
+            "existing `plan_path` + `plan_review_status: not-approved` → `计划评审状态：未通过`",
+            "existing `plan_path` + `plan_review_status: approved` → `计划评审状态：已通过`",
+            "existing `plan_path` + `plan_review_status: unknown` → `计划评审状态：未知`",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+        for field in (
+            "requirements_topic",
+            "requirements_scope",
+            "requirements_understanding_confidence",
+            "requirements_understanding_confirmation",
+            "requirements_user_approval",
+            "requirements_independent_review",
+        ):
+            with self.subTest(field=field):
+                self.assertRegex(text, rf"`{field}`[^\n]*`unknown`[^\n]*`未知`")
+        self.assertIn("`spec_user_approval` and `spec_independent_review` accept only `pending | approved`", text)
+        self.assertIn("`spec_path: null` → `技术规格：未确定`", text)
+        self.assertIn("`plan_path: null` → `实施计划：尚未创建`", text)
+        lowered = text.casefold()
+        self.assertIn("canonical english snapshot", lowered)
+        self.assertIn("legacy english handoff", lowered)
+        self.assertIn("do not reverse-parse", lowered)
+
+    def test_chinese_view_is_validated_before_routing_and_mapping_failure_is_closed(self):
+        text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
+        for required in (
+            "pre-render",
+            "before selecting",
+            "before session routing",
+            "field count",
+            "field order",
+            "mapping is complete and unique",
+            "do not emit a partial chinese view",
+            "do not fall back to the english user-visible handoff",
+            "do not select the routing capability",
+            "retry from the preserved canonical snapshot",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+
+    def test_mapping_failure_is_the_only_status_suffix_exception_and_reports_a_locator(self):
+        text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
+        for required in (
+            "only explicit exception",
+            "deterministic chinese blocker",
+            "does not append a status view",
+            "stop the current automatic handoff",
+            "identify the unmapped field or failed integrity condition",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+
     def test_technical_spec_includes_interfaces_and_data_model_when_relevant(self):
         text = (
             read("references/document-contracts.md") + read("assets/spec-template.md")
@@ -287,12 +485,12 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
     def test_plan_template_requires_docs_and_task_review(self):
         template = read("assets/plan-template.md").casefold()
         for required in (
-            "exact files",
-            "interfaces",
-            "testing approach",
-            "when the approved spec or repository rules require tdd",
-            "documentation synchronization",
-            "task-level independent review",
+            "精确文件",
+            "接口",
+            "测试方式",
+            "当批准的技术规格或仓库规则要求 tdd",
+            "文档同步",
+            "任务级独立评审",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, template)
@@ -301,7 +499,7 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
         contracts = read("references/document-contracts.md").casefold()
         template = read("assets/spec-template.md").casefold()
         self.assertIn("only when the requested feature actually touches", contracts)
-        self.assertIn("only when the feature requires it", template)
+        self.assertIn("仅在功能需要时", template)
         self.assertNotIn("## errors, uncertainty, and safety", template)
 
     def test_production_files_have_no_placeholders_or_machine_paths(self):

@@ -1,17 +1,18 @@
-当前不能直接写 PRD：审批权限模型会实质影响范围、业务规则和验收标准，不能用“常见做法”代替产品决策；技术设计门禁也暂时阻塞。
+仓库材料只确认：系统目前支持创建订单和订单所有者查看，尚无审批相关能力。关键业务选择仍未确定，当前理解不足 95%，不能直接生成 PRD 或进入技术设计。
 
-第一个问题：谁有权审批订单？
+第一个问题：哪些订单应进入审批？
 
-- A. 指定审批角色：所有订单由统一角色审批
-- B. 直属上级：订单提交人的上级审批
-- C. 规则路由：按金额、部门等条件匹配审批人
-- D. 其他，请说明
+- A. 所有订单提交后都审批
+- B. 仅满足特定条件时审批，例如金额、品类或风险等级
+- C. 由订单所有者手动发起审批
 
-requirements_path: /workspace/fixture/docs/requirements/2026-07-15-order-approval.md
-requirements_topic: order-approval
-requirements_scope: feature
-understanding_confidence: 45
-understanding_user_confirmation: pending
-requirements_user_approval: pending
-requirements_independent_review: pending
-specification_gate: blocked
+请选一项；若选 B，请同时说明触发条件。
+
+需求文档：/workspace/fixture/docs/requirements/2026-07-17-order-approval.md
+需求主题：order-approval
+需求范围：功能
+需求理解置信度：35
+需求理解确认：待确认
+需求文档用户批准：待批准
+需求文档独立评审：待评审
+技术规格门禁：未开放

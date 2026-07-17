@@ -1,12 +1,12 @@
-仓库证据表明，现有系统仅支持创建订单和订单所有者查看，尚无审批权限模型。当前理解不足 95%，且审批角色会直接决定业务规则与验收标准，因此暂不创建 PRD，也不进入实现方案；API、表结构、队列和开发任务不属于 PRD 内容。
+目前不能创建 PRD 或制定实现方案：审批角色尚未确定，且 API、数据库结构、消息队列和开发任务属于技术设计，不应写入 PRD。
 
-第一个关键问题：订单审批权限模型是什么——哪些角色可以审批，是否需要单人审批、多人会签或按顺序审批？
+先确认一个关键问题：哪些用户可以发起审批，哪些角色可以审批？请说明角色名称及是单级审批还是多级审批。
 
-requirements_path: /workspace/fixture/docs/requirements/2026-07-15-order-approval.md
-requirements_topic: order-approval
-requirements_scope: feature
-understanding_confidence: 35
-understanding_user_confirmation: pending
-requirements_user_approval: pending
-requirements_independent_review: pending
-specification_gate: blocked
+需求文档：/workspace/fixture/docs/requirements/2026-07-17-order-approval.md
+需求主题：order-approval
+需求范围：功能
+需求理解置信度：35
+需求理解确认：待确认
+需求文档用户批准：待批准
+需求文档独立评审：待评审
+技术规格门禁：未开放

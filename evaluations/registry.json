@@ -8,12 +8,12 @@
     },
     "creating-product-requirements": {
       "evaluation_mode": "managed",
-      "evidence_profile": "creation-only",
+      "evidence_profile": "creation-plus-current-red",
       "stage": "review-approved"
     },
     "generating-development-prompts": {
       "evaluation_mode": "imported",
-      "evidence_profile": "imported-reviewed",
+      "evidence_profile": "imported-plus-current-red",
       "stage": "review-approved"
     },
     "implementing-bounded-changes": {

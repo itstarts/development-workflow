@@ -13,48 +13,48 @@ user_approval: pending
 independent_review: pending
 ---
 
-# <Feature Name> Design Specification
+# <功能名称>技术规格
 
-## Goals
+## 目标
 
-<State observable outcomes.>
+<说明可观察的目标结果。>
 
-## Non-goals
+## 非目标
 
-<State boundaries excluded from this delivery.>
+<说明本次交付明确排除的边界。>
 
-## Current Evidence
+## 当前证据
 
-<Cite applicable rules, relevant files, tests, and established behavior.>
+<说明适用规则、相关文件、测试和已确认行为。>
 
-## Behavior and Boundaries
+## 行为与边界
 
-<Define user-visible behavior, contracts, invariants, and edge conditions.>
+<定义用户可见行为、契约、不变量和边界条件。>
 
-## Components and Control Flow
+## 组件与控制流
 
-<Define components, responsibilities, dependencies, and control or data flow.>
+<定义组件、职责、依赖以及控制流或数据流。>
 
-## API and Technical Interfaces
+## API 与技术接口
 
-<Define relevant APIs, events, commands, file formats, or other technical interfaces; state not applicable with evidence when none are required.>
+<定义相关 API、事件、命令、文件格式或其他技术接口；无需接口时，基于证据说明不适用。>
 
-## Data Model and Entity Relationships
+## 数据模型与实体关系
 
-<Define relevant entities, relationships, ownership, persistence, and invariants; state not applicable with evidence when no data model changes are required.>
+<定义相关实体、关系、所有权、持久化和不变量；无需数据模型变更时，基于证据说明不适用。>
 
-## State Transitions, Migration Boundaries, and Consistency
+## 状态转换、迁移边界与一致性
 
-<Define relevant state transitions, migrations, transactions, concurrency, and consistency behavior; state not applicable with evidence when none are required.>
+<定义相关状态转换、迁移、事务、并发和一致性行为；均不适用时，基于证据说明。>
 
-## Errors and Uncertainty
+## 错误与不确定性
 
-<Define necessary validation, failure behavior, and unresolved evidence. Add permissions, security, or sensitive-data handling only when the feature requires it.>
+<定义必要校验、失败行为和未解决证据。仅在功能需要时增加权限、安全或敏感数据处理。>
 
-## Testing and Documentation
+## 测试与文档
 
-<Define automated checks, manual checks, and documentation changes.>
+<定义自动化检查、人工检查和文档变更。>
 
-## Acceptance Criteria
+## 验收标准
 
-<List independently observable completion criteria.>
+<列出可独立观察的完成标准。>

@@ -15,6 +15,7 @@ from typing import Optional, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "evaluations" / "registry.json"
 MANAGED_PROFILES = {"creation-only", "creation-plus-current-red"}
+IMPORTED_PROFILES = {"imported-reviewed", "imported-plus-current-red"}
 MANAGED_STAGES = {"baseline-only", "implemented", "review-approved"}
 REQUIRED_ROOT_FILES = (
     "AGENTS.md",
@@ -146,7 +147,12 @@ def load_evaluation_registry(errors: list[str]) -> dict[str, dict[str, str]]:
                 errors.append(f"{skill_name}: evaluation registry entry is invalid")
                 continue
         elif mode == "imported":
-            if profile != "imported-reviewed" or stage != "review-approved":
+            if profile not in IMPORTED_PROFILES or (
+                profile == "imported-reviewed" and stage != "review-approved"
+            ) or (
+                profile == "imported-plus-current-red"
+                and stage not in {"implemented", "review-approved"}
+            ):
                 errors.append(f"{skill_name}: evaluation registry entry is invalid")
                 continue
         else:
@@ -166,10 +172,11 @@ def validate_managed_evaluation(
     stage: str,
     evidence_only: bool,
     errors: list[str],
+    require_creation_evidence: bool = True,
 ) -> None:
     evaluation_root = ROOT / "evaluations" / skill_name
     skill_root = ROOT / "skills" / skill_name
-    if stage == "baseline-only" and (skill_root / "SKILL.md").is_file():
+    if require_creation_evidence and stage == "baseline-only" and (skill_root / "SKILL.md").is_file():
         errors.append(f"{skill_name}: baseline-only stage cannot expose a skill")
     if stage != "baseline-only" and not (skill_root / "SKILL.md").is_file():
         errors.append(f"{skill_name}: implemented stage requires the skill")
@@ -218,12 +225,16 @@ def validate_managed_evaluation(
     ):
         errors.append(f"{skill_name}: case files must exactly match the rubric")
 
-    audit = load_structured_result(
-        evaluation_root / "baseline" / "pre-creation-audit.json",
-        skill_name,
-        "pre-creation audit",
-        errors,
-    )
+    audit = None
+    baseline = None
+    audit_ids: set[str] = set()
+    if require_creation_evidence:
+        audit = load_structured_result(
+            evaluation_root / "baseline" / "pre-creation-audit.json",
+            skill_name,
+            "pre-creation audit",
+            errors,
+        )
     if audit is not None:
         if audit.get("evidence_role") != "pre-creation-audit":
             errors.append(f"{skill_name}: pre-creation audit evidence_role is invalid")
@@ -242,12 +253,12 @@ def validate_managed_evaluation(
         if not isinstance(audit_cases, list):
             errors.append(f"{skill_name}: pre-creation audit cases are malformed")
 
-    baseline = load_structured_result(
-        evaluation_root / "baseline" / "result.json",
-        skill_name,
-        "baseline",
-        errors,
-    )
+        baseline = load_structured_result(
+            evaluation_root / "baseline" / "result.json",
+            skill_name,
+            "baseline",
+            errors,
+        )
     if baseline is not None:
         if baseline.get("evidence_role") != "migration-baseline":
             errors.append(
@@ -310,7 +321,7 @@ def validate_managed_evaluation(
         if not audit_ids.issubset(set(baseline_case_map)):
             errors.append(f"{skill_name}: pre-creation audit cases must exist in baseline")
 
-    if profile == "creation-plus-current-red":
+    if profile in {"creation-plus-current-red", "imported-plus-current-red"}:
         migration_red = load_structured_result(
             evaluation_root / "migration-red" / "result.json",
             skill_name,
@@ -358,6 +369,8 @@ def validate_managed_evaluation(
         if green is not None:
             if green.get("evidence_role") != "green":
                 errors.append(f"{skill_name}: green evidence_role must be green")
+            if green.get("target_skill_loaded") is not True:
+                errors.append(f"{skill_name}: green target skill must be loaded")
             if green.get("all_runs_valid") is not True:
                 errors.append(f"{skill_name}: green runs must all be valid")
             if green.get("all_required_passed") is not True:
@@ -464,13 +477,20 @@ def validate(evidence_only: Optional[str] = None) -> list[str]:
     registry = load_evaluation_registry(errors)
     if evidence_only is not None:
         entry = registry.get(evidence_only)
-        if entry is None or entry.get("evaluation_mode") != "managed":
-            errors.append(f"{evidence_only}: evidence-only target is not managed")
+        if entry is None or not (
+            entry.get("evaluation_mode") == "managed"
+            or entry.get("evidence_profile") == "imported-plus-current-red"
+        ):
+            errors.append(f"{evidence_only}: evidence-only target has no current evidence profile")
         elif entry.get("stage") != "implemented":
             errors.append(f"{evidence_only}: evidence-only requires implemented stage")
 
     for skill_name, entry in registry.items():
-        if entry["evaluation_mode"] != "managed":
+        has_current_evidence = (
+            entry["evaluation_mode"] == "managed"
+            or entry["evidence_profile"] == "imported-plus-current-red"
+        )
+        if not has_current_evidence:
             continue
         if evidence_only is not None and skill_name != evidence_only:
             continue
@@ -480,6 +500,7 @@ def validate(evidence_only: Optional[str] = None) -> list[str]:
             entry["stage"],
             evidence_only == skill_name,
             errors,
+            require_creation_evidence=entry["evaluation_mode"] == "managed",
         )
 
     evaluation_dirs = {
@@ -487,12 +508,13 @@ def validate(evidence_only: Optional[str] = None) -> list[str]:
         for path in (ROOT / "evaluations").iterdir()
         if path.is_dir() and path.name != "__pycache__"
     }
-    managed_names = {
+    registered_evidence_names = {
         name
         for name, entry in registry.items()
         if entry["evaluation_mode"] == "managed"
+        or entry["evidence_profile"] == "imported-plus-current-red"
     }
-    for orphan in sorted(evaluation_dirs - managed_names):
+    for orphan in sorted(evaluation_dirs - registered_evidence_names):
         errors.append(f"{orphan}: orphan evaluation evidence is not registered")
 
     active_skills = sorted(

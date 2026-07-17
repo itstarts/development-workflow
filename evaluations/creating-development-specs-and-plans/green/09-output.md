@@ -1,18 +1,18 @@
-无法创建技术 spec。技能硬门禁要求提供经过确认、独立评审和用户批准的 PRD 路径；仓库仅包含 README、订单创建代码及测试，没有 PRD 或交接状态。README/代码只能作为技术证据，不能替代已批准产品需求。
+无法直接创建技术 spec。虽然 `order-approval` 和 `feature` 已明确，但缺少已批准 PRD 的显式路径及审批交接；README 和代码不能替代该门禁证据。
 
-未创建或修改任何文件，也未创建 plan 或实现代码。要继续，请先提供已批准的 `order-approval` feature PRD 路径。
+仓库未发生任何修改，也未创建 plan 或实现代码。请先提供已批准 PRD 的仓库内路径及完整八字段交接，之后才能生成 spec。
 
-requirements_path: null
-requirements_topic: order-approval
-requirements_scope: feature
-requirements_understanding_confidence: unknown
-requirements_understanding_confirmation: unknown
-requirements_user_approval: unknown
-requirements_independent_review: unknown
-specification_gate: blocked
-spec_path: null
-spec_user_approval: pending
-spec_independent_review: pending
-plan_path: null
-plan_review_status: not-approved
-implementation_gate: blocked
+需求文档：未确定
+需求主题：order-approval
+需求范围：功能
+需求理解置信度：未知
+需求理解确认：未知
+需求文档用户批准：未知
+需求文档独立评审：未知
+技术规格门禁：未开放
+技术规格：/workspace/fixture/docs/specs/2026-07-17-order-approval-design.md
+技术规格用户批准：待批准
+技术规格独立评审：待评审
+实施计划：尚未创建
+计划评审状态：未开始
+实施门禁：未开放

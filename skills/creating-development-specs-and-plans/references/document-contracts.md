@@ -4,6 +4,8 @@
 
 Use `assets/spec-template.md` as the required shape. Replace every angle-bracket slot with current evidence and delete instructional slot text from the finished document.
 
+Write user-facing titles, section headings, explanatory prose, labels, and template-derived content in Chinese by default. Keep YAML frontmatter keys, allowed values, paths, commands, API names, field names, protocols, filenames, Task identifiers, and other technical identifiers in their established technical form.
+
 Create or materially modify the spec only from approved product requirements whose explicit path, expected topic, expected scope, confidence, summary confirmation, independent review, and user approval all passed `inspect_product_requirements.py`. Copy the requirements source into spec frontmatter using a repository-relative path and preserve its validated topic, scope, confidence, confirmation, and approval states.
 
 The technical spec must state goals, non-goals, current evidence, behavior and boundaries, component responsibilities or control flow, errors and uncertainty, testing, documentation impact, and observable acceptance criteria. When relevant, it owns API definitions and other technical interfaces, the data model and entity relationships, migration boundaries, state transitions, transaction or concurrency behavior, and consistency guarantees. It must not rewrite product scope or treat implementation choices as new product requirements. Cover security, permissions, or sensitive data only when the requested feature actually touches those boundaries. Use positive requirements. Record a prohibition only when a real misuse or high-risk boundary makes it necessary.
@@ -13,6 +15,8 @@ Start with `user_approval: pending` and `independent_review: pending`. The revie
 ## Implementation Plan
 
 Create a plan only when the PRD specification gate remains open, spec independent review is approved, and the user has approved that reviewed spec. Use the approved PRD, current spec, repository evidence, applicable rules, and `assets/plan-template.md` as the required shape.
+
+Apply the same Chinese user-facing document rule to the plan while preserving its frontmatter and technical identifiers.
 
 Each task is one independently testable deliverable a reviewer could reject without rejecting an unrelated task. Include:
 

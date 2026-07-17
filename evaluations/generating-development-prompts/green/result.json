@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "evidence_role": "green",
+  "target_skill_loaded": true,
+  "all_runs_valid": true,
+  "all_required_passed": true,
+  "review_status": "approved",
+  "reviewer": "independent-skill-reviewer",
+  "reviewed_at": "2026-07-17",
+  "cases": [
+    {"id": "01", "valid": true, "passed_criteria": ["current-session-routing", "fourteen-field-preservation", "no-user-visible-thread", "localized-routing-suffix"]},
+    {"id": "02", "valid": true, "passed_criteria": ["new-session-routing", "fourteen-field-preservation", "single-code-block", "no-user-visible-thread", "localized-routing-suffix"]},
+    {"id": "03", "valid": true, "passed_criteria": ["blocked-routing", "fourteen-field-preservation", "no-user-visible-thread", "localized-routing-suffix"]},
+    {"id": "04", "valid": true, "passed_criteria": ["new-session-routing", "fourteen-field-preservation", "single-code-block", "no-user-visible-thread", "localized-routing-suffix", "copy-stress-boundary"]}
+  ]
+}

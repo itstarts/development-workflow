@@ -1,14 +1,12 @@
-使用路径：`product/order-approval.md`，绝对路径为 `/workspace/fixture/product/order-approval.md`。
+将使用路径 `/workspace/fixture/product/order-approval.md`。该文件当前不存在；审批权限与驳回行为均未确定，理解置信度未达到 95%，因此未创建文档。
 
-当前状态：文件不存在；审批权限与驳回行为均为关键未决项，理解置信度不足 95%，所有门禁保持阻塞。本轮未创建任何文档。
+最关键的问题：哪些角色可以审批订单，是否需要按订单金额、部门或层级限制审批权限？
 
-最关键的问题：**谁有权审批订单？请说明审批角色及各角色适用的订单范围。**
-
-requirements_path: /workspace/fixture/product/order-approval.md
-requirements_topic: order-approval
-requirements_scope: feature
-understanding_confidence: 40
-understanding_user_confirmation: pending
-requirements_user_approval: pending
-requirements_independent_review: pending
-specification_gate: blocked
+需求文档：/workspace/fixture/product/order-approval.md
+需求主题：order-approval
+需求范围：功能
+需求理解置信度：30
+需求理解确认：待确认
+需求文档用户批准：待批准
+需求文档独立评审：待评审
+技术规格门禁：未开放

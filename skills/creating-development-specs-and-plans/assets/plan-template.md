@@ -6,38 +6,38 @@ spec_user_approval: approved
 review_status: pending
 ---
 
-# <Feature Name> Implementation Plan
+# <功能名称>实施计划
 
-**Goal:** <One observable outcome.>
+**目标：** <一个可观察的目标结果。>
 
-**Architecture:** <Implementation approach and stable boundaries.>
+**架构：** <实施方式与稳定边界。>
 
-**Tech Stack:** <Existing languages, frameworks, and tools.>
+**技术栈：** <现有语言、框架和工具。>
 
-## Global Constraints
+## 全局约束
 
-<Copy exact project-wide constraints from the approved spec and applicable rules.>
+<复制已批准技术规格和适用规则中的项目级精确约束。>
 
-### Task <number>: <Independently Testable Deliverable>
+### Task <编号>: <可独立测试的交付项>
 
-**Exact files:**
+**精确文件：**
 
-- Create: `<repository-relative-path>`
-- Modify: `<repository-relative-path>`
-- Test: `<repository-relative-path>`
+- Create: `<仓库相对路径>`
+- Modify: `<仓库相对路径>`
+- Test: `<仓库相对路径>`
 
-**Interfaces:**
+**接口：**
 
-- Consumes: <Existing signatures, inputs, or artifacts.>
-- Produces: <Exact signatures, outputs, or artifacts used later.>
+- Consumes: <现有签名、输入或制品。>
+- Produces: <后续使用的精确签名、输出或制品。>
 
-**Testing approach:** <Use the approach required by the approved spec and repository rules. When the approved spec or repository rules require TDD, include RED, Verify RED, GREEN, Verify GREEN, and REFACTOR steps; otherwise list the minimum relevant implementation and verification steps.>
+**测试方式：** <使用已批准技术规格和仓库规则要求的方法。当批准的技术规格或仓库规则要求 TDD 时，包含 RED、Verify RED、GREEN、Verify GREEN 和 REFACTOR 步骤；否则列出最小相关实施和验证步骤。>
 
-- [ ] Implement: <Make the smallest production change required by the task.>
-- [ ] Verify: Run `<exact command>`; expect <observable result>.
-- [ ] Documentation synchronization: <Update the exact affected document or state why none changes.>
-- [ ] Task-level independent review: <Review the current diff and verification evidence; fix findings and re-review.>
+- [ ] 实施：<完成本任务所需的最小生产变更。>
+- [ ] 验证：运行 `<精确命令>`；预期 <可观察结果>。
+- [ ] 文档同步：<更新受影响的精确文档，或说明无需变更。>
+- [ ] 任务级独立评审：<评审当前 diff 和验证证据；修复发现并复审。>
 
-## Final Verification
+## 最终验证
 
-<List complete commands, expected results, integration review, and any explicitly unverified release gate.>
+<列出完整命令、预期结果、集成评审以及任何明确未验证的发布门。>

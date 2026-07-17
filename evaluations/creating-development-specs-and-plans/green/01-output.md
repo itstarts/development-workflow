@@ -1,34 +1,28 @@
-当前被硬门禁阻塞，不能创建 spec、plan 或开始编码。
+目前无法生成 spec、plan 或开始编码，且仓库未发生任何修改。
 
-仓库证据显示订单系统目前只有创建订单能力，没有审批流程、通知渠道或审批权限模型。你也明确说明：
+原因是仓库规则和指定技能都设置了硬门禁：不存在已批准 PRD；稳定主题、审批权限、通知方式、驳回后重提规则均未确定。“稍后再看”不构成对当前 spec 的明确批准。
 
-- 没有已批准 PRD；
-- 稳定 topic 尚未确认；
-- `feature` 只是暂定 scope；
-- 审批人、通知方式、驳回后重提规则均未确定。
+请先完成产品需求并提供：
 
-下一步需要先形成并批准 PRD，然后提供：
+- 已批准 PRD 的仓库内路径
+- 非临时的 kebab-case 稳定主题
+- 明确范围：`product`、`phase` 或 `feature`
+- PRD 中对审批人、通知机制、驳回重提等规则的决定
+- PRD 的用户批准及独立评审证据
 
-1. PRD 的仓库内路径；
-2. 确认后的 kebab-case topic，例如 `order-approval`；
-3. 确认后的 scope；
-4. PRD 中可靠记录的理解确认、用户批准及独立评审状态。
+之后才能依次进行：PRD 校验 → spec 编写与独立评审 → 你明确批准 spec → plan 编写与独立评审 → 开放实施门禁。
 
-之后才能依次进行：PRD 检查 → spec → 独立评审 → 你的明确批准 → plan → 独立评审。此技能的交付边界止于文档交接，本轮不能实施目标代码。
-
-```text
-requirements_path: null
-requirements_topic: null
-requirements_scope: unknown
-requirements_understanding_confidence: unknown
-requirements_understanding_confirmation: unknown
-requirements_user_approval: unknown
-requirements_independent_review: unknown
-specification_gate: blocked
-spec_path: null
-spec_user_approval: pending
-spec_independent_review: pending
-plan_path: null
-plan_review_status: not-approved
-implementation_gate: blocked
-```
+需求文档：未确定
+需求主题：未确定
+需求范围：未知
+需求理解置信度：未知
+需求理解确认：未知
+需求文档用户批准：未知
+需求文档独立评审：未知
+技术规格门禁：未开放
+技术规格：未确定
+技术规格用户批准：待批准
+技术规格独立评审：待评审
+实施计划：尚未创建
+计划评审状态：未开始
+实施门禁：未开放
