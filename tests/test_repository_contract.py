@@ -1240,6 +1240,29 @@ class RepositoryContractTests(unittest.TestCase):
             ),
         )
 
+    def test_authoring_and_prompt_skills_share_risk_batched_review_contract(self):
+        authoring = (
+            ROOT
+            / "skills"
+            / "creating-development-specs-and-plans"
+            / "references"
+            / "document-contracts.md"
+        ).read_text(encoding="utf-8").casefold()
+        prompt = (
+            ROOT
+            / "skills"
+            / "generating-development-prompts"
+            / "assets"
+            / "development-prompt.md"
+        ).read_text(encoding="utf-8").casefold()
+
+        self.assertIn("task count", authoring)
+        self.assertIn("latest complete diff", authoring)
+        self.assertNotIn("task-level independent review gate", authoring)
+        self.assertIn("不得仅因任务数量", prompt)
+        self.assertIn("最新完整 diff", prompt)
+        self.assertNotIn("独立评审未通过不得进入下一项", prompt)
+
     def test_repository_validator_requires_red_baseline_before_exposing_new_skill(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
@@ -1374,7 +1397,7 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual(1, result.returncode)
         self.assertIn("evaluation evidence contains sensitive or machine-local text", result.stderr)
 
-    def test_repository_validator_allows_task_level_review_text(self):
+    def test_repository_validator_allows_ordinary_review_policy_text(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
             evidence = (
@@ -1385,7 +1408,7 @@ class RepositoryContractTests(unittest.TestCase):
                 / "ordinary-output.md"
             )
             evidence.write_text(
-                "The plan requires a task-level independent review.\n",
+                "The plan requires one final review of the latest complete diff.\n",
                 encoding="utf-8",
             )
 
@@ -1470,6 +1493,22 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertFalse(skill_asset.exists())
         self.assertTrue(project_role.is_file())
         self.assertTrue(workflow_role.is_file())
+
+    def test_repository_reviewers_use_risk_batched_latest_diff_contract(self):
+        rules = (ROOT / "AGENTS.md").read_text(encoding="utf-8").casefold()
+        final_reviewer = (
+            ROOT / ".codex" / "agents" / "final-reviewer.toml"
+        ).read_text(encoding="utf-8").casefold()
+        workflow_reviewer = (
+            ROOT / ".codex" / "agents" / "workflow-final-reviewer.toml"
+        ).read_text(encoding="utf-8").casefold()
+
+        self.assertIn("最新完整 diff", rules)
+        self.assertIn("最新完整 diff", final_reviewer)
+        self.assertIn("风险里程碑评审（若有）", final_reviewer)
+        self.assertIn("未受影响 skill", workflow_reviewer)
+        self.assertNotIn("任务级评审", final_reviewer)
+        self.assertNotIn("任务级与集成评审", workflow_reviewer)
 
     def test_agent_rules_record_tdd_and_self_containment_gates(self):
         root_rules = (ROOT / "AGENTS.md").read_text()

@@ -240,6 +240,21 @@ class SkillContractTests(unittest.TestCase):
                     f"execution template must contain one of {equivalents!r}",
                 )
 
+    def test_execution_contract_batches_review_by_risk_not_task_count(self):
+        template = read("assets/development-prompt.md").casefold()
+        skill = read("SKILL.md").casefold()
+        for required in (
+            "每项任务完成与影响范围匹配的验证",
+            "不得仅因任务数量",
+            "中间里程碑评审",
+            "最新完整 diff",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, template)
+        self.assertIn("task count", skill)
+        self.assertIn("latest complete diff", skill)
+        self.assertNotIn("独立评审未通过不得进入下一项", template)
+
     def test_production_files_have_no_framework_name_path_or_derived_workflow(self):
         forbidden = (
             "systematic " + "debugging",

@@ -297,14 +297,16 @@ class RenderPromptTests(unittest.TestCase):
 
         for expected in (
             "未参与实现的独立评审者",
-            "由同一评审者复审当前版本",
-            "独立评审未通过不得进入下一项",
+            "最新完整 diff",
+            "不得仅因任务数量",
+            "中间里程碑评审",
             "执行整体评审",
             "重复修复、验证和整体复审",
             "整体复审通过且验证证据完整后才报告完成",
         ):
             with self.subTest(expected=expected):
                 self.assertIn(expected, output)
+        self.assertNotIn("独立评审未通过不得进入下一项", output)
 
     def test_success_requires_tdd_and_repeatable_review_loops(self):
         output = self.prompt_body(self.render_raw(valid_payload()).stdout)
@@ -313,7 +315,7 @@ class RenderPromptTests(unittest.TestCase):
             "先写并运行失败测试",
             "确认失败原因符合预期",
             "再写最小实现",
-            "重复修复、验证和复审，直到 APPROVED",
+            "每项任务完成与影响范围匹配的验证",
             "全部计划任务完成并集成后",
             "执行整体评审",
             "重复修复、验证和整体复审，直到 APPROVED",

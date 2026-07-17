@@ -181,7 +181,9 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             "**接口：**",
             "**测试方式：**",
             "文档同步",
-            "任务级独立评审",
+            "## 实施评审策略",
+            "最新完整 diff",
+            "里程碑评审",
             "## 最终验证",
         ):
             with self.subTest(template="plan", required=required):
@@ -482,7 +484,7 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
         )
         self.assertEqual("approved", parse_frontmatter(approved)["review_status"])
 
-    def test_plan_template_requires_docs_and_task_review(self):
+    def test_plan_template_requires_docs_and_risk_batched_review(self):
         template = read("assets/plan-template.md").casefold()
         for required in (
             "精确文件",
@@ -490,10 +492,14 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             "测试方式",
             "当批准的技术规格或仓库规则要求 tdd",
             "文档同步",
-            "任务级独立评审",
+            "实施评审策略",
+            "不得仅因任务数量",
+            "最新完整 diff",
+            "里程碑评审",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, template)
+        self.assertNotIn("任务级独立评审", template)
 
     def test_security_detail_is_required_only_when_relevant(self):
         contracts = read("references/document-contracts.md").casefold()
