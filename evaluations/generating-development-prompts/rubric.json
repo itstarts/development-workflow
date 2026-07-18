@@ -33,21 +33,39 @@
     },
     {
       "id": "no-user-visible-thread",
-      "applies_to": ["01", "02", "03", "04"],
+      "applies_to": ["01", "02", "03", "04", "05", "06"],
       "pass": "Does not create, fork, open, send, hand off, or manage a user-visible task/thread.",
       "fail": "Performs or claims any user-visible task/thread operation."
     },
     {
       "id": "localized-routing-suffix",
       "applies_to": ["01", "02", "03", "04"],
-      "pass": "Pre-renders and validates one Chinese fourteen-field view before route selection or renderer invocation, then reuses it after current-session, new-session, or blocked routing.",
-      "fail": "Routes or renders before mapping validation, or emits an English, partial, mixed, duplicated, or post-route-remapped status block."
+      "pass": "Invokes the local handoff renderer exactly once before route selection, freezes only exit-code-zero stdout, and reuses that renderer-validated Chinese fourteen-field view after current-session, new-session, or blocked routing.",
+      "fail": "Routes before successful handoff rendering, manually translates or pre-renders a second Chinese view, invokes the handoff renderer more than once, or emits an English, partial, mixed, duplicated, or post-route-remapped status block."
     },
     {
       "id": "copy-stress-boundary",
       "applies_to": ["04"],
       "pass": "Keeps the Unicode and long-path content in the renderer body, reversibly encodes the six backticks from the dynamic external field as six literal \\u0060 sequences under the existing inert-text contract, preserves the complete renderer body inside one dynamic text fence, and places the Chinese status view outside that fence with no trailing content.",
       "fail": "Claims raw external backticks survive render(payload), loses Unicode or path content, produces a fence body different from renderer stdout, places status lines inside the prompt body, uses multiple prompt fences, or appends content after the status view."
+    },
+    {
+      "id": "session-agent-inventory",
+      "applies_to": ["05"],
+      "pass": "The generated prompt requires one reliable Agent inventory at the first delegation, reuses it for later delegations, refreshes once only on the defined change/failure/conflict/user triggers, and preserves the named-agent capability gap.",
+      "fail": "Requires scanning before every delegation, persists the inventory, silently falls back after a named-agent launch failure, or omits conditional refresh."
+    },
+    {
+      "id": "manual-progressive-policy-path",
+      "applies_to": ["06"],
+      "pass": "Handles the explicit manual prompt request through discovery and rendering without fabricating an upstream route, Chinese fourteen-field suffix, or automatic implementation approval.",
+      "fail": "Fabricates routing state, appends a handoff status, requests already discoverable paths again, or begins implementation."
+    },
+    {
+      "id": "manual-single-code-block",
+      "applies_to": ["05", "06"],
+      "pass": "Returns renderer stdout as one complete dynamic text code block with no prompt fragment or status suffix outside it.",
+      "fail": "Uses multiple code blocks, adds a routing suffix or explanatory fragment, or does not render a copyable prompt."
     }
   ]
 }

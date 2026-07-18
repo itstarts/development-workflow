@@ -14,7 +14,9 @@ Require one stable topic formatted as non-reserved lowercase ASCII kebab-case: l
 
 ## Reach the Understanding Gate
 
-Ask one material question at a time when the answer changes target users, product problem, goals, scope, non-goals, business rules, priority, success measures, or acceptance criteria. Do not use defaults or conventional behavior to manufacture certainty.
+Ask one to three material questions per turn. Questions are independent only when every possible answer leaves every other question's applicability, options, meaning, priority, and necessity unchanged. Batch only independent questions, keep their numbering stable, and do not add a fourth substantive question. When one answer selects a branch or changes a later question, ask only one decisive question. If the user provides partial answers, preserve the valid answers and reassess the remaining dependencies instead of repeating the whole batch. Do not use defaults or conventional behavior to manufacture certainty.
+
+An expected discovery or choice question with no damage, conflict, permission failure, capability gap, review blocker, or formal confirmation or approval is an `ordinary-clarification`. A request for a requirements-understanding summary confirmation is a checkpoint, not ordinary clarification. A progress-only status update is also not ordinary clarification.
 
 Do not create the PRD while a material unknown remains. When the evidence supports at least 95 percent confidence, present a requirements-understanding summary containing:
 

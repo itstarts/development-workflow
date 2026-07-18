@@ -52,7 +52,15 @@ python3 \
 installer 在目标目录已存在时会停止。更新前不要直接覆盖正在使用的安装副本：
 
 1. 使用临时 `CODEX_HOME` 安装候选版本。
-2. 运行官方 skill validator，并比较候选内容与当前安装。
+2. 运行官方 skill validator，并使用仓库只读比较器核对候选内容：
+
+   ```bash
+   .venv/bin/python scripts/verify_install.py \
+     --codex-home /path/to/staging-codex-home \
+     --skill creating-product-requirements
+   ```
+
+   省略 `--skill` 时比较 registry 中全部已实现 skill。命令只报告 publishable payload 的 missing、extra、different 或非普通文件，不创建、复制、删除或修改目标，也不构成正式安装授权。内容 missing、extra 或 different 返回 `1`；参数、registry、路径、读取、symlink 或其它非普通文件错误返回 `2`。
 3. 备份或移走旧目录后，再把已验证候选安装到正式位置。
 4. 启动新 Codex 会话并确认五个 skill 均可见。
 

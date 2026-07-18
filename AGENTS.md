@@ -72,30 +72,19 @@
 
 ## 验证
 
-至少执行：
+受影响 skill 在独立评审写回前，先按当前 registry stage 运行统一定向门；同一任务涉及多个 skill 时重复 `--skill`：
 
 ```bash
-.venv/bin/python -m unittest discover -s tests -v
-.venv/bin/python scripts/validate_repo.py
-.venv/bin/python -m unittest discover -s skills/creating-product-requirements/tests -v
-.venv/bin/python -m unittest discover -s skills/creating-development-specs-and-plans/tests -v
-.venv/bin/python -m unittest discover -s skills/generating-development-prompts/tests -v
-.venv/bin/python -m unittest discover -s skills/implementing-bounded-changes/tests -v
-.venv/bin/python -m unittest discover -s skills/managing-agents-rules/tests -v
-.venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
-  skills/creating-product-requirements
-.venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
-  skills/creating-development-specs-and-plans
-.venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
-  skills/generating-development-prompts
-.venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
-  skills/implementing-bounded-changes
-.venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator/scripts/quick_validate.py" \
-  skills/managing-agents-rules
-.venv/bin/python "${CODEX_HOME:-$HOME/.codex}/skills/.system/plugin-creator/scripts/validate_plugin.py" .
+.venv/bin/python scripts/check.py --skill <skill-name>
 ```
 
-开发环境先运行 `python3 -m venv .venv` 和 `.venv/bin/python -m pip install -r requirements-dev.txt`。维护矩阵至少覆盖 Python 3.9 和 Python 3.14。新增 skill 后，把它加入仓库 validator、官方 skill validator、安装测试和 plugin 验证。
+全部已公开 skill 均为 `review-approved` 后，运行统一完整门：
+
+```bash
+.venv/bin/python scripts/check.py --full
+```
+
+`check.py` 统一执行仓库测试、目标 skill 测试、stage-aware freshness 和官方 skill validator；`--full` 还执行 plugin validator。开发环境先运行 `python3 -m venv .venv` 和 `.venv/bin/python -m pip install -r requirements-dev.txt`。维护矩阵至少覆盖 Python 3.9 和 Python 3.14。新增 skill 后，把它加入仓库 validator、官方 skill validator、安装测试和 plugin 验证。
 
 ## 评审
 

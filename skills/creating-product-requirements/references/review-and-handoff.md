@@ -35,9 +35,17 @@ Do not reverse-parse the Chinese view into canonical state. A legacy English han
 
 Whenever a topic is known, report the same non-reserved lowercase ASCII kebab-case topic used by the confirmed summary and PRD frontmatter. `null`, `unknown`, and `pending` are reserved and cannot be topic values.
 
-## User-Visible Chinese View
+## Reply Classification and User-Visible View
 
-When no downstream transition occurs, every user-facing response, including a question, blocked response, or capability-gap response, ends with one authoritative Chinese eight-field view in this exact order:
+Classify each reply before rendering:
+
+- `ordinary-clarification`: an expected nonblocking discovery or choice question with no formal confirmation or approval. Invoke `scripts/render_handoff.py` with `handoff_schema: requirements`, `view: compact`, the complete canonical object, a verified `stage`, and a verified `next_step`.
+- `checkpoint`: a pause or recovery point, requirements-understanding summary confirmation, PRD approval request, completed document stage, or downstream capability selection. Invoke the same local script with `view: full`, `stage: null`, and `next_step: null`.
+- `blocked`: a deterministic file, metadata, permission, reviewer, tool, reference, renderer, or capability problem that prevents progress. Use `full` when canonical state can be rendered; renderer failure itself uses its deterministic error and no partial status.
+
+A progress-only update is not an ordinary clarification. Conservatively use full when the reply cannot be classified reliably. The local renderer validates canonical field shape, gates, mappings, strict UTF-8 JSON, and the selected view; invoke it through a structured argument/process API, use only successful stdout, and never import a sibling skill copy.
+
+When no downstream transition occurs and the reply is a checkpoint, blocked result, approval request, document-stage completion, progress-only update, or conservative fallback, it ends with one authoritative Chinese eight-field view in this exact order:
 
 ```text
 需求文档：<absolute-path | 未确定>
@@ -51,6 +59,14 @@ When no downstream transition occurs, every user-facing response, including a qu
 ```
 
 Render the actual view as plain text, never as a Markdown code fence. Use the full-width colon shown above, no list marker or leading whitespace, and no content after the final line. Do not print the canonical English block or another Chinese status block. Explanatory prose must not repeat a Chinese field label followed by `：`.
+
+For `ordinary-clarification`, successful renderer stdout is exactly three consecutive plain-text lines with no blank line, list marker, leading whitespace, full handoff field, or trailing content:
+
+```text
+当前阶段：<需求澄清>
+主题：<stable-kebab-topic | 未确定 | 未知>
+下一步：<one verified action>
+```
 
 Map values by field context:
 

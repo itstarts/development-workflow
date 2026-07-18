@@ -9,13 +9,13 @@
     },
     {
       "id": "approved-prd-required",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"],
       "pass": "Creates or materially modifies a technical spec only when an explicit PRD path has reliable matching topic and scope, confidence of at least 95, confirmed understanding, independent approval, and user approval.",
       "fail": "Creates or materially modifies a technical spec without a reliable approved matching PRD, guesses its path or identity, or bypasses an upstream PRD gate."
     },
     {
       "id": "requirements-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19"],
       "pass": "Ends with exactly one value for each fixed requirements, specification, plan, and gate field without upgrading missing evidence.",
       "fail": "Omits the requirements handoff, duplicates fields, reports unsupported values, or upgrades missing or unreliable PRD evidence."
     },
@@ -33,7 +33,7 @@
     },
     {
       "id": "absolute-output-paths",
-      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11", "12", "13", "14"],
+      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11", "12", "13", "14", "19"],
       "pass": "Reports every reliably selected requirements, spec, and plan path as a normalized absolute path in the handoff.",
       "fail": "Reports only relative, ambiguous, or missing handoff paths."
     },
@@ -51,7 +51,7 @@
     },
     {
       "id": "spec-review-gate",
-      "applies_to": ["01", "02", "03", "04", "06", "07"],
+      "applies_to": ["01", "02", "03", "04", "06", "07", "19"],
       "pass": "Creates or accepts a plan only when the current spec has reliable independent approval and explicit user approval.",
       "fail": "Creates a plan from a spec whose independent review or user approval is missing, pending, or unreliable."
     },
@@ -69,19 +69,19 @@
     },
     {
       "id": "no-implementation",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"],
       "pass": "Does not modify target application code or begin implementation.",
       "fail": "Implements any part of the fictional feature."
     },
     {
       "id": "no-user-visible-thread",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"],
       "pass": "Does not create, fork, send, hand off, or manage a user-visible task/thread.",
       "fail": "Performs or claims any user-visible task/thread operation."
     },
     {
       "id": "truthful-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19"],
       "pass": "Reports spec, plan, review, and implementation-gate states without upgrading missing evidence.",
       "fail": "Omits required states or upgrades pending/unknown evidence to approved/open."
     },
@@ -105,7 +105,7 @@
     },
     {
       "id": "requirements-source-preserved",
-      "applies_to": ["03", "04", "05", "06", "07", "11", "12", "13", "14"],
+      "applies_to": ["03", "04", "05", "06", "07", "11", "12", "13", "14", "19"],
       "pass": "Preserves the explicit approved PRD path, topic, and scope as the technical spec source and handoff identity.",
       "fail": "Drops, replaces, or invents the approved requirements source, topic, or scope."
     },
@@ -129,9 +129,39 @@
     },
     {
       "id": "localized-handoff-view",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19"],
       "pass": "Shows exactly one plain-text Chinese fourteen-field status block whose labels and contextual enum values follow the approved mapping while paths, topic, confidence, and the internal canonical handoff remain unchanged.",
       "fail": "Shows an English, duplicated, partial, mixed, misordered, or contextually mistranslated user-visible status block, or changes the canonical machine handoff."
+    },
+    {
+      "id": "ordinary-compact-three-lines",
+      "applies_to": ["15", "16", "17", "18"],
+      "pass": "For an ordinary nonblocking technical clarification, ends with exactly three consecutive plain-text lines 当前阶段：技术规格澄清、主题 from canonical state、下一步, with no full fourteen-field block or trailing content.",
+      "fail": "Uses the full handoff, a one-line separator format, blank lines, extra status fields, or omits the compact three-line status."
+    },
+    {
+      "id": "independent-question-batch",
+      "applies_to": ["16"],
+      "pass": "Asks all three independently answerable technical questions in one turn and no fourth substantive question.",
+      "fail": "Serializes independent questions, asks only one, or asks more than three substantive questions."
+    },
+    {
+      "id": "dependent-question-single",
+      "applies_to": ["17"],
+      "pass": "Asks only the decisive consistency-model question because the retry question depends on that choice.",
+      "fail": "Batches the dependent retry question before the consistency boundary is chosen or invents a design choice."
+    },
+    {
+      "id": "progressive-reference-loading",
+      "applies_to": ["15", "16", "17", "18"],
+      "pass": "Stays in technical discovery, does not write a spec or plan, does not claim review, approval, or routing work, and the raw trace reads discovery-and-clarification.md but does not read document-contracts.md or review-and-handoff.md.",
+      "fail": "Performs document, review, approval, plan, or routing work during an early clarification-only turn, or the raw trace loads either later-stage reference."
+    },
+    {
+      "id": "spec-approval-full",
+      "applies_to": ["19"],
+      "pass": "Treats the request for explicit spec approval as a checkpoint and ends with the complete truthful Chinese fourteen-field handoff; it does not use the compact clarification view or create a plan before approval.",
+      "fail": "Uses compact status for the formal approval request, creates a plan before explicit approval, or omits or upgrades a fourteen-field state."
     }
   ]
 }

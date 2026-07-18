@@ -1,4 +1,4 @@
-已在[当前 PRD](/workspace/fixture/docs/requirements/2026-07-15-order-approval.md:7)记录批准状态及日期，并完成元数据、交接快照和中文映射验证。门禁已开放，但运行时未暴露 `creating-development-specs-and-plans` 能力，因此未创建技术规格或新会话。
+已记录并验证当前 PRD 的明确批准，唯一改动为 `user_approval: approved`。规格门禁已开放，但本会话未暴露 `creating-development-specs-and-plans` 能力，因此未创建技术规格或新会话。
 
 需求文档：/workspace/fixture/docs/requirements/2026-07-15-order-approval.md
 需求主题：order-approval

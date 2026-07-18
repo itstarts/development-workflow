@@ -8,6 +8,8 @@ An explicit prompt request is compatible with plan review `not-approved` or `unk
 
 ## Canonical Snapshot and Chinese View
 
+For every automatic route, pass the frozen canonical object exactly once to this skill's local `scripts/render_handoff.py` with `handoff_schema: workflow`, `view: full`, `stage: null`, and `next_step: null` before choosing a route. This handoff renderer is the sole presentation validator for field count, field order, labels, contextual mappings, gate consistency, and exact output bytes. Freeze only exit-code-zero `render_handoff.py` stdout as the authoritative user-visible suffix. Do not manually translate or pre-render a Chinese view or import a sibling renderer. Do not reverse-parse display text or route after any renderer error or partial output.
+
 The canonical English snapshot remains the only machine authority and the compatible legacy input contract:
 
 ```text
@@ -27,39 +29,7 @@ plan_review_status: not-approved | approved | unknown
 implementation_gate: blocked | open
 ```
 
-Pre-render this authoritative Chinese view from the frozen canonical English snapshot:
-
-```text
-需求文档：<路径> | 未确定
-需求主题：<稳定主题> | 未确定 | 未知
-需求范围：产品 | 阶段 | 功能 | 未确定 | 未知
-需求理解置信度：<0 到 100 的整数> | 未知
-需求理解确认：待确认 | 已确认 | 未知
-需求文档用户批准：待批准 | 已批准 | 未知
-需求文档独立评审：待评审 | 已通过 | 未知
-技术规格门禁：未开放 | 已开放
-技术规格：<路径> | 未确定
-技术规格用户批准：待批准 | 已批准
-技术规格独立评审：待评审 | 已通过
-实施计划：<路径> | 尚未创建
-计划评审状态：未开始 | 未通过 | 已通过 | 未知
-实施门禁：未开放 | 已开放
-```
-
-The two blocks above are schema references. In an actual automatic reply, do not expose the canonical English snapshot as user-visible output. Emit exactly one value per Chinese field, never copy `|` alternatives, and do not reverse-parse the Chinese view into machine state.
-
-Apply values by field context:
-
-- Preserve non-null paths, topic, and integer confidence exactly. Map requirements or spec path `null` and topic `null` to `未确定`; map plan path `null` to `尚未创建`.
-- Map requirements scope `product | phase | feature | null | unknown` to `产品 | 阶段 | 功能 | 未确定 | 未知`.
-- Map requirements understanding confirmation `pending | approved | unknown` to `待确认 | 已确认 | 未知`.
-- Map requirements user approval `pending | approved | unknown` to `待批准 | 已批准 | 未知`.
-- Map requirements independent review `pending | approved | unknown` to `待评审 | 已通过 | 未知`.
-- Map spec user approval `pending | approved` to `待批准 | 已批准`; map spec independent review `pending | approved` to `待评审 | 已通过`. These spec fields do not accept `unknown`.
-- Map both gates `blocked | open` to `未开放 | 已开放`.
-- Map `plan_path: null` with `plan_review_status: not-approved` to `未开始`; for an existing plan map `not-approved | approved | unknown` to `未通过 | 已通过 | 未知`.
-
-Before choosing a route and before invoking the renderer, validate that the Chinese view's field count is fourteen, field order and labels exactly match the schema, and every mapping is complete and unique. If validation fails, preserve the canonical snapshot and emit a deterministic Chinese blocker that identifies the unmapped field or failed integrity condition. Mapping failure is the only explicit exception to the status-suffix rule: the reply does not append a status view. Do not emit a partial, mixed, or English fallback block; do not choose any route; do not invoke the renderer; and stop the current automatic routing. Retry from the preserved canonical source only after the mapping is corrected.
+The canonical block above is a machine schema reference. In an actual automatic reply, do not expose it as user-visible output and do not maintain a second Chinese mapping table in this reference. A handoff renderer failure is the only explicit exception to the automatic status-suffix rule. On nonzero exit, invalid machine-readable stderr, or missing complete stdout, preserve the canonical snapshot and emit a deterministic Chinese blocker based on the renderer's machine-readable stderr. The blocker identifies the failed canonical field or integrity condition, does not append a status view, does not choose any route, does not invoke `render_prompt.py`, and stops the current automatic routing. Retry the one handoff-renderer invocation only after the canonical source or renderer defect is corrected.
 
 ## Choose One Result
 
@@ -80,7 +50,7 @@ Every result names the actual evidence that selected it. Do not claim `current-s
 - `new-session`: report the result and reasons, then render one complete prompt.
 - `blocked`: report the result and cross-session blocker; do not render automatically. A later explicit prompt request may render a prompt that preserves the blocker.
 
-For automatic routing after successful mapping validation, `current-session`, `new-session`, and `blocked` all end with the same prevalidated Chinese view derived from the frozen snapshot. The handoff is plain text: never wrap the handoff in a code fence. Its final non-empty line is `实施门禁：未开放 | 已开放` with the view's one actual value. Place the route and reasons before it. For `new-session`, place renderer stdout before the Chinese view and outside the dynamic fence; do not put any Chinese status line in the renderer body. Do not duplicate or remap the view after routing, and do not place content after it.
+For automatic routing after successful handoff rendering, `current-session`, `new-session`, and `blocked` all end with the same renderer-validated Chinese view: the frozen `render_handoff.py` stdout. The handoff is plain text: never wrap the handoff in a code fence. Its final non-empty line is `实施门禁：<renderer value>`. Place the route and reasons before it. For `new-session`, place `render_prompt.py` stdout before `render_handoff.py` stdout and outside the dynamic fence; do not put any Chinese status line in the prompt renderer body. Do not duplicate or remap the view after routing, and do not place content after it.
 
 A manual prompt request without a verified upstream snapshot returns renderer stdout verbatim on success and does not fabricate or append a status view.
 

@@ -4,79 +4,297 @@
   "target_skill_loaded": true,
   "all_runs_valid": true,
   "all_required_passed": true,
+  "fresh_cases": [
+    "07",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19"
+  ],
   "review_status": "approved",
-  "reviewer": "independent-skill-reviewer",
-  "reviewed_at": "2026-07-17",
+  "reviewer": "workflow-final-reviewer",
+  "reviewed_at": "2026-07-18",
   "cases": [
     {
       "id": "01",
       "valid": true,
-      "passed_criteria": ["approval-gate", "approved-prd-required", "requirements-status-fields", "real-spec-review", "spec-review-gate", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "localized-handoff-view"]
+      "passed_criteria": [
+        "approval-gate",
+        "approved-prd-required",
+        "requirements-status-fields",
+        "real-spec-review",
+        "spec-review-gate",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "02",
       "valid": true,
-      "passed_criteria": ["approval-gate", "approved-prd-required", "requirements-status-fields", "explicit-path-priority", "absolute-output-paths", "real-spec-review", "spec-review-gate", "real-plan-review", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "localized-handoff-view"]
+      "passed_criteria": [
+        "approval-gate",
+        "approved-prd-required",
+        "requirements-status-fields",
+        "explicit-path-priority",
+        "absolute-output-paths",
+        "real-spec-review",
+        "spec-review-gate",
+        "real-plan-review",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "03",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "spec-review-gate", "real-plan-review", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "spec-review-gate",
+        "real-plan-review",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "requirements-source-preserved",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "04",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "default-paths", "absolute-output-paths", "relative-document-links", "spec-review-gate", "real-plan-review", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "default-paths",
+        "absolute-output-paths",
+        "relative-document-links",
+        "spec-review-gate",
+        "real-plan-review",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "requirements-source-preserved",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "05",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "unknown-review-state", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "unknown-review-state",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "requirements-source-preserved",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "06",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "spec-review-gate", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "open-gate", "requirements-source-preserved", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "spec-review-gate",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "open-gate",
+        "requirements-source-preserved",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "07",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "spec-review-gate", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "spec-review-gate",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "requirements-source-preserved",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "08",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "null-paths", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "null-paths",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "09",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "10",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "prd-state-validation", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "prd-state-validation",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "11",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved", "technical-spec-boundary", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "requirements-source-preserved",
+        "technical-spec-boundary",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "12",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "open-gate", "requirements-source-preserved", "approved-plan-auto-routing", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "open-gate",
+        "requirements-source-preserved",
+        "approved-plan-auto-routing",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "13",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "default-paths", "absolute-output-paths", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "requirements-source-preserved", "downstream-revalidation-failure", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "default-paths",
+        "absolute-output-paths",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "requirements-source-preserved",
+        "downstream-revalidation-failure",
+        "localized-handoff-view"
+      ]
     },
     {
       "id": "14",
       "valid": true,
-      "passed_criteria": ["approved-prd-required", "requirements-status-fields", "absolute-output-paths", "no-implementation", "no-user-visible-thread", "truthful-status-fields", "open-gate", "requirements-source-preserved", "approved-plan-auto-routing", "localized-handoff-view"]
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "open-gate",
+        "requirements-source-preserved",
+        "approved-plan-auto-routing",
+        "localized-handoff-view"
+      ]
+    },
+    {
+      "id": "15",
+      "valid": true,
+      "passed_criteria": [
+        "approved-prd-required",
+        "no-implementation",
+        "no-user-visible-thread",
+        "ordinary-compact-three-lines",
+        "progressive-reference-loading"
+      ]
+    },
+    {
+      "id": "16",
+      "valid": true,
+      "passed_criteria": [
+        "approved-prd-required",
+        "no-implementation",
+        "no-user-visible-thread",
+        "ordinary-compact-three-lines",
+        "independent-question-batch",
+        "progressive-reference-loading"
+      ]
+    },
+    {
+      "id": "17",
+      "valid": true,
+      "passed_criteria": [
+        "approved-prd-required",
+        "no-implementation",
+        "no-user-visible-thread",
+        "ordinary-compact-three-lines",
+        "dependent-question-single",
+        "progressive-reference-loading"
+      ]
+    },
+    {
+      "id": "18",
+      "valid": true,
+      "passed_criteria": [
+        "approved-prd-required",
+        "no-implementation",
+        "no-user-visible-thread",
+        "ordinary-compact-three-lines",
+        "progressive-reference-loading"
+      ]
+    },
+    {
+      "id": "19",
+      "valid": true,
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "spec-review-gate",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "requirements-source-preserved",
+        "localized-handoff-view",
+        "spec-approval-full"
+      ]
     }
   ]
 }

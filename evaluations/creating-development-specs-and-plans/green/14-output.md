@@ -1,6 +1,4 @@
-只读复验通过。三个文档的主题、范围、路径及审批元数据一致；PRD 检查器返回 `approved`，两级门禁均开放。
-
-已进入会话路由选择，但当前运行时未暴露 `generating-development-prompts` 下游能力，因此无法完成路由。未搜索安装路径、未修改文档、未开始实施、未创建新会话。
+只读复验通过：三份文档身份、引用路径和审批元数据一致，十四字段映射完整，工作区无改动。实施门禁已开放，但当前运行时未提供 `generating-development-prompts`，因此无法继续会话路由；未搜索安装路径、修改文档、实施代码或创建新会话。
 
 需求文档：/workspace/fixture/docs/requirements/2026-07-12-order-approval.md
 需求主题：order-approval

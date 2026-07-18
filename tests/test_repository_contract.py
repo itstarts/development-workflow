@@ -89,6 +89,26 @@ def run_repository_validator(
     )
 
 
+def configure_evidence_only_target(repository: Path, skill_name: str) -> None:
+    registry_path = repository / "evaluations" / "registry.json"
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    registry["skills"][skill_name]["stage"] = "implemented"
+    registry_path.write_text(
+        json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    green_path = repository / "evaluations" / skill_name / "green" / "result.json"
+    green = json.loads(green_path.read_text(encoding="utf-8"))
+    green["review_status"] = "pending"
+    green.pop("reviewer", None)
+    green.pop("reviewed_at", None)
+    green_path.write_text(
+        json.dumps(green, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def chinese_handoff_schema(relative_path: str) -> list[tuple[str, tuple[str, ...]]]:
     text = (ROOT / relative_path).read_text(encoding="utf-8")
     blocks = re.findall(r"```text\n(.*?)\n```", text, re.DOTALL)
@@ -389,13 +409,20 @@ class RepositoryContractTests(unittest.TestCase):
     def test_repository_validator_allows_requirements_namespace(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
+            configure_evidence_only_target(
+                repository, "creating-development-specs-and-plans"
+            )
             requirements = repository / "docs" / "requirements"
             requirements.mkdir(parents=True, exist_ok=True)
             (requirements / "2026-07-15-order.md").write_text(
                 "# Order requirements\n", encoding="utf-8"
             )
 
-            result = run_repository_validator(repository)
+            result = run_repository_validator(
+                repository,
+                "--evidence-only",
+                "creating-development-specs-and-plans",
+            )
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
@@ -435,7 +462,7 @@ class RepositoryContractTests(unittest.TestCase):
                 criterion["applies_to"] = [
                     case_id
                     for case_id in criterion["applies_to"]
-                    if case_id not in {"09", "10"}
+                    if case_id not in {"09", "10", "11", "12", "13", "14", "15"}
                 ]
             rubric["criteria"] = [
                 criterion
@@ -449,6 +476,11 @@ class RepositoryContractTests(unittest.TestCase):
             for case_name in (
                 "09-approved-auto-spec-transition.md",
                 "10-chinese-handoff-status.md",
+                "11-ordinary-compact.md",
+                "12-independent-question-batch.md",
+                "13-dependent-question.md",
+                "14-progressive-reference-loading.md",
+                "15-progress-only-full.md",
             ):
                 (target / "cases" / case_name).unlink()
             shutil.rmtree(target / "green")
@@ -475,6 +507,33 @@ class RepositoryContractTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
+            registry["skills"]["generating-development-prompts"][
+                "stage"
+            ] = "review-approved"
+            prompt_green_path = (
+                repository
+                / "evaluations"
+                / "generating-development-prompts"
+                / "green"
+                / "result.json"
+            )
+            prompt_green = json.loads(prompt_green_path.read_text(encoding="utf-8"))
+            prompt_green.update(
+                {
+                    "review_status": "approved",
+                    "reviewer": "test-independent-reviewer",
+                    "reviewed_at": "2026-07-15",
+                }
+            )
+            prompt_green_path.write_text(
+                json.dumps(prompt_green, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
             result = run_repository_validator(repository)
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
@@ -482,27 +541,8 @@ class RepositoryContractTests(unittest.TestCase):
     def test_evidence_only_allows_pending_review_but_strict_validation_blocks(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
-            registry_path = repository / "evaluations" / "registry.json"
-            registry = json.loads(registry_path.read_text(encoding="utf-8"))
-            registry["skills"]["creating-development-specs-and-plans"][
-                "stage"
-            ] = "implemented"
-            registry_path.write_text(
-                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
-                encoding="utf-8",
-            )
-            green_path = (
-                repository
-                / "evaluations"
-                / "creating-development-specs-and-plans"
-                / "green"
-                / "result.json"
-            )
-            green = json.loads(green_path.read_text(encoding="utf-8"))
-            green["review_status"] = "pending"
-            green_path.write_text(
-                json.dumps(green, ensure_ascii=False, indent=2) + "\n",
-                encoding="utf-8",
+            configure_evidence_only_target(
+                repository, "creating-development-specs-and-plans"
             )
 
             strict = run_repository_validator(repository)
@@ -570,14 +610,8 @@ class RepositoryContractTests(unittest.TestCase):
     def test_creation_plus_current_red_allows_cases_added_after_creation_baseline(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
-            registry_path = repository / "evaluations" / "registry.json"
-            registry = json.loads(registry_path.read_text(encoding="utf-8"))
-            registry["skills"]["creating-development-specs-and-plans"][
-                "stage"
-            ] = "implemented"
-            registry_path.write_text(
-                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
-                encoding="utf-8",
+            configure_evidence_only_target(
+                repository, "creating-development-specs-and-plans"
             )
             result = run_repository_validator(
                 repository,
@@ -635,6 +669,15 @@ class RepositoryContractTests(unittest.TestCase):
     def test_repository_validator_requires_review_approval_metadata(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
+            registry_path = repository / "evaluations" / "registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["skills"]["creating-development-specs-and-plans"][
+                "stage"
+            ] = "review-approved"
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
             green_path = (
                 repository
                 / "evaluations"
@@ -643,14 +686,24 @@ class RepositoryContractTests(unittest.TestCase):
                 / "result.json"
             )
             green = json.loads(green_path.read_text(encoding="utf-8"))
+            green.update(
+                {
+                    "review_status": "approved",
+                    "reviewer": "test-independent-reviewer",
+                    "reviewed_at": "2026-07-15",
+                }
+            )
             green.pop("reviewer")
-            green.pop("reviewed_at")
             green_path.write_text(
                 json.dumps(green, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
 
-            result = run_repository_validator(repository)
+            result = run_repository_validator(
+                repository,
+                "--reviewed-skill",
+                "creating-development-specs-and-plans",
+            )
 
         self.assertEqual(1, result.returncode)
         self.assertIn("green evidence approval metadata is incomplete", result.stderr)
@@ -778,6 +831,7 @@ class RepositoryContractTests(unittest.TestCase):
                         "target_skill_loaded": True,
                         "all_runs_valid": True,
                         "all_required_passed": True,
+                        "fresh_cases": ["01"],
                         "review_status": "pending",
                         "cases": [
                             {
@@ -991,21 +1045,38 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertIn("旧英文八字段和十四字段输入", workflow)
         self.assertIn("映射失败", workflow)
         self.assertIn("不附加状态块", workflow)
-        self.assertIn("renderer stdout", workflow)
+        self.assertIn("`render_prompt.py` stdout", workflow)
         self.assertIn("状态块位于动态代码框之外", workflow)
 
-    def test_three_skills_share_the_same_chinese_handoff_mapping(self):
+    def test_three_skills_share_renderer_mapping_without_prompt_duplication(self):
         requirements = chinese_handoff_schema(
             "skills/creating-product-requirements/references/review-and-handoff.md"
         )
         specs = chinese_handoff_schema(
             "skills/creating-development-specs-and-plans/references/review-and-handoff.md"
         )
-        prompts = chinese_handoff_schema(
-            "skills/generating-development-prompts/references/session-routing-policy.md"
-        )
         self.assertEqual(requirements, specs[:8])
-        self.assertEqual(specs, prompts)
+        policy = (
+            ROOT
+            / "skills"
+            / "generating-development-prompts"
+            / "references"
+            / "session-routing-policy.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("sole presentation validator", policy)
+        self.assertNotIn("需求文档：<", policy)
+        renderers = [
+            (
+                ROOT / "skills" / skill / "scripts" / "render_handoff.py"
+            ).read_bytes()
+            for skill in (
+                "creating-product-requirements",
+                "creating-development-specs-and-plans",
+                "generating-development-prompts",
+            )
+        ]
+        self.assertEqual(renderers[0], renderers[1])
+        self.assertEqual(renderers[1], renderers[2])
 
     def test_versioned_prd_handoff_is_unique_ordered_chinese_final_suffix(self):
         output = (
@@ -1087,7 +1158,7 @@ class RepositoryContractTests(unittest.TestCase):
 
     def test_prd_changelog_reports_all_current_green_scenarios(self):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("10 个 GREEN 场景", changelog)
+        self.assertIn("15 个 GREEN 场景", changelog)
 
     def test_authoring_templates_use_chinese_titles_and_sections(self):
         expected = {
@@ -1122,7 +1193,7 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertIn("用户可见 handoff/status-block 回复后缀", changelog)
         self.assertIn("英文 canonical", changelog)
         self.assertIn("旧英文输入", changelog)
-        self.assertIn("状态块不进入 renderer stdout", changelog)
+        self.assertIn("状态块不进入 prompt renderer stdout", changelog)
 
     def test_project_reviewer_roles_have_explicit_retention_assessment(self):
         guide = (ROOT / "docs" / "agent-development.md").read_text(encoding="utf-8")
@@ -1349,6 +1420,15 @@ class RepositoryContractTests(unittest.TestCase):
     def test_repository_validator_rejects_incomplete_green_evidence(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
+            registry_path = repository / "evaluations" / "registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["skills"]["creating-development-specs-and-plans"][
+                "stage"
+            ] = "review-approved"
+            registry_path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
             green = (
                 repository
                 / "evaluations"
@@ -1362,7 +1442,11 @@ class RepositoryContractTests(unittest.TestCase):
             payload.pop("review_status", None)
             green.write_text(json.dumps(payload), encoding="utf-8")
 
-            result = run_repository_validator(repository)
+            result = run_repository_validator(
+                repository,
+                "--reviewed-skill",
+                "creating-development-specs-and-plans",
+            )
 
         self.assertEqual(1, result.returncode)
         for expected in (
@@ -1400,6 +1484,9 @@ class RepositoryContractTests(unittest.TestCase):
     def test_repository_validator_allows_ordinary_review_policy_text(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
+            configure_evidence_only_target(
+                repository, "creating-development-specs-and-plans"
+            )
             evidence = (
                 repository
                 / "evaluations"
@@ -1412,13 +1499,20 @@ class RepositoryContractTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            result = run_repository_validator(repository)
+            result = run_repository_validator(
+                repository,
+                "--evidence-only",
+                "creating-development-specs-and-plans",
+            )
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
     def test_repository_validator_allows_sensitive_data_terms_without_values(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
+            configure_evidence_only_target(
+                repository, "creating-development-specs-and-plans"
+            )
             evidence = (
                 repository
                 / "evaluations"
@@ -1431,7 +1525,11 @@ class RepositoryContractTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            result = run_repository_validator(repository)
+            result = run_repository_validator(
+                repository,
+                "--evidence-only",
+                "creating-development-specs-and-plans",
+            )
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
@@ -1538,7 +1636,14 @@ class RepositoryContractTests(unittest.TestCase):
     def test_repository_validator_passes_current_tree(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
-            result = run_repository_validator(repository)
+            configure_evidence_only_target(
+                repository, "creating-development-specs-and-plans"
+            )
+            result = run_repository_validator(
+                repository,
+                "--evidence-only",
+                "creating-development-specs-and-plans",
+            )
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("repository validation passed", result.stdout)
 
@@ -1619,6 +1724,9 @@ class RepositoryContractTests(unittest.TestCase):
     def test_repository_validator_passes_after_skill_test_cache_artifacts(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = copy_repository(Path(temporary_directory))
+            configure_evidence_only_target(
+                repository, "creating-development-specs-and-plans"
+            )
             scripts = (
                 repository
                 / "skills"
@@ -1633,12 +1741,10 @@ class RepositoryContractTests(unittest.TestCase):
             (scripts / "native.pyd").write_bytes(b"\x00\xffcache")
             (scripts / ".DS_Store").write_bytes(b"\x00\xffcache")
 
-            result = subprocess.run(
-                [sys.executable, str(repository / "scripts" / "validate_repo.py")],
-                cwd=repository,
-                text=True,
-                capture_output=True,
-                check=False,
+            result = run_repository_validator(
+                repository,
+                "--evidence-only",
+                "creating-development-specs-and-plans",
             )
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
