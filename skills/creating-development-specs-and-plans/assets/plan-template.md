@@ -1,9 +1,9 @@
 ---
-document_type: implementation-plan
-topic: <stable-topic>
-spec_path: <repository-relative-spec-path>
-spec_user_approval: approved
-review_status: pending
+文档类型: 实施计划
+主题: <stable-topic>
+技术规格: <repository-relative-spec-path>
+技术规格用户批准: 已批准
+计划评审状态: 待评审
 ---
 
 # <功能名称>实施计划
@@ -31,6 +31,13 @@ review_status: pending
 - Consumes: <现有签名、输入或制品。>
 - Produces: <后续使用的精确签名、输出或制品。>
 
+**保证追踪：**
+
+- 覆盖保证：<列出本任务实现并验证的 spec 保证 ID。>
+- 覆盖结果：<列出与这些保证对应的 spec 结果 ID。>
+- 精确测试：<列出测试路径与测试名称。>
+- 可观察断言：<列出与各保证 ID 对应、独立可判断的结果。>
+
 **测试方式：** <使用已批准技术规格和仓库规则要求的方法。当批准的技术规格或仓库规则要求 TDD 时，包含 RED、Verify RED、GREEN、Verify GREEN 和 REFACTOR 步骤；否则列出最小相关实施和验证步骤。>
 
 - [ ] 实施：<完成本任务所需的最小生产变更。>
@@ -44,4 +51,4 @@ review_status: pending
 
 ## 最终验证
 
-<列出完整命令、预期结果、集成评审以及任何明确未验证的发布门。>
+<列出完整命令、预期结果、集成评审以及任何明确未验证的发布门；核对保证 ID、精确测试、命令和断言双向完整，形成无遗漏保证且无孤立必需测试的追踪结果。>

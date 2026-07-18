@@ -2,7 +2,7 @@
 
 Use `assets/prd-template.md`. Replace every angle-bracket slot with current evidence and remove instructional slot text from the finished document.
 
-Write the user-facing document title, section headings, explanatory prose, and template-derived content in Chinese by default. Keep YAML frontmatter keys, allowed values, paths, commands, API names, field names, protocols, filenames, and other technical identifiers in their established technical form.
+Write the user-facing document title, section headings, explanatory prose, labels, and template-derived content in Chinese by default. New PRDs use the `chinese-current` frontmatter schema below. Paths, commands, API names, protocols, filenames, stable topics, ISO dates, confidence integers, reviewer roles, and canonical handoff identifiers retain their technical form.
 
 The `topic` value is the same non-reserved lowercase ASCII kebab-case topic confirmed in the current requirements-understanding summary and emitted in the handoff. Do not translate, localize, title-case, or independently rename it when writing the PRD.
 
@@ -16,6 +16,35 @@ Record product-visible constraints without choosing a technical solution. Keep a
 
 Write flat YAML frontmatter from byte zero. A new PRD can exist only after confidence is at least 95 and the current requirements-understanding summary is confirmed, so it begins with that confirmation approved while document approvals remain pending.
 
-`understanding_user_confirmation` records confirmation of the pre-document summary; it is not PRD approval. `independent_review` records a fresh reviewer verdict. `user_approval` records the user's explicit approval of the independently reviewed current file.
+For a new `chinese-current` PRD, use exactly these semantic fields and representations:
+
+| Canonical semantic key | Chinese key | Chinese value or format |
+| --- | --- | --- |
+| `document_type` | `文档类型` | `产品需求` |
+| `topic` | `主题` | stable topic unchanged |
+| `scope_type` | `范围类型` | `产品`、`阶段`、or `功能` |
+| `understanding_confidence` | `理解置信度` | integer from 95 through 100 |
+| `understanding_user_confirmation` | `需求理解确认` | `已确认` |
+| `user_approval` | `用户批准` | `待批准` or `已批准` |
+| `approved_at` | `批准日期` | ISO date, present only after user approval |
+| `independent_review` | `独立评审` | `待评审` or `已通过` |
+| `independent_reviewer` | `独立评审角色` | reviewer role unchanged, present only after review approval |
+| `independent_reviewed_at` | `独立评审日期` | ISO date, present only after review approval |
+
+`需求理解确认` records confirmation of the pre-document summary; it is not PRD approval. `独立评审` records a fresh reviewer verdict. `用户批准` records the user's explicit approval of the independently reviewed current file. Initial creation has `用户批准: 待批准` and `独立评审: 待评审` without approval, reviewer, or review dates. A real review approval changes only the same Chinese schema to `独立评审: 已通过` and adds `独立评审角色` plus `独立评审日期`. Explicit user approval changes only the same Chinese schema to `用户批准: 已批准` and adds `批准日期`.
+
+An existing PRD that already uses the complete English keys and English values is `english-legacy`. Read, maintain, invalidate, approve, and re-review an existing `english-legacy` document using that same schema: keep `understanding_user_confirmation`, `user_approval`, `approved_at`, `independent_review`, `independent_reviewer`, and `independent_reviewed_at` in English with their established English values. There is no implicit migration. Do not convert an existing English document merely because new documents are localized, and never add Chinese aliases to it.
+
+Determine the document schema before any metadata write. A document containing known English and known Chinese keys, duplicate semantic fields, malformed flat metadata, or unsupported lifecycle values is unreliable. Do not select the more favorable value, repair it automatically, or write partial approval state. Approval and review writeback always preserve the current reliable schema. The canonical English eight-field handoff and its gate truth table remain unchanged; normalize the reliable document meaning into that canonical state without reverse-parsing the Chinese display view.
+
+## Write Outcomes and Readback Reconciliation
+
+- If the target path already exists and the user has not identified it as the current PRD, stop without writing or overwriting it.
+- If a creation or approval precondition is not satisfied, report the actual pending or unknown state and make no write.
+- If a local write fails and the tool confirms it was not applied, report the persistence failure and retain the prior state; this is confirmed not applied, not partial success.
+- If the completion result is uncertain because the write tool was interrupted, timed out, or otherwise cannot say whether it applied, do not repeat the write. Read the target back before taking any review, approval, or downstream action.
+- If readback is byte-for-byte the exact expected content, treat the write as applied and continue from the verified document state without another write.
+- If readback is byte-for-byte the original content, treat the write as confirmed not applied; after fixing the cause, retry the same authorized write at most once from that original state.
+- If readback is unreadable, partially changed, or differs from both expected and original content, keep the write result and every dependent gate unknown. Do not overwrite or roll back automatically, do not repeat the write, and do not use partial approval. Stop for manual inspection of the current file.
 
 Use repository-relative paths inside the PRD and an absolute path in the handoff.

@@ -33,7 +33,7 @@
     },
     {
       "id": "candidate-evidence-and-scope",
-      "applies_to": ["05", "06", "07", "08", "10"],
+      "applies_to": ["05", "06", "07", "08", "10", "11"],
       "pass": "At completion, keeps only rules supported by this task's diff, validation, corrections, or stable operation evidence; removes duplicates and temporary details; and assigns project or global scope with a reason.",
       "fail": "Suggests speculative, duplicate, task-only, or personal-preference rules, omits evidence or scope reasoning, or writes an ambiguous-scope candidate without asking."
     },
@@ -51,7 +51,7 @@
     },
     {
       "id": "per-diff-explicit-approval",
-      "applies_to": ["02", "04", "05", "06", "07", "09", "10"],
+      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11"],
       "pass": "Shows the resolved target, candidate, evidence, scope reason, and current minimal unified diff, then treats explicit approval as valid only for that target and diff.",
       "fail": "Writes before showing the concrete diff, reuses approval across targets, batches project and global writes under one approval, or treats implementation approval as rule-write approval."
     },
@@ -81,9 +81,15 @@
     },
     {
       "id": "truthful-state-and-completion",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11"],
       "pass": "Reports only actions, approvals, writes, validation, and review that actually occurred; unresolved approval or unreadable state remains pending or blocked.",
       "fail": "Claims a rule was created, updated, effective, validated, or reviewed when the observable run did not establish it."
+    },
+    {
+      "id": "markdown-safe-approval-snapshot",
+      "applies_to": ["11"],
+      "pass": "Shows the target, evidence, scope reason, and complete unified diff exactly once; encloses the diff in a Markdown backtick fence longer than the longest consecutive backtick run inside the diff; uses no HTML details or summary disclosure tags; and places the explicit approval request after the closing fence without writing the rule.",
+      "fail": "Uses literal details or summary tags, lets an inner fence close the diff block, truncates or duplicates the diff, places the approval request inside the diff, or writes before approval."
     }
   ]
 }

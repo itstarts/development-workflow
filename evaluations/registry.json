@@ -23,7 +23,7 @@
     },
     "managing-agents-rules": {
       "evaluation_mode": "managed",
-      "evidence_profile": "creation-only",
+      "evidence_profile": "creation-plus-current-red",
       "stage": "review-approved"
     }
   }

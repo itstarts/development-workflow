@@ -4,6 +4,8 @@
 
 Run `inspect_product_requirements.py` before creating or materially modifying a spec and again before reporting either downstream gate open. Use the explicit repository root, requirements path, expected topic, and expected scope. Do not call a sibling skill or infer the expected values from the document being checked.
 
+The inspector accepts a complete `chinese-current` PRD or a compatible `english-legacy` PRD and always returns the existing canonical English JSON. Mixed-schema, semantic-duplicate, malformed, or unsupported localized metadata is unreliable and keeps both downstream gates blocked.
+
 Map reliable `pending` or confidence below 95 to `not-approved`. Map a missing path, missing field, invalid value, duplicate, conflict, mismatch, unreadable file, non-Git root, out-of-root path, nonzero inspector exit, or unparseable output to `unknown`. Both states block specification and implementation. Only the inspector's reliable `approved` result opens `specification_gate`.
 
 After this workflow has been selected from an upstream eight-field handoff, it owns the downstream response contract. If PRD revalidation fails, emit the complete fourteen-field handoff rather than falling back to eight fields. Map unreliable requirements values to `unknown` or `not-approved` as defined above, preserve reliably selected spec and plan paths, keep `specification_gate: blocked` and `implementation_gate: blocked`, and report the validation failure.
@@ -14,7 +16,7 @@ Dispatch a fresh read-only spec reviewer that did not write the spec. Give it th
 
 When the reviewer is known to be unavailable, do not dispatch and do not wait. Keep independent review pending, report the blocked gate, and stop after the fixed handoff. Do not probe a known-unavailable channel merely to manufacture an attempted review.
 
-Require findings ordered by severity, open questions, verification gaps, and one final verdict. Fix every finding and re-review the latest file until it is approved or genuinely blocked. The reviewer stays read-only; after approval of the latest file, the main agent updates independent-review metadata. A reviewer verdict does not equal user approval. Ask the user only after independent spec review passes; the user explicitly approves the current written spec before creating the plan. A material spec change invalidates approval from both the independent reviewer and the user, then restarts both gates.
+Require findings ordered by severity, open questions, verification gaps, and one final verdict. Fix every finding and re-review the latest file until it is approved or genuinely blocked. The reviewer stays read-only; after approval of the latest file, the main agent updates independent-review metadata in the spec's current reliable schema. A reviewer verdict does not equal user approval. Ask the user only after independent spec review passes; the user explicitly approves the current written spec before creating the plan. A material spec change invalidates approval from both the independent reviewer and the user, removes their current-schema dates and reviewer metadata, then restarts both gates.
 
 ## Plan Review
 
@@ -22,7 +24,9 @@ Dispatch a fresh read-only plan reviewer that did not write the plan. Give it th
 
 Apply the same known-unavailable rule: do not dispatch, do not wait, keep the plan pending, and never replace the missing review with author self-review.
 
-Fix every finding and re-review the latest plan. Set `review_status: approved` only after an explicit approval with no unresolved blocking finding or verification gap. When a reviewer is unavailable, keep the document pending; pending maps to not-approved. Unreliable review metadata maps to unknown.
+Before reviewing or creating a plan, classify the spec metadata as `chinese-current` or `english-legacy`, normalize it to canonical meaning, and verify the complete lifecycle contract. A mixed schema, semantic duplicate, missing required field, malformed scalar, or unsupported value makes the spec unreliable: do not create the plan and keep `implementation_gate` blocked.
+
+Fix every finding and re-review the latest plan. Write approval only after an explicit reviewer verdict with no unresolved blocking finding or verification gap, using `计划评审状态: 已通过` plus Chinese role/date fields for `chinese-current`, or `review_status: approved` plus `reviewer`/`reviewed_at` for `english-legacy`. When a reviewer is unavailable, keep the document's current-schema state pending; canonical pending maps to not-approved. Unreliable review metadata maps to unknown.
 
 ## Reply Classification
 

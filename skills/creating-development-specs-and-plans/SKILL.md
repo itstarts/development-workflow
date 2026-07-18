@@ -26,7 +26,8 @@ Turn approved product requirements into a repository-grounded technical specific
 
 - Keep an unavailable or inconclusive review blocked. Never replace independent review with author self-review.
 - An approved PRD is a hard prerequisite for spec creation or material modification. Re-run its inspection before opening either downstream gate.
-- Treat `review_status: pending` as `not-approved`; treat malformed, duplicate, conflicting, or unreadable review metadata as `unknown`.
+- Treat a reliable pending plan-review state in either supported document schema as `not-approved`; treat mixed-schema, malformed, semantic-duplicate, conflicting, unsupported, or unreadable review metadata as `unknown`.
+- Before plan creation, require a complete chinese-current spec or a reliable `english-legacy` spec. Do not create the plan from a mixed schema, semantic duplicate, missing-field, malformed, or unsupported spec, and keep `implementation_gate` blocked.
 - Open `implementation_gate` only while `specification_gate` remains open, spec independent review is approved, the user approved that reviewed spec, and the current plan has real independent approval.
 - End every checkpoint, blocked, capability-gap, approval, progress-only, document-stage completion, conservative fallback, or routing reply with the complete fourteen-field handoff record. End only ordinary nonblocking clarification with the compact three-line view. Renderer failure is the explicit fail-closed exception below.
 - Do not route when any handoff field is missing or conflicting, or when `implementation_gate` is not open.

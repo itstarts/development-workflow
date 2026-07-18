@@ -355,10 +355,20 @@ class RepositoryContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         document = (
             template.replace("<stable-kebab-topic>", "order-approval", 1)
-            .replace("<scope-type>", "feature", 1)
-            .replace("<integer-from-95-through-100>", "97", 1)
-            .replace("user_approval: pending", "user_approval: approved", 1)
-            .replace("independent_review: pending", "independent_review: approved", 1)
+            .replace("<产品-阶段-或-功能>", "功能", 1)
+            .replace("<95-100-整数>", "97", 1)
+            .replace(
+                "用户批准: 待批准",
+                "用户批准: 已批准\n批准日期: 2026-07-19",
+                1,
+            )
+            .replace(
+                "独立评审: 待评审",
+                "独立评审: 已通过\n"
+                "独立评审角色: product-analyst\n"
+                "独立评审日期: 2026-07-19",
+                1,
+            )
         )
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory) / "repository"
@@ -462,7 +472,11 @@ class RepositoryContractTests(unittest.TestCase):
                 criterion["applies_to"] = [
                     case_id
                     for case_id in criterion["applies_to"]
-                    if case_id not in {"09", "10", "11", "12", "13", "14", "15"}
+                    if case_id
+                    not in {
+                        "09", "10", "11", "12", "13", "14", "15", "16",
+                        "17", "18", "19",
+                    }
                 ]
             rubric["criteria"] = [
                 criterion
@@ -481,6 +495,10 @@ class RepositoryContractTests(unittest.TestCase):
                 "13-dependent-question.md",
                 "14-progressive-reference-loading.md",
                 "15-progress-only-full.md",
+                "16-content-only-deliverable.md",
+                "17-localized-prd-approval-writeback.md",
+                "18-legacy-english-prd-rereview.md",
+                "19-localized-prd-write-reconciliation.md",
             ):
                 (target / "cases" / case_name).unlink()
             shutil.rmtree(target / "green")
@@ -1158,7 +1176,7 @@ class RepositoryContractTests(unittest.TestCase):
 
     def test_prd_changelog_reports_all_current_green_scenarios(self):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("15 个 GREEN 场景", changelog)
+        self.assertIn("19 个 GREEN 场景", changelog)
 
     def test_authoring_templates_use_chinese_titles_and_sections(self):
         expected = {
@@ -1183,6 +1201,166 @@ class RepositoryContractTests(unittest.TestCase):
             with self.subTest(relative=relative):
                 for heading in headings:
                     self.assertIn(heading, content)
+
+    def test_localized_document_frontmatter_and_canonical_handoff_contracts_are_separate(self):
+        template = (
+            ROOT
+            / "skills"
+            / "creating-product-requirements"
+            / "assets"
+            / "prd-template.md"
+        ).read_text(encoding="utf-8")
+        match = re.match(r"\A---\n(.*?)\n---\n", template, re.DOTALL)
+        self.assertIsNotNone(match)
+        self.assertEqual(
+            [
+                "文档类型",
+                "主题",
+                "范围类型",
+                "理解置信度",
+                "需求理解确认",
+                "用户批准",
+                "独立评审",
+            ],
+            [line.split(":", 1)[0] for line in match.group(1).splitlines()],
+        )
+        for legacy_key in (
+            "document_type",
+            "topic",
+            "scope_type",
+            "understanding_confidence",
+            "understanding_user_confirmation",
+            "user_approval",
+            "independent_review",
+        ):
+            with self.subTest(legacy_key=legacy_key):
+                self.assertNotRegex(match.group(1), rf"(?m)^{legacy_key}:")
+
+        handoff = (
+            ROOT
+            / "skills"
+            / "creating-product-requirements"
+            / "references"
+            / "review-and-handoff.md"
+        ).read_text(encoding="utf-8")
+        canonical = re.search(r"```text\n(.*?)\n```", handoff, re.DOTALL)
+        self.assertIsNotNone(canonical)
+        self.assertEqual(
+            list(CANONICAL_REQUIREMENTS_FIELDS),
+            [line.split(":", 1)[0] for line in canonical.group(1).splitlines()],
+        )
+
+        localized_templates = {
+            "skills/creating-development-specs-and-plans/assets/spec-template.md": [
+                "文档类型", "主题", "需求文档", "需求主题", "需求范围",
+                "需求理解置信度", "需求理解确认", "需求文档用户批准",
+                "需求文档独立评审", "技术规格门禁", "技术规格用户批准",
+                "技术规格独立评审",
+            ],
+            "skills/creating-development-specs-and-plans/assets/plan-template.md": [
+                "文档类型", "主题", "技术规格", "技术规格用户批准", "计划评审状态",
+            ],
+        }
+        for relative, expected_keys in localized_templates.items():
+            content = (ROOT / relative).read_text(encoding="utf-8")
+            localized = re.match(r"\A---\n(.*?)\n---\n", content, re.DOTALL)
+            self.assertIsNotNone(localized)
+            with self.subTest(relative=relative):
+                self.assertEqual(
+                    expected_keys,
+                    [line.split(":", 1)[0] for line in localized.group(1).splitlines()],
+                )
+
+        workflow_handoff = (
+            ROOT
+            / "skills"
+            / "creating-development-specs-and-plans"
+            / "references"
+            / "review-and-handoff.md"
+        ).read_text(encoding="utf-8")
+        workflow_canonical = re.search(
+            r"```text\n(.*?)\n```", workflow_handoff, re.DOTALL
+        )
+        self.assertIsNotNone(workflow_canonical)
+        self.assertEqual(
+            list(CANONICAL_FOURTEEN_FIELDS),
+            [
+                line.split(":", 1)[0]
+                for line in workflow_canonical.group(1).splitlines()
+            ],
+        )
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            spec = root / "spec.md"
+            plan = root / "plan.md"
+            spec.write_text("# Localized metadata spec\n", encoding="utf-8")
+
+            def discovered_review(plan_text: str) -> dict:
+                plan.write_text(plan_text, encoding="utf-8")
+                completed = subprocess.run(
+                    [
+                        sys.executable,
+                        str(
+                            ROOT
+                            / "skills"
+                            / "generating-development-prompts"
+                            / "scripts"
+                            / "discover_context.py"
+                        ),
+                        "--cwd",
+                        str(root),
+                        "--topic",
+                        "localized-metadata",
+                        "--spec",
+                        str(spec),
+                        "--plan",
+                        str(plan),
+                    ],
+                    cwd=root,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(0, completed.returncode, completed.stderr)
+                return json.loads(completed.stdout)["documents"]["plan"]["review"]
+
+            chinese = discovered_review(
+                "---\n"
+                "文档类型: 实施计划\n"
+                "主题: localized-metadata\n"
+                "技术规格: docs/specs/localized-metadata-design.md\n"
+                "技术规格用户批准: 已批准\n"
+                "计划评审状态: 已通过\n"
+                "计划评审角色: skill-reviewer\n"
+                "计划评审日期: 2026-07-19\n"
+                "---\n# Plan\n"
+            )
+            self.assertEqual(
+                {
+                    "status": "approved",
+                    "reviewer": "skill-reviewer",
+                    "reviewed_at": "2026-07-19",
+                },
+                chinese,
+            )
+            self.assertEqual(
+                "unknown",
+                discovered_review("计划评审状态: 已通过\n\n# Plan\n")["status"],
+            )
+
+        public_workflow = (ROOT / "docs" / "workflow.md").read_text(
+            encoding="utf-8"
+        )
+        for required in (
+            "chinese-current",
+            "english-legacy",
+            "英文 canonical",
+            "不批量迁移",
+            "legacy header 只接受 ASCII 英文字段",
+        ):
+            with self.subTest(public_contract=required):
+                self.assertIn(required, public_workflow)
 
     def test_renderer_stdout_breaking_migration_is_publicly_documented(self):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -1256,14 +1434,17 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertNotIn("product requirements", governance)
         self.assertNotIn("bounded change", governance)
 
-    def test_authoring_plan_template_preserves_handoff_review_states(self):
+    def test_legacy_authoring_plan_preserves_handoff_review_states(self):
         template = (
-            ROOT
-            / "skills"
-            / "creating-development-specs-and-plans"
-            / "assets"
-            / "plan-template.md"
-        ).read_text(encoding="utf-8")
+            "---\n"
+            "document_type: implementation-plan\n"
+            "topic: order\n"
+            "spec_path: docs/specs/2026-07-15-order-design.md\n"
+            "spec_user_approval: approved\n"
+            "review_status: pending\n"
+            "---\n\n"
+            "# Order plan\n"
+        )
 
         def review_status(content: str) -> str:
             with tempfile.TemporaryDirectory() as temporary_directory:
@@ -1480,6 +1661,79 @@ class RepositoryContractTests(unittest.TestCase):
 
         self.assertEqual(1, result.returncode)
         self.assertIn("evaluation evidence contains sensitive or machine-local text", result.stderr)
+
+    def test_public_security_policy_names_the_synthetic_fixture_root(self):
+        policy = (ROOT / "SECURITY.md").read_text(encoding="utf-8").casefold()
+        self.assertIn("/workspace/fixture", policy)
+        self.assertIn("合成", policy)
+        self.assertIn("不是真实", policy)
+
+    def test_repository_validator_allows_the_synthetic_fixture_root(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            configure_evidence_only_target(
+                repository, "creating-development-specs-and-plans"
+            )
+            evidence = (
+                repository
+                / "evaluations"
+                / "creating-development-specs-and-plans"
+                / "green"
+                / "synthetic-root-output.md"
+            )
+            evidence.write_text(
+                "fixture repository: /workspace/fixture/docs/specs/example.md\n",
+                encoding="utf-8",
+            )
+
+            result = run_repository_validator(
+                repository,
+                "--evidence-only",
+                "creating-development-specs-and-plans",
+            )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_repository_validator_rejects_cross_platform_machine_local_evaluation_paths(self):
+        machine_local_paths = (
+            ("macos-private-temp", "/private/var/folders/aa/bb/T/dw-eval/fixture/output.md"),
+            ("macos-var-temp", "/var/folders/aa/bb/T/dw-eval/fixture/output.md"),
+            ("macos-private-tmp", "/private/tmp/dw-eval/fixture/output.md"),
+            ("linux-home", "/home/example/private/output.md"),
+            ("posix-temp", "/tmp/dw-eval/fixture/output.md"),
+            ("windows-backslash", r"C:\Users\example\private\output.md"),
+            ("windows-slash", "C:/Users/example/private/output.md"),
+            ("unapproved-workspace-root", "/workspace/other/private/output.md"),
+        )
+        for label, machine_local_path in machine_local_paths:
+            with self.subTest(label=label), tempfile.TemporaryDirectory() as temporary_directory:
+                repository = copy_repository(Path(temporary_directory))
+                configure_evidence_only_target(
+                    repository, "creating-development-specs-and-plans"
+                )
+                evidence = (
+                    repository
+                    / "evaluations"
+                    / "creating-development-specs-and-plans"
+                    / "green"
+                    / "machine-local-output.md"
+                )
+                evidence.write_text(
+                    f"raw evaluation path: {machine_local_path}\n",
+                    encoding="utf-8",
+                )
+
+                result = run_repository_validator(
+                    repository,
+                    "--evidence-only",
+                    "creating-development-specs-and-plans",
+                )
+
+            self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+            self.assertIn(
+                "evaluation evidence contains sensitive or machine-local text",
+                result.stderr,
+            )
 
     def test_repository_validator_allows_ordinary_review_policy_text(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

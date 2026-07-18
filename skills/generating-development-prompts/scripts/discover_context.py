@@ -14,6 +14,18 @@ from typing import List, Optional, Sequence, Tuple
 DATE_PATTERN = re.compile(r"(?<!\d)(\d{4}-\d{2}-\d{2})(?!\d)")
 TOKEN_PATTERN = re.compile(r"[\w]+", re.UNICODE)
 MARKDOWN_PATH_PATTERN = re.compile(r"[\w./-]+\.md\b", re.IGNORECASE)
+ASCII_KEY_PATTERN = re.compile(r"[A-Za-z][A-Za-z0-9_-]*")
+STABLE_TOPIC_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+RESERVED_TOPICS = {"null", "unknown", "pending"}
+CHINESE_PLAN_KEYS = {
+    "文档类型": "document_type",
+    "主题": "topic",
+    "技术规格": "spec_path",
+    "技术规格用户批准": "spec_user_approval",
+    "计划评审状态": "review_status",
+    "计划评审角色": "reviewer",
+    "计划评审日期": "reviewed_at",
+}
 
 
 @dataclass(frozen=True)
@@ -24,6 +36,12 @@ class Candidate:
     date: str
     mtime_ns: int
     content: str
+
+
+@dataclass(frozen=True)
+class MetadataRecord:
+    language: str
+    fields: dict
 
 
 class GitUnavailableError(Exception):
@@ -268,22 +286,60 @@ def unknown_review() -> dict:
     return {"status": "unknown", "reviewer": None, "reviewed_at": None}
 
 
-def scalar_record(lines: Sequence[str]) -> Optional[dict]:
+def scalar_value(line: str) -> Optional[Tuple[str, str]]:
+    if not line or line[:1].isspace():
+        return None
+    match = re.fullmatch(r"([^:\s][^:]*):[ \t]*(.+?)", line)
+    if not match:
+        return None
+    key = match.group(1)
+    value = match.group(2).strip()
+    if not value or value[0] in "'\"[{|>&*!" or value[-1] in "'\"]}":
+        return None
+    return key, value
+
+
+def ascii_scalar_record(lines: Sequence[str]) -> Optional[dict]:
     records = {}
     for line in lines:
-        if not line or line[:1].isspace():
+        parsed = scalar_value(line)
+        if parsed is None:
             return None
-        match = re.fullmatch(r"([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.+?)", line)
-        if not match:
+        raw_key, value = parsed
+        if ASCII_KEY_PATTERN.fullmatch(raw_key) is None:
             return None
-        key = match.group(1).casefold()
-        value = match.group(2).strip()
+        key = raw_key.casefold()
         if key in records:
-            return None
-        if not value or value[0] in "'\"[{|>&*!" or value[-1] in "'\"]}":
             return None
         records[key] = value
     return records
+
+
+def frontmatter_record(lines: Sequence[str]) -> Optional[MetadataRecord]:
+    fields = {}
+    language = None
+    for line in lines:
+        parsed = scalar_value(line)
+        if parsed is None:
+            return None
+        raw_key, value = parsed
+        if ASCII_KEY_PATTERN.fullmatch(raw_key) is not None:
+            current_language = "english-legacy"
+            semantic_key = raw_key.casefold()
+        elif raw_key in CHINESE_PLAN_KEYS:
+            current_language = "chinese-current"
+            semantic_key = CHINESE_PLAN_KEYS[raw_key]
+        else:
+            return None
+        if language is not None and current_language != language:
+            return None
+        language = current_language
+        if semantic_key in fields:
+            return None
+        fields[semantic_key] = value
+    if language is None:
+        return None
+    return MetadataRecord(language=language, fields=fields)
 
 
 def review_from_records(records: Optional[dict], frontmatter: bool) -> dict:
@@ -303,6 +359,61 @@ def review_from_records(records: Optional[dict], frontmatter: bool) -> dict:
     }
 
 
+def valid_iso_date(value: str) -> bool:
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) is None:
+        return False
+    try:
+        datetime.date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
+
+
+def review_from_frontmatter(record: Optional[MetadataRecord]) -> dict:
+    if record is None:
+        return unknown_review()
+    if record.language == "english-legacy":
+        return review_from_records(record.fields, frontmatter=True)
+
+    fields = record.fields
+    required = {
+        "document_type",
+        "topic",
+        "spec_path",
+        "spec_user_approval",
+        "review_status",
+    }
+    if not required.issubset(fields):
+        return unknown_review()
+    if fields["document_type"] != "实施计划":
+        return unknown_review()
+    topic = fields["topic"]
+    if (
+        STABLE_TOPIC_PATTERN.fullmatch(topic) is None
+        or topic in RESERVED_TOPICS
+    ):
+        return unknown_review()
+    if not fields["spec_path"] or fields["spec_user_approval"] != "已批准":
+        return unknown_review()
+
+    raw_status = fields["review_status"]
+    reviewer = fields.get("reviewer")
+    reviewed_at = fields.get("reviewed_at")
+    if raw_status == "待评审":
+        if reviewer is not None or reviewed_at is not None:
+            return unknown_review()
+        return {"status": "not-approved", "reviewer": None, "reviewed_at": None}
+    if raw_status == "已通过":
+        if reviewer is None or reviewed_at is None or not valid_iso_date(reviewed_at):
+            return unknown_review()
+        return {
+            "status": "approved",
+            "reviewer": reviewer,
+            "reviewed_at": reviewed_at,
+        }
+    return unknown_review()
+
+
 def parse_review(candidate: Optional[Candidate]) -> dict:
     if candidate is None:
         return unknown_review()
@@ -313,7 +424,7 @@ def parse_review(candidate: Optional[Candidate]) -> dict:
             closing = lines.index("---", 1)
         except ValueError:
             return unknown_review()
-        return review_from_records(scalar_record(lines[1:closing]), frontmatter=True)
+        return review_from_frontmatter(frontmatter_record(lines[1:closing]))
 
     metadata_lines = []
     for line in content.splitlines():
@@ -326,7 +437,7 @@ def parse_review(candidate: Optional[Candidate]) -> dict:
         if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*:[ \t]*.+?", line):
             break
         metadata_lines.append(line)
-    return review_from_records(scalar_record(metadata_lines), frontmatter=False)
+    return review_from_records(ascii_scalar_record(metadata_lines), frontmatter=False)
 
 
 def plan_entry(candidate: Optional[Candidate], source: str) -> dict:

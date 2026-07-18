@@ -1,16 +1,16 @@
 ---
-document_type: design
-topic: <stable-topic>
-requirements_path: <repository-relative-requirements-path>
-requirements_topic: <stable-topic>
-requirements_scope: <product-or-phase-or-feature>
-requirements_understanding_confidence: <integer-from-95-through-100>
-requirements_understanding_confirmation: approved
-requirements_user_approval: approved
-requirements_independent_review: approved
-specification_gate: open
-user_approval: pending
-independent_review: pending
+文档类型: 技术规格
+主题: <stable-topic>
+需求文档: <repository-relative-requirements-path>
+需求主题: <stable-topic>
+需求范围: <产品-阶段-或-功能>
+需求理解置信度: <95-100-整数>
+需求理解确认: 已确认
+需求文档用户批准: 已批准
+需求文档独立评审: 已通过
+技术规格门禁: 已开放
+技术规格用户批准: 待批准
+技术规格独立评审: 待评审
 ---
 
 # <功能名称>技术规格
@@ -39,9 +39,21 @@ independent_review: pending
 
 <定义相关 API、事件、命令、文件格式或其他技术接口；无需接口时，基于证据说明不适用。>
 
+## 命令结果与失败矩阵
+
+| 结果 ID | 命令或异步完成阶段 | 前置条件 | 结果类型 | 客户端可见结果 | 事务、回滚与副作用 | 调用方动作 | 保证 ID |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `O-<编号>` | <命令或完成阶段> | <必要状态与输入> | <成功、无变化、校验、状态、冲突、持久化、依赖、取消、超时或未知中的一个结果> | <HTTP、状态、错误码与必要字段> | <该结果的提交、回滚与一致性效果> | <修正、合并、重试、轮询、停止或其它单一责任> | `G-<编号>` |
+
+<按结果而不是按命令归一化；每个结果单独一行，同一命令可重复多行。成功、无变化和每个失败或提交核对分支分别给唯一结果 ID；调用方动作或一致性效果不同时，不得在同一行合并。覆盖每个改变持久化状态的命令和每个异步完成或提交路径；不存在相关命令时，基于证据说明不适用。>
+
 ## 数据模型与实体关系
 
 <定义相关实体、关系、所有权、持久化和不变量；无需数据模型变更时，基于证据说明不适用。>
+
+## 数据库事务与锁语义
+
+<数据库或持久化并发相关时，明确实际引擎、模式、版本依据、事务起止、首次读写、锁获取顺序、读转写语义、持锁时长、隔离或快照、busy/deadlock/timeout、重试、回滚和公开失败分类；不适用时基于证据说明。>
 
 ## 状态转换、迁移边界与一致性
 
@@ -50,6 +62,14 @@ independent_review: pending
 ## 错误与不确定性
 
 <定义必要校验、失败行为和未解决证据。仅在功能需要时增加权限、安全或敏感数据处理。>
+
+## 保证与测试追踪
+
+| 保证 ID | 保证或失败契约 | 对应结果 ID 或状态 | 精确测试文件与名称 | 精确命令 | 可观察断言 |
+| --- | --- | --- | --- | --- | --- |
+| `G-<编号>` | <单一可验证保证> | `<O-编号>` 或 <状态转换> | `<测试路径>::<测试名称>` | `<可执行测试命令>` | <独立可观察结果> |
+
+<每项重要保证单独占一行；不得遗漏命令结果、客户端可见失败、事务锁、回滚、一致性或异步完成保证，也不得保留无法映射回保证 ID 的必需测试。>
 
 ## 测试与文档
 

@@ -1,11 +1,11 @@
 ---
-document_type: product-requirements
-topic: <stable-kebab-topic>
-scope_type: <scope-type>
-understanding_confidence: <integer-from-95-through-100>
-understanding_user_confirmation: approved
-user_approval: pending
-independent_review: pending
+文档类型: 产品需求
+主题: <stable-kebab-topic>
+范围类型: <产品-阶段-或-功能>
+理解置信度: <95-100-整数>
+需求理解确认: 已确认
+用户批准: 待批准
+独立评审: 待评审
 ---
 
 # <产品需求名称>

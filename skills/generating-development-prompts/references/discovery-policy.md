@@ -38,9 +38,15 @@ Return exactly `approved`, `not-approved`, or `unknown`.
 
 Accept only one of these forms:
 
-1. Complete YAML frontmatter beginning at byte zero with exactly one flat, column-zero `review_status: scalar` entry; or
-2. When no frontmatter exists, exactly one column-zero `Review-Status: <value>` within the first 20 non-empty metadata lines before the first Markdown heading, code fence, or body paragraph.
+1. YAML frontmatter beginning at byte zero that is either a complete chinese-current plan or a compatible english-legacy frontmatter record; or
+2. When no frontmatter exists, one ASCII-only legacy header using column-zero `Review-Status`, `Reviewer`, and `Reviewed-At` fields within the first 20 non-empty metadata lines before the first Markdown heading, code fence, or body paragraph.
 
-For frontmatter, parse only simple flat `key: scalar` entries. Do not fall back to the header form when frontmatter exists. Treat duplicate or conflicting fields, nested values, multiline scalars, unrecognized quoting, malformed or unclosed frontmatter, and markers inside examples or code fences as `unknown`. Map case-insensitive `approved` to `approved`, a recognized explicit different state to `not-approved`, and missing or unreliable input to `unknown`. Preserve unique reviewer and review date metadata when present, but never use them as approval substitutes.
+For every frontmatter, parse only simple flat `key: scalar` entries. Accept an ASCII key matching the legacy key grammar or an exact Chinese key from this fixed plan set: `文档类型`, `主题`, `技术规格`, `技术规格用户批准`, `计划评审状态`, `计划评审角色`, and `计划评审日期`. Classify the schema before reading status. A mixed schema, semantic duplicate, unknown Unicode key, malformed line, nested value, multiline scalar, unrecognized quoting, or unclosed frontmatter is `unknown`. Do not fall back to the header form when frontmatter exists.
+
+An english-legacy plan keeps the existing review-only contract: require one `review_status` to classify review, map case-insensitive `approved` to `approved`, map another explicit scalar state to `not-approved`, and preserve optional unique `reviewer` and `reviewed_at` values. Do not add document type, topic, or spec-path requirements to this legacy schema.
+
+A complete Chinese plan requires exactly one `文档类型: 实施计划`, a non-reserved kebab-case `主题`, a non-empty `技术规格`, `技术规格用户批准: 已批准`, and one supported plan-review state. Map `计划评审状态: 已通过` to `approved` only when unique non-empty `计划评审角色` and ISO `计划评审日期` fields are present; preserve those two technical values. Map `计划评审状态: 待评审` to `not-approved` only when reviewer and date are absent. A missing required field, stale lifecycle field, invalid date, or unsupported localized value is `unknown`; reviewer or date never substitutes for approval.
+
+Keep the header parser separate and ASCII-only. Do not accept Chinese metadata in the legacy header. Treat duplicate or conflicting header fields and markers inside examples or code fences as `unknown`.
 
 Allow prompt generation for all three states. Require the rendered prompt to block implementation before modification whenever the state is not `approved`.

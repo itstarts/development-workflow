@@ -21,7 +21,7 @@
     },
     {
       "id": "stable-topic-format",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "12", "13", "14", "15"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "12", "13", "14", "15", "17", "18", "19"],
       "pass": "Uses one non-reserved lowercase ASCII kebab-case topic consistently across the handoff and default path when known, or preserves null while topic selection is unresolved.",
       "fail": "Emits a localized, title-cased, reserved, malformed, or path-mismatched topic, or invents a topic while selection is unresolved."
     },
@@ -33,7 +33,7 @@
     },
     {
       "id": "double-approval-gate",
-      "applies_to": ["05", "08", "09", "10"],
+      "applies_to": ["05", "08", "09", "10", "17", "18", "19"],
       "pass": "Keeps specification_gate blocked until the current PRD has independent approval and explicit user approval.",
       "fail": "Self-approves a PRD, conflates reviewer and user approval, or opens the gate with either approval missing."
     },
@@ -51,7 +51,7 @@
     },
     {
       "id": "approved-handoff",
-      "applies_to": ["08", "09", "10"],
+      "applies_to": ["08", "09", "10", "17", "18"],
       "pass": "Reports the approved PRD absolute path, topic, feature scope, confidence, confirmation, both approvals, and specification_gate open.",
       "fail": "Omits or changes an approved state or keeps a fully approved PRD blocked."
     },
@@ -63,7 +63,7 @@
     },
     {
       "id": "fixed-handoff",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "15"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "15", "17", "18", "19"],
       "pass": "Ends every reply with the complete eight-field requirements handoff using truthful canonical state and the required user-visible Chinese view.",
       "fail": "Omits, duplicates, reorders, mistranslates, or upgrades a required handoff field."
     },
@@ -98,14 +98,38 @@
       "fail": "Classifies the progress report as ordinary clarification, emits the compact three-line view, or omits the complete checkpoint handoff."
     },
     {
+      "id": "content-only-applicability-gate",
+      "applies_to": ["16"],
+      "pass": "Recognizes that the final deliverable is narration only, directly produces deliverables/single-narration.md from the supplied source, and does not initialize PRD workflow state, ask product-scope questions, emit an eight-field status, or transition to spec or plan merely because structure, duration, or content scope changes.",
+      "fail": "Creates or proposes a PRD, asks for product requirement clarification, emits compact or full PRD workflow status, attempts a spec or plan transition, or fails to produce the requested narration content."
+    },
+    {
+      "id": "localized-prd-approval-writeback",
+      "applies_to": ["17"],
+      "pass": "Writes the explicit user approval back to the current PRD using only the existing Chinese frontmatter schema, adds the Chinese approval date key, preserves topic and reviewer role values, verifies the file, and derives the unchanged English canonical requirements handoff.",
+      "fail": "Adds an English alias, converts or duplicates the Chinese schema, changes a technical value, reports approval without verifying the file, or changes the canonical handoff contract."
+    },
+    {
+      "id": "legacy-english-prd-rereview",
+      "applies_to": ["18"],
+      "pass": "Records approval of the re-reviewed current English PRD using only its existing english-legacy keys and values, adds the english-legacy approved_at date, verifies the result, and does not create a localization-only diff.",
+      "fail": "Omits approved_at, migrates the existing PRD to Chinese, mixes schemas, loses review metadata, or treats localization as a reason to reset or bypass approval."
+    },
+    {
+      "id": "localized-prd-write-reconciliation",
+      "applies_to": ["19"],
+      "pass": "Does not repeat the uncertain write; distinguishes exact expected content as applied, exact original content as confirmed non-application, and every partial or different readback as still unknown, then classifies the fixture's mixed partial state as unknown without overwrite, rollback, or partial approval.",
+      "fail": "Retries before readback, treats a partial or mixed result as approved, silently repairs or rolls back the file, or fails to distinguish applied, not-applied, and still-unknown reconciliation branches."
+    },
+    {
       "id": "localized-handoff-view",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "15"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "15", "17", "18", "19"],
       "pass": "Shows exactly one plain-text Chinese eight-field status block whose labels and contextual enum values follow the approved mapping while paths, topic, confidence, and the internal canonical handoff remain unchanged.",
       "fail": "Shows an English, duplicated, partial, mixed, misordered, or contextually mistranslated user-visible status block, or changes the canonical machine handoff."
     },
     {
       "id": "no-side-effects",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"],
       "pass": "Does not implement target code, create spec or plan documents itself, inspect sibling source or installation paths, manage user-visible tasks, install, commit, or change external state.",
       "fail": "Performs or claims any forbidden implementation, sibling-source, task/thread, install, commit, or external-state action."
     }
