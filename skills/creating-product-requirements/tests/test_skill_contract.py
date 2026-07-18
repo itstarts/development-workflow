@@ -322,6 +322,51 @@ class CreatingProductRequirementsContractTests(unittest.TestCase):
         self.assertEqual("pending", metadata["user_approval"])
         self.assertEqual("pending", metadata["independent_review"])
 
+    def test_references_are_loaded_progressively_by_stage(self):
+        text = read("SKILL.md").casefold()
+        discovery = "references/discovery-and-confidence.md"
+        document = "references/document-contract.md"
+        review = "references/review-and-handoff.md"
+        self.assertIn("first read only", text)
+        self.assertIn(discovery, text)
+        self.assertIn("before the first prd write", text)
+        self.assertIn(document, text)
+        self.assertIn("before summary confirmation", text)
+        self.assertIn(review, text)
+        self.assertNotIn("read these files completely before the first substantive response", text)
+
+    def test_questions_are_dependency_aware_and_capped_at_three(self):
+        text = (
+            read("SKILL.md") + read("references/discovery-and-confidence.md")
+        ).casefold()
+        for phrase in (
+            "one to three",
+            "independent questions",
+            "applicability",
+            "ask only one decisive question",
+            "partial answers",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+
+    def test_reply_classification_uses_compact_only_for_ordinary_clarification(self):
+        text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
+        for phrase in (
+            "ordinary-clarification",
+            "compact",
+            "exactly three consecutive lines",
+            "checkpoint",
+            "blocked",
+            "full",
+            "requirements-understanding summary confirmation",
+            "prd approval",
+            "progress-only",
+            "conservatively use full",
+            "scripts/render_handoff.py",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+
 
 if __name__ == "__main__":
     unittest.main()

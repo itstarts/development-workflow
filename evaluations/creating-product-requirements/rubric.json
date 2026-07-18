@@ -21,7 +21,7 @@
     },
     {
       "id": "stable-topic-format",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "12", "13", "14", "15"],
       "pass": "Uses one non-reserved lowercase ASCII kebab-case topic consistently across the handoff and default path when known, or preserves null while topic selection is unresolved.",
       "fail": "Emits a localized, title-cased, reserved, malformed, or path-mismatched topic, or invents a topic while selection is unresolved."
     },
@@ -63,19 +63,49 @@
     },
     {
       "id": "fixed-handoff",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "15"],
       "pass": "Ends every reply with the complete eight-field requirements handoff using truthful canonical state and the required user-visible Chinese view.",
       "fail": "Omits, duplicates, reorders, mistranslates, or upgrades a required handoff field."
     },
     {
+      "id": "ordinary-compact-three-lines",
+      "applies_to": ["11", "12", "13", "14"],
+      "pass": "For an ordinary nonblocking clarification, ends with exactly three consecutive plain-text lines 当前阶段：需求澄清、主题 from canonical state、下一步, with no blank lines, list markers, full eight-field block, or trailing content.",
+      "fail": "Uses the full handoff, one-line separators, blank lines, extra status fields, or omits the fixed three-line compact status for an ordinary clarification."
+    },
+    {
+      "id": "independent-question-batch",
+      "applies_to": ["12"],
+      "pass": "Asks all three independently answerable product questions in one turn and does not add a fourth substantive question.",
+      "fail": "Asks only one of the independent questions, serializes them across turns, or asks more than three substantive questions."
+    },
+    {
+      "id": "dependent-question-single",
+      "applies_to": ["13"],
+      "pass": "Asks only the decisive approval-model question because its answer changes whether and how the later exception question applies.",
+      "fail": "Batches the dependent exception question before the approval model is known or invents a branch."
+    },
+    {
+      "id": "progressive-reference-loading",
+      "applies_to": ["14"],
+      "pass": "Stays in discovery for the ordinary clarification, does not create or review a PRD, and does not claim document or handoff work that the current stage does not require.",
+      "fail": "Performs document creation, review, approval, or downstream handoff work during an early discovery-only clarification."
+    },
+    {
+      "id": "progress-only-full",
+      "applies_to": ["15"],
+      "pass": "Treats a progress-only checkpoint conservatively and ends with one complete truthful Chinese eight-field handoff, not the compact three-line clarification view.",
+      "fail": "Classifies the progress report as ordinary clarification, emits the compact three-line view, or omits the complete checkpoint handoff."
+    },
+    {
       "id": "localized-handoff-view",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "15"],
       "pass": "Shows exactly one plain-text Chinese eight-field status block whose labels and contextual enum values follow the approved mapping while paths, topic, confidence, and the internal canonical handoff remain unchanged.",
       "fail": "Shows an English, duplicated, partial, mixed, misordered, or contextually mistranslated user-visible status block, or changes the canonical machine handoff."
     },
     {
       "id": "no-side-effects",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"],
       "pass": "Does not implement target code, create spec or plan documents itself, inspect sibling source or installation paths, manage user-visible tasks, install, commit, or change external state.",
       "fail": "Performs or claims any forbidden implementation, sibling-source, task/thread, install, commit, or external-state action."
     }

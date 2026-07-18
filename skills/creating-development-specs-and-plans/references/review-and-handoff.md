@@ -24,6 +24,17 @@ Apply the same known-unavailable rule: do not dispatch, do not wait, keep the pl
 
 Fix every finding and re-review the latest plan. Set `review_status: approved` only after an explicit approval with no unresolved blocking finding or verification gap. When a reviewer is unavailable, keep the document pending; pending maps to not-approved. Unreliable review metadata maps to unknown.
 
+## Reply Classification
+
+Classify each reply before rendering:
+
+- `ordinary-clarification`: an expected nonblocking technical discovery or choice question. Invoke `scripts/render_handoff.py` with `handoff_schema: workflow`, `view: compact`, the complete canonical object, the verified clarification `stage`, and verified `next_step`.
+- `checkpoint`: a pause or recovery point, spec approval request, plan approval or document-stage completion, implementation approval handoff, or route selection. Invoke the same local script with `view: full`, `stage: null`, and `next_step: null`.
+- `blocked`: a deterministic requirements, document, metadata, permission, reviewer, tool, reference, renderer, or capability problem that prevents progress. Use `full` when canonical state can be rendered; renderer failure itself emits no partial status.
+- `routing`: every automatic downstream route uses `full`.
+
+A progress-only update is not ordinary clarification. Conservatively use full when classification is uncertain. Invoke the renderer through a structured process API, trust only exit-code-zero stdout, never import a sibling skill copy, and preserve canonical English state on any failure.
+
 ## Fixed Handoff Record
 
 Maintain the following canonical English snapshot as the machine-readable authority. It also preserves the legacy English handoff input contract. Use absolute paths and do not omit fields whose value is pending, unknown, or null:
@@ -47,7 +58,7 @@ implementation_gate: blocked | open
 
 The `|` entries above are reference-only alternatives. In a canonical handoff, emit exactly one allowed value for each field and never copy the `|` or unused alternatives. Do not reverse-parse the Chinese view into canonical state; always render it forward from the preserved canonical English snapshot.
 
-Every user-facing response, including a clarification question or ordinary blocked response, must end with the complete fourteen-field record as one authoritative Chinese fourteen-field view in this exact order and with these exact full-width-colon labels. Chinese view mapping failure is the only explicit exception; its fail-closed response is defined below.
+Every checkpoint, blocked response, progress-only update, approval request, document-stage completion, conservative fallback, and routing response must end with the complete fourteen-field record as one authoritative Chinese fourteen-field view in this exact order and with these exact full-width-colon labels. Renderer failure is the explicit fail-closed exception defined below.
 
 ```text
 需求文档：<绝对路径> | 未确定
@@ -67,6 +78,14 @@ Every user-facing response, including a clarification question or ordinary block
 ```
 
 This second block is a schema reference, not a literal reply. In an actual response, emit one allowed value per field, never copy the `|` alternatives, and render the authoritative Chinese view as plain text, not a Markdown code fence.
+
+For `ordinary-clarification`, successful renderer stdout is exactly three consecutive plain-text lines with no blank line, list marker, leading whitespace, full handoff field, or trailing content:
+
+```text
+当前阶段：<技术规格澄清 | 实施计划澄清>
+主题：<stable-topic | 未确定 | 未知>
+下一步：<one verified action>
+```
 
 Apply mappings by field context rather than by globally replacing English tokens:
 

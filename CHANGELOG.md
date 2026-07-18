@@ -22,16 +22,22 @@
 
 ### creating-product-requirements
 
+- 普通非阻塞澄清从完整八字段后缀改为固定三行 compact 状态，属于 `breaking contract change`；摘要确认、批准、阻塞、阶段完成和下游交接继续使用完整八字段。
+- 支持一轮最多三个互不依赖的产品问题；依赖问题仍只询问决定性分支，并按阶段渐进加载 discovery、document 与 review/handoff references。
+- 新增 skill 内自包含的严格 `render_handoff.py`，确定性校验 canonical、gate 与 compact/full 显示，不改变英文八字段或旧英文输入。
 - 新增产品、阶段和功能三种范围类型；一份 PRD 只承载一个稳定主题。
 - 只有需求理解置信度至少 95 且用户明确确认当前摘要后才创建 PRD；Agent 自评不能替代用户确认。
 - PRD 聚焦产品范围、用户场景和验收标准，不包含 API、数据模型、迁移或实现任务。
 - 固定 PRD 独立评审、用户批准、实质修改失效和 requirements 八字段交接门禁。
 - 已批准 PRD 写入并验证八字段后，主 Agent 在同一会话自动进入可用的 spec workflow；下游不可用时保留真实八字段并报告能力缺口。
 - PRD 模板的标题、章节和说明默认使用中文，frontmatter 与八字段公共契约不变。
-- 通过无目标 skill baseline、当前 10 个 GREEN 场景、官方 validator 和独立评审完成创建与维护闭环。
+- 通过无目标 skill baseline、当前 15 个 GREEN 场景、官方 validator 和独立评审完成创建与维护闭环。
 
 ### generating-development-prompts
 
+- policy 按 discovery → permission → routing 渐进加载；没有上游十四字段的手动提示词请求不加载或伪造路由状态。
+- 目标会话 Agent 清单改为首次委派读取一次并在会话内复用，仅在配置变化、读取或按名称启动失败、可观察能力冲突或用户要求时刷新一次。
+- 自动三态路由使用 skill 内同一严格 handoff renderer 的 full 视图，手动 renderer-only 输出与 dynamic fence 合同保持不变。
 - 导入经过任务级、集成和最终全量评审的初始实现。
 - 统一 Python 3.9 与 Python 3.14 对深层 JSON 输入的 `invalid_json` 错误分类。
 - 移除无法基于任务复杂度可靠判断的 effort 建议及其输入、渲染和校验契约。
@@ -40,10 +46,13 @@
 - 默认自动发现目录改为 `docs/specs` 与 `docs/plans`；生成提示词不绑定外部开发方法或固定评审 skill，并以自包含合同要求任务级 TDD 和定向验证、按真实风险设置可选里程碑评审，以及集成后对最新完整 diff 的单次整体评审循环，不因任务数量增加评审门。
 - 已批准十四字段触发 `current-session`、`new-session`、`blocked` 三态会话路由；手动提示词请求继续兼容未批准或状态未知的 plan，并保留实施阻断门。
 - `renderer stdout` 从裸提示词正文改为单一 Markdown 代码框，属于 `breaking contract change`。把 stdout 当作裸正文的调用方必须改为提取唯一 Markdown 代码框内容；不提供并行 raw 模式。
-- 自动路由在选择三态或调用 renderer 前验证中文十四字段视图，三条成功路径复用该视图；状态块不进入 renderer stdout，并始终位于可复制代码框之外。
+- 自动路由在选择三态或调用 `render_prompt.py` 前先调用本地 handoff renderer 一次，并冻结其成功 stdout 作为中文十四字段视图；三条路由路径复用该视图，状态块不进入 prompt renderer stdout，并始终位于可复制代码框之外。
 
 ### creating-development-specs-and-plans
 
+- 普通非阻塞技术澄清从完整十四字段后缀改为固定三行 compact 状态，属于 `breaking contract change`；spec 批准、阻塞、阶段完成和路由继续使用完整十四字段。
+- 支持一轮最多三个互不依赖的技术问题，依赖问题逐问，并按阶段渐进加载 discovery、document 与 review/handoff references。
+- 新增与上下游字节一致但运行时独立的严格 `render_handoff.py`，保留十四字段、双门、旧英文输入和 plan 状态语义。
 - 将已批准 PRD 设为创建或实质修改技术 spec 的强制上游门；缺失、不可靠、未批准或 topic/scope 不匹配时阻断。
 - 新增只读 PRD inspector，校验仓库根、路径边界、稳定主题、范围、95% 置信度、摘要确认、独立评审和用户批准。
 - 技术 spec 在相关时明确 API/技术接口、数据模型与实体关系、迁移、状态流转、事务、并发与一致性。
@@ -58,6 +67,8 @@
 
 ### Repository
 
+- 新增 Git-aware evaluation freshness：`fresh_cases`、clean commit 祖先链、dirty worktree evidence bundle 和 non-Git 严格失败，避免 production 晚于 RED/GREEN/review 仍误报完成。
+- 新增 `scripts/check.py` 统一定向/完整验证，以及只读 `scripts/verify_install.py` 安装 payload 差异检查；两者只编排现有权威验证，不安装依赖、不启动服务、不写真实 `CODEX_HOME`。
 - 建立 plugin-compatible 目录、项目级 agent 角色、分层 `AGENTS.md` 和仓库验证入口。
 - 增加 MIT License、贡献指南、安全策略、安装指南、工作流契约与 Agent 开发指南，形成公开仓库文档入口。
 - 补齐本机凭证、编辑器状态、Python 缓存、原始评估、构建测试产物和临时日志的 `.gitignore` 边界。

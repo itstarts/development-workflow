@@ -230,20 +230,21 @@ class RenderPromptTests(unittest.TestCase):
             with self.subTest(removed=removed):
                 self.assertNotIn(removed, section)
 
-    def test_prompt_prefers_matching_global_custom_agents(self):
+    def test_prompt_prefers_matching_agents_from_one_session_inventory(self):
         completed = self.render_raw(valid_payload())
         self.assertEqual(0, completed.returncode, completed.stderr)
         output = self.prompt_body(completed.stdout)
 
         self.assertIn("全局子代理选择", output)
         for expected in (
-            "CODEX_HOME/agents",
-            "~/.codex/agents",
+            "首次需要委派",
+            "会话内清单",
             "name",
             "description",
-            "存在职责匹配时，使用该全局 agent",
-            "仅在没有匹配的全局 agent 时使用内置或通用子代理",
-            "无法按 name 启动时，停止该次委派并报告能力缺口",
+            "后续委派不重复扫描",
+            "按名称启动失败",
+            "刷新一次",
+            "停止该次委派并报告能力缺口",
             "记录每次委派实际使用的 agent name",
         ):
             with self.subTest(expected=expected):
@@ -513,6 +514,20 @@ class RenderPromptTests(unittest.TestCase):
         self.assertIn("Git 仓库", body)
         self.assertNotIn("工作区状态：", body)
         self.assertNotIn("HEAD：", body)
+
+    def test_rendered_prompt_uses_one_session_agent_inventory_with_refresh_triggers(self):
+        completed = self.render_raw(valid_payload())
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        body = self.prompt_body(completed.stdout)
+        self.assertIn("首次需要委派", body)
+        self.assertIn("会话内清单", body)
+        self.assertIn("后续委派不重复扫描", body)
+        self.assertIn("配置变化", body)
+        self.assertIn("按名称启动失败", body)
+        self.assertIn("显式要求刷新", body)
+        self.assertIn("刷新一次", body)
+        self.assertNotIn("每次委派前检查", body)
 
 
 if __name__ == "__main__":

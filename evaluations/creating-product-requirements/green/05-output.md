@@ -1,11 +1,11 @@
-不能将两项状态伪造为 approved，也不能进入技术 spec。仓库中目前只有 `AGENTS.md` 和 `README.md`，没有可检查的订单审批 PRD；自检不能充当独立评审，你也尚未基于当前评审版文件明确批准。
+目前不能进入技术 spec，也不能代填 `approved`。
 
-请提供当前 PRD 的仓库内路径，这是继续流程所需的第一个信息。我没有修改任何文件或审批元数据。
+仓库及 Git 历史中均不存在订单审批 PRD，只有 [AGENTS.md](/workspace/fixture/AGENTS.md) 和 [README.md](/workspace/fixture/README.md)。末尾路径只是按规则推导的候选位置，文件尚不存在。下一步需提供当前 PRD，完成真实独立评审，再由你明确批准该具体版本。未修改仓库或实现代码。
 
-需求文档：未确定
+需求文档：/workspace/fixture/docs/requirements/2026-07-18-order-approval.md
 需求主题：order-approval
 需求范围：功能
-需求理解置信度：20
+需求理解置信度：未知
 需求理解确认：待确认
 需求文档用户批准：待批准
 需求文档独立评审：待评审

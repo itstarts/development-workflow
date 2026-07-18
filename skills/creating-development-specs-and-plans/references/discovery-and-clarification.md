@@ -11,9 +11,30 @@
 
 ## Clarify Material Decisions
 
-Do not reopen approved product scope in this skill. Ask one question at a time only when an unresolved technical choice changes public interfaces, data, permissions, security, consistency, migration, or another important design contract. Use repository evidence for small technical details and record the assumption.
+Do not reopen approved product scope in this skill. Ask one to three questions per turn only when unresolved technical choices change public interfaces, data, permissions, security, consistency, migration, or another important design contract. Questions are independent only when every possible answer leaves every other question's applicability, options, meaning, priority, and necessity unchanged. Batch only independent questions and do not add a fourth substantive question. When one answer selects a later branch, ask only one decisive question. If the user supplies partial answers, preserve valid answers and reassess remaining dependencies. Use repository evidence for small technical details and record the assumption.
 
-When such a choice remains unresolved, ask one material question. Do not write or review either document, run document validation, or enter a later workflow stage in that turn. Immediately end the reply with the fixed handoff record from `review-and-handoff.md`.
+When choices remain unresolved, do not write or review either document, run document validation, or enter a later workflow stage in that turn. An expected nonblocking discovery or choice question with no damage, conflict, permission failure, capability gap, review blocker, or formal confirmation or approval is an `ordinary-clarification`. A spec approval request, document-stage checkpoint, blocked reply, routing transition, or progress-only update is not ordinary clarification.
+
+An ordinary clarification does not load `review-and-handoff.md`. Build one complete compact renderer input directly from verified discovery state and invoke local `scripts/render_handoff.py` through a structured process API; do not inspect the renderer source to reconstruct its interface. Never use a shell heredoc or a temporary input file. If the available command interface exposes only a shell command, serialize the complete JSON first, shell-quote it as one inert argument to `printf '%s'`, and pipe only that byte string to the renderer; never interpolate individual user values into shell syntax. The top-level object has exactly `schema_version: 1`, `handoff_schema: workflow`, `view: compact`, `canonical`, `stage`, and `next_step`. Its complete `canonical` object has exactly these fields:
+
+```text
+requirements_path
+requirements_topic
+requirements_scope
+requirements_understanding_confidence
+requirements_understanding_confirmation
+requirements_user_approval
+requirements_independent_review
+specification_gate
+spec_path
+spec_user_approval
+spec_independent_review
+plan_path
+plan_review_status
+implementation_gate
+```
+
+Preserve every verified upstream value. A non-reserved stable topic explicitly supplied by the user is reliable independently of a still-missing requirements path or scope; preserve that topic in canonical state instead of replacing it with `null`. When converting an upstream requirements snapshot, rename `understanding_confidence` to `requirements_understanding_confidence` and `understanding_user_confirmation` to `requirements_understanding_confirmation`. Use the canonical contract's truthful `null`, `unknown`, `pending`, `not-approved`, or `blocked` state for unavailable or not-started facts; never upgrade a gate. Before any spec exists, both spec approval fields are `pending`. A plan that does not exist or has not passed review always uses `plan_review_status: not-approved`; `pending` is not an allowed plan-review value. Keep `specification_gate` and `implementation_gate` blocked unless their complete approval truth tables are already verified. Set `stage` to `技术规格澄清` or `实施计划澄清` according to the actual discovery stage and set `next_step` to one verified, single-line action. Successful stdout is the entire three-line compact suffix. The renderer owns its exact Chinese labels and topic mapping; use no partial stdout. If invocation fails, reclassify the reply as blocked and then load the later review/handoff reference required for that blocked path.
 
 Keep reliably selected explicit paths in the handoff even when a material content question blocks document creation. Normalize them to absolute paths and preserve their priority; only use `null` when the path itself is unresolved.
 

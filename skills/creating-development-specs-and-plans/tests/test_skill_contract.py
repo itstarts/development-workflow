@@ -139,13 +139,13 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, text)
 
-    def test_every_clarification_and_blocker_ends_with_fixed_handoff(self):
+    def test_compact_clarification_and_full_blocker_are_distinct(self):
         text = read("references/review-and-handoff.md").casefold()
         for required in (
-            "every user-facing response",
-            "clarification question",
+            "ordinary-clarification",
+            "exactly three consecutive",
             "blocked response",
-            "must end with the complete fourteen-field record",
+            "complete fourteen-field record",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, text)
@@ -262,9 +262,10 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             read("SKILL.md") + read("references/discovery-and-clarification.md")
         ).casefold()
         for required in (
-            "one material question",
+            "one to three",
+            "ask only one decisive question",
             "do not write or review either document",
-            "immediately end the reply with the fixed handoff record",
+            "complete compact renderer input",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, text)
@@ -438,10 +439,10 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, text)
 
-    def test_mapping_failure_is_the_only_status_suffix_exception_and_reports_a_locator(self):
+    def test_renderer_failure_is_the_status_suffix_exception_and_reports_a_locator(self):
         text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
         for required in (
-            "only explicit exception",
+            "explicit fail-closed exception",
             "deterministic chinese blocker",
             "does not append a status view",
             "stop the current automatic handoff",
@@ -520,6 +521,58 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
                 self.assertNotRegex(text, r"\b(?:TODO|TBD|PLACEHOLDER)\b")
                 self.assertNotIn("/Users/", text)
                 self.assertNotIn("~/.codex/plugins/cache/", text)
+
+    def test_references_are_loaded_progressively_by_stage(self):
+        skill = read("SKILL.md").casefold()
+        discovery = read("references/discovery-and-clarification.md").casefold()
+        self.assertIn("first read only", skill)
+        self.assertIn("references/discovery-and-clarification.md", skill)
+        self.assertIn("before the first spec or plan write", skill)
+        self.assertIn("references/document-contracts.md", skill)
+        self.assertIn("before a blocked reply", skill)
+        self.assertIn("references/review-and-handoff.md", skill)
+        self.assertNotIn("read these files completely before the first substantive reply", skill)
+        self.assertIn("ordinary clarification does not load `review-and-handoff.md`", discovery)
+        self.assertIn("complete compact renderer input", discovery)
+        self.assertIn("requirements_understanding_confidence", discovery)
+        self.assertIn("implementation_gate", discovery)
+        self.assertIn("plan_review_status: not-approved", discovery)
+        self.assertIn("`pending` is not an allowed plan-review value", discovery)
+        self.assertIn("reliable independently of a still-missing requirements path", discovery)
+        self.assertIn("preserve that topic in canonical state", discovery)
+        self.assertIn("never use a shell heredoc", discovery)
+        self.assertIn("shell-quote it as one inert argument", discovery)
+        self.assertNotIn("end the reply using the classified view from `review-and-handoff.md`", discovery)
+
+    def test_questions_are_dependency_aware_and_capped_at_three(self):
+        text = (
+            read("SKILL.md") + read("references/discovery-and-clarification.md")
+        ).casefold()
+        for phrase in (
+            "one to three",
+            "independent questions",
+            "applicability",
+            "ask only one decisive question",
+            "partial answers",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+
+    def test_reply_classification_keeps_spec_approval_and_progress_full(self):
+        text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
+        for phrase in (
+            "ordinary-clarification",
+            "exactly three consecutive lines",
+            "checkpoint",
+            "spec approval",
+            "blocked",
+            "routing",
+            "progress-only",
+            "conservatively use full",
+            "scripts/render_handoff.py",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
 
 
 if __name__ == "__main__":

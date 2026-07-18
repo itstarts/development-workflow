@@ -107,7 +107,8 @@ class SkillContractTests(unittest.TestCase):
         skill = read("SKILL.md").lower()
         self.assertIn("single markdown code fence", skill)
         self.assertIn("dynamic backtick fence", skill)
-        self.assertIn("renderer stdout verbatim", skill)
+        self.assertIn("render_prompt.py", skill)
+        self.assertIn("stdout verbatim", skill)
 
     def test_manual_prompt_request_keeps_unapproved_plan_compatibility(self):
         policy_path = ROOT / "references" / "session-routing-policy.md"
@@ -148,16 +149,18 @@ class SkillContractTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, policy)
 
-    def test_automatic_routes_share_one_prevalidated_chinese_suffix(self):
+    def test_automatic_routes_share_one_renderer_validated_chinese_suffix(self):
         combined = read("SKILL.md") + read("references/session-routing-policy.md")
         lowered = combined.casefold()
         for required in (
             "canonical english snapshot",
-            "pre-render",
+            "render_handoff.py",
+            "exactly once",
             "before choosing a route",
-            "before invoking the renderer",
-            "same prevalidated chinese view",
-            "renderer stdout before the chinese view",
+            "sole presentation validator",
+            "same renderer-validated chinese view",
+            "`render_prompt.py` stdout before",
+            "`render_handoff.py` stdout",
             "outside the dynamic fence",
             "do not reverse-parse",
         ):
@@ -166,39 +169,25 @@ class SkillContractTests(unittest.TestCase):
         for route in ("current-session", "new-session", "blocked"):
             with self.subTest(route=route):
                 self.assertIn(route, lowered)
+        self.assertNotIn("pre-render this authoritative chinese view", lowered)
+        self.assertNotIn("before invoking the renderer", lowered)
+        self.assertNotIn("do not invoke the renderer", lowered)
 
-    def test_user_visible_chinese_handoff_has_exact_fourteen_field_order(self):
-        blocks = fenced_text_blocks(read("references/session-routing-policy.md"))
-        self.assertGreaterEqual(len(blocks), 2)
-        labels = (
-            "需求文档",
-            "需求主题",
-            "需求范围",
-            "需求理解置信度",
-            "需求理解确认",
-            "需求文档用户批准",
-            "需求文档独立评审",
-            "技术规格门禁",
-            "技术规格",
-            "技术规格用户批准",
-            "技术规格独立评审",
-            "实施计划",
-            "计划评审状态",
-            "实施门禁",
-        )
-        self.assertEqual(list(labels), [line.split("：", 1)[0] for line in blocks[1]])
-        self.assertTrue(all("：" in line and not line.startswith(" ") for line in blocks[1]))
+    def test_routing_policy_does_not_duplicate_renderer_owned_chinese_mapping(self):
+        policy = read("references/session-routing-policy.md")
+        self.assertEqual(0, policy.count("需求文档：<"))
+        self.assertEqual(0, policy.count("Map requirements scope"))
+        self.assertIn("`render_handoff.py` stdout", policy)
 
-    def test_mapping_failure_stops_routing_and_manual_request_stays_compatible(self):
+    def test_handoff_renderer_failure_stops_routing_and_manual_request_stays_compatible(self):
         combined = (read("SKILL.md") + read("references/session-routing-policy.md")).casefold()
         for required in (
-            "field count",
-            "field order",
-            "mapping is complete and unique",
+            "handoff renderer failure",
+            "machine-readable stderr",
             "only explicit exception",
             "deterministic chinese blocker",
             "does not append a status view",
-            "do not invoke the renderer",
+            "do not choose any route",
             "stop the current automatic routing",
             "manual prompt request without a verified upstream snapshot returns renderer stdout verbatim",
         ):
@@ -272,6 +261,54 @@ class SkillContractTests(unittest.TestCase):
                 self.assertTrue(path.is_file(), f"production file is missing: {path}")
                 text = path.read_text(encoding="utf-8")
                 self.assertNotRegex(text, r"\b(?:TODO|TBD|PLACEHOLDER)\b")
+
+    def test_policies_are_loaded_progressively_by_entry_path(self):
+        text = read("SKILL.md").casefold()
+        self.assertIn("classify the entry", text)
+        self.assertIn("first read only", text)
+        self.assertIn("references/discovery-policy.md", text)
+        self.assertIn("when a permission matrix is needed", text)
+        self.assertIn("references/permission-policy.md", text)
+        self.assertIn("only for automatic routing", text)
+        self.assertIn("references/session-routing-policy.md", text)
+        self.assertIn("manual prompt", text)
+        self.assertIn("does not load the routing policy", text)
+
+    def test_automatic_routes_use_full_renderer_and_manual_prompt_stays_renderer_only(self):
+        text = (read("SKILL.md") + read("references/session-routing-policy.md")).casefold()
+        for phrase in (
+            "scripts/render_handoff.py",
+            "handoff_schema",
+            "workflow",
+            "view",
+            "full",
+            "current-session",
+            "new-session",
+            "blocked",
+            "manual prompt request without a verified upstream snapshot",
+            "stdout verbatim",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+
+    def test_agent_inventory_is_session_scoped_with_conditional_refresh(self):
+        text = (read("SKILL.md") + read("assets/development-prompt.md")).casefold()
+        for phrase in (
+            "first delegation",
+            "session-scoped inventory",
+            "name",
+            "description",
+            "do not rescan",
+            "configuration changed",
+            "initial read failed",
+            "launch by name fails",
+            "observable capability conflict",
+            "explicitly requests a refresh",
+            "refresh once",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+        self.assertNotIn("每次委派前检查", text)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-只读核验通过：当前 PRD 元数据完整、无冲突，理解置信度为 97，理解摘要确认、独立评审和用户批准均有效。现在允许进入技术 spec；本次未修改文件，也未启动下游流程。
+检查通过：审批证据完整且一致，当前允许进入技术 spec。本次仅只读核验，未修改文件或启动下游流程。
 
 需求文档：/workspace/fixture/docs/requirements/2026-07-15-order-approval.md
 需求主题：order-approval

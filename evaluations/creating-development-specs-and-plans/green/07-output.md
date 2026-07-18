@@ -1,10 +1,12 @@
-目前不能开始实现。PRD 已通过全部门禁；spec 虽获用户批准，但独立评审仍为 pending。plan 的独立评审状态虽为 approved，也不能越过 spec 的前置门禁。
+核验完成，仓库未发生修改。
 
-- PRD：[docs/requirements/2026-07-12-order-approval.md](/workspace/fixture/docs/requirements/2026-07-12-order-approval.md:1) — 用户批准、独立评审通过，检查器确认 approved。
-- Spec：[docs/specs/2026-07-12-order-approval-design.md](/workspace/fixture/docs/specs/2026-07-12-order-approval-design.md:1) — 用户批准；独立评审待完成。
-- Plan：[docs/plans/2026-07-12-order-approval.md](/workspace/fixture/docs/plans/2026-07-12-order-approval.md:1) — 独立评审记录为 approved，含 reviewer 和日期；当前仍不能授权实现。
+| 文档 | 路径 | 状态 |
+|---|---|---|
+| PRD | [docs/requirements/2026-07-12-order-approval.md](/workspace/fixture/docs/requirements/2026-07-12-order-approval.md) | 用户批准、独立评审均已通过 |
+| Spec | [docs/specs/2026-07-12-order-approval-design.md](/workspace/fixture/docs/specs/2026-07-12-order-approval-design.md) | 用户已批准；独立评审仍为 pending |
+| Plan | [docs/plans/2026-07-12-order-approval.md](/workspace/fixture/docs/plans/2026-07-12-order-approval.md) | 已由 `fixture-plan-reviewer` 独立评审批准 |
 
-未修改任何文件。
+现在不能开始实现。plan 自身虽已通过评审，但 spec 的独立评审尚未通过，未满足实现的硬性前置条件。
 
 需求文档：/workspace/fixture/docs/requirements/2026-07-12-order-approval.md
 需求主题：order-approval

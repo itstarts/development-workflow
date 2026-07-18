@@ -1,13 +1,13 @@
 {
   "schema_version": 3,
   "evidence_role": "current-skill-red",
-  "selected_case": "14",
+  "selected_case": "15",
   "valid": true,
   "red_observed": true,
   "failed_criteria": [
-    "localized-handoff-view"
+    "ordinary-compact-three-lines"
   ],
   "warnings": [],
-  "output": "migration-red/14-output.md",
+  "output": "migration-red/15-output.md",
   "sanitization": "The ephemeral fixture prefix was replaced with /workspace/fixture in the selected versioned output."
 }

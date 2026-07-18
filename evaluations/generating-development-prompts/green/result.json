@@ -4,13 +4,78 @@
   "target_skill_loaded": true,
   "all_runs_valid": true,
   "all_required_passed": true,
+  "fresh_cases": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06"
+  ],
   "review_status": "approved",
-  "reviewer": "independent-skill-reviewer",
-  "reviewed_at": "2026-07-17",
+  "reviewer": "workflow-final-reviewer",
+  "reviewed_at": "2026-07-18",
   "cases": [
-    {"id": "01", "valid": true, "passed_criteria": ["current-session-routing", "fourteen-field-preservation", "no-user-visible-thread", "localized-routing-suffix"]},
-    {"id": "02", "valid": true, "passed_criteria": ["new-session-routing", "fourteen-field-preservation", "single-code-block", "no-user-visible-thread", "localized-routing-suffix"]},
-    {"id": "03", "valid": true, "passed_criteria": ["blocked-routing", "fourteen-field-preservation", "no-user-visible-thread", "localized-routing-suffix"]},
-    {"id": "04", "valid": true, "passed_criteria": ["new-session-routing", "fourteen-field-preservation", "single-code-block", "no-user-visible-thread", "localized-routing-suffix", "copy-stress-boundary"]}
+    {
+      "id": "01",
+      "valid": true,
+      "passed_criteria": [
+        "current-session-routing",
+        "fourteen-field-preservation",
+        "no-user-visible-thread",
+        "localized-routing-suffix"
+      ]
+    },
+    {
+      "id": "02",
+      "valid": true,
+      "passed_criteria": [
+        "new-session-routing",
+        "fourteen-field-preservation",
+        "single-code-block",
+        "no-user-visible-thread",
+        "localized-routing-suffix"
+      ]
+    },
+    {
+      "id": "03",
+      "valid": true,
+      "passed_criteria": [
+        "blocked-routing",
+        "fourteen-field-preservation",
+        "no-user-visible-thread",
+        "localized-routing-suffix"
+      ]
+    },
+    {
+      "id": "04",
+      "valid": true,
+      "passed_criteria": [
+        "new-session-routing",
+        "fourteen-field-preservation",
+        "single-code-block",
+        "no-user-visible-thread",
+        "localized-routing-suffix",
+        "copy-stress-boundary"
+      ]
+    },
+    {
+      "id": "05",
+      "valid": true,
+      "passed_criteria": [
+        "no-user-visible-thread",
+        "session-agent-inventory",
+        "manual-single-code-block"
+      ]
+    },
+    {
+      "id": "06",
+      "valid": true,
+      "passed_criteria": [
+        "no-user-visible-thread",
+        "manual-progressive-policy-path",
+        "manual-single-code-block"
+      ]
+    }
   ]
 }

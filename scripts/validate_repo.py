@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional, Sequence
@@ -49,8 +50,6 @@ EVALUATION_SENSITIVE_PATTERN = re.compile(
     r"/Users/|OPENAI_API_KEY\s*[:=]\s*\S+|(?:^|[^A-Za-z])sk-[A-Za-z0-9]{10}|(?:task|thread)[_ /-]?id\s*[:=]\s*[\"']?[0-9a-f-]{8,}",
     re.IGNORECASE,
 )
-
-
 def load_skill_frontmatter(path: Path) -> dict[str, str]:
     text = path.read_text(encoding="utf-8")
     if not text.startswith("---\n"):
@@ -164,6 +163,68 @@ def load_evaluation_registry(errors: list[str]) -> dict[str, dict[str, str]]:
             "stage": stage,
         }
     return result
+
+
+def rubric_case_criteria(
+    evaluation_root: Path, skill_name: str, errors: list[str]
+) -> dict[str, set[str]]:
+    rubric_path = evaluation_root / "rubric.json"
+    try:
+        payload = json.loads(rubric_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    criteria = payload.get("criteria") if isinstance(payload, dict) else None
+    if not isinstance(criteria, list):
+        return {}
+    result: dict[str, set[str]] = {}
+    for criterion in criteria:
+        if not isinstance(criterion, dict):
+            continue
+        criterion_id = criterion.get("id")
+        applies_to = criterion.get("applies_to")
+        if not isinstance(criterion_id, str) or not isinstance(applies_to, list):
+            continue
+        for case_id in applies_to:
+            if isinstance(case_id, str):
+                result.setdefault(case_id, set()).add(criterion_id)
+    return result
+
+
+def selected_case_file(evaluation_root: Path, case_id: str) -> Optional[Path]:
+    candidates = sorted((evaluation_root / "cases").glob(f"{case_id}-*.md"))
+    return candidates[0] if len(candidates) == 1 else None
+
+
+def validate_fresh_cases(
+    skill_name: str,
+    evaluation_root: Path,
+    expected_case_criteria: dict[str, set[str]],
+    selected_red_case: Optional[str],
+    green: dict,
+    case_map: dict[str, dict],
+    errors: list[str],
+) -> list[str]:
+    value = green.get("fresh_cases")
+    if (
+        not isinstance(value, list)
+        or not value
+        or not all(isinstance(item, str) for item in value)
+        or len(value) != len(set(value))
+    ):
+        errors.append(f"{skill_name}: green fresh_cases must be a non-empty unique list")
+        return []
+    if selected_red_case is not None and selected_red_case not in value:
+        errors.append(f"{skill_name}: green fresh_cases must include the current RED case")
+    for case_id in value:
+        case_path = selected_case_file(evaluation_root, case_id)
+        if (
+            case_id not in expected_case_criteria
+            or case_id not in case_map
+            or case_path is None
+            or not (evaluation_root / "green" / f"{case_id}-output.md").is_file()
+        ):
+            errors.append(f"{skill_name}: green fresh case {case_id} is incomplete")
+    return value
 
 
 def validate_managed_evaluation(
@@ -321,6 +382,7 @@ def validate_managed_evaluation(
         if not audit_ids.issubset(set(baseline_case_map)):
             errors.append(f"{skill_name}: pre-creation audit cases must exist in baseline")
 
+    selected_red_case: Optional[str] = None
     if profile in {"creation-plus-current-red", "imported-plus-current-red"}:
         migration_red = load_structured_result(
             evaluation_root / "migration-red" / "result.json",
@@ -391,6 +453,16 @@ def validate_managed_evaluation(
                 errors.append(
                     f"{skill_name}: green evidence approval metadata is incomplete"
                 )
+            if stage == "implemented" and green.get("review_status") != "pending":
+                errors.append(
+                    f"{skill_name}: implemented green evidence review must be pending"
+                )
+            if stage == "implemented" and (
+                green.get("reviewer") is not None or green.get("reviewed_at") is not None
+            ):
+                errors.append(
+                    f"{skill_name}: implemented green evidence must remove stale review metadata"
+                )
             if stage == "implemented" and not evidence_only:
                 errors.append(f"{skill_name}: implemented evidence is not review-approved")
 
@@ -424,6 +496,16 @@ def validate_managed_evaluation(
                         errors.append(
                             f"{skill_name}: green case {case_id} criteria are incomplete"
                         )
+            if profile in {"creation-plus-current-red", "imported-plus-current-red"}:
+                validate_fresh_cases(
+                    skill_name,
+                    evaluation_root,
+                    expected_case_criteria,
+                    selected_red_case,
+                    green,
+                    case_map,
+                    errors,
+                )
 
     if evaluation_root.is_dir():
         for path in sorted(evaluation_root.rglob("*")):
@@ -442,8 +524,273 @@ def validate_managed_evaluation(
                 )
 
 
-def validate(evidence_only: Optional[str] = None) -> list[str]:
+def run_git(args: Sequence[str], text: bool = True) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", *args],
+        cwd=ROOT,
+        text=text,
+        capture_output=True,
+        check=False,
+    )
+
+
+def git_worktree_available() -> bool:
+    result = run_git(["rev-parse", "--is-inside-work-tree"])
+    return result.returncode == 0 and result.stdout.strip() == "true"
+
+
+def changed_paths() -> set[str]:
+    paths: set[str] = set()
+    for args in (
+        ("diff", "--name-only", "--no-renames", "-z"),
+        ("diff", "--cached", "--name-only", "--no-renames", "-z"),
+        ("ls-files", "--others", "--exclude-standard", "-z"),
+    ):
+        result = run_git(args, text=False)
+        if result.returncode != 0:
+            continue
+        for raw in result.stdout.split(b"\0"):
+            if raw:
+                paths.add(raw.decode("utf-8", "surrogateescape"))
+    return paths
+
+
+def production_path_matches(path: str, skill_name: str) -> bool:
+    prefix = f"skills/{skill_name}/"
+    if not path.startswith(prefix):
+        return False
+    relative = path[len(prefix) :]
+    if relative == "SKILL.md":
+        return True
+    return any(relative.startswith(f"{directory}/") for directory in PRODUCTION_DIRS)
+
+
+def last_commit_for_paths(paths: Sequence[str]) -> Optional[str]:
+    if not paths:
+        return None
+    result = run_git(["log", "-1", "--format=%H", "HEAD", "--", *paths])
+    if result.returncode != 0:
+        return None
+    value = result.stdout.strip()
+    return value or None
+
+
+def last_production_commit(skill_name: str) -> Optional[str]:
+    result = run_git(
+        ["log", "--format=@@%H", "--name-status", "--find-renames", "HEAD"]
+    )
+    if result.returncode != 0:
+        return None
+    current: Optional[str] = None
+    for line in result.stdout.splitlines():
+        if line.startswith("@@"):
+            current = line[2:]
+            continue
+        if not current or "\t" not in line:
+            continue
+        fields = line.split("\t")
+        paths = fields[1:]
+        if any(production_path_matches(path, skill_name) for path in paths):
+            return current
+    return None
+
+
+def is_ancestor(older: Optional[str], newer: Optional[str]) -> bool:
+    if older is None or newer is None:
+        return False
+    result = run_git(["merge-base", "--is-ancestor", older, newer])
+    return result.returncode == 0
+
+
+def relative(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def freshness_evidence(skill_name: str) -> Optional[dict]:
+    evaluation_root = ROOT / "evaluations" / skill_name
+    try:
+        red = json.loads(
+            (evaluation_root / "migration-red" / "result.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        green = json.loads(
+            (evaluation_root / "green" / "result.json").read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError):
+        return None
+    selected = red.get("selected_case")
+    fresh_cases = green.get("fresh_cases")
+    if not isinstance(selected, str) or not isinstance(fresh_cases, list) or not all(
+        isinstance(item, str) for item in fresh_cases
+    ):
+        return None
+    case_path = selected_case_file(evaluation_root, selected)
+    if case_path is None:
+        return None
+    return {
+        "selected": selected,
+        "fresh_cases": fresh_cases,
+        "criterion": [
+            relative(evaluation_root / "rubric.json"),
+            relative(case_path),
+        ],
+        "red_result": relative(evaluation_root / "migration-red" / "result.json"),
+        "red_output": relative(
+            evaluation_root / "migration-red" / f"{selected}-output.md"
+        ),
+        "green_result": relative(evaluation_root / "green" / "result.json"),
+        "green_outputs": [
+            relative(evaluation_root / "green" / f"{case_id}-output.md")
+            for case_id in fresh_cases
+        ],
+    }
+
+
+def validate_worktree_freshness(
+    skill_name: str,
+    evidence: dict,
+    paths: set[str],
+    errors: list[str],
+    messages: list[str],
+) -> bool:
+    production_changed = any(
+        production_path_matches(path, skill_name) for path in paths
+    )
+    relevant = set(evidence["criterion"])
+    relevant.update(
+        [evidence["red_result"], evidence["red_output"], evidence["green_result"]]
+    )
+    relevant.update(evidence["green_outputs"])
+    if not production_changed and not relevant.intersection(paths):
+        return False
+
+    missing: list[str] = []
+    if not production_changed:
+        missing.append("production")
+    if evidence["red_result"] not in paths:
+        missing.append("current-red-result")
+    if evidence["red_output"] not in paths:
+        missing.append("current-red-output")
+    if evidence["green_result"] not in paths:
+        missing.append("green-result-review")
+    for path in evidence["green_outputs"]:
+        if path not in paths:
+            missing.append(f"green-output:{Path(path).name}")
+    if missing:
+        errors.append(
+            f"{skill_name}: worktree evidence bundle is incomplete; missing "
+            + ", ".join(missing)
+        )
+        return True
+    messages.append(f"{skill_name}: freshness worktree-current")
+    return True
+
+
+def validate_clean_freshness(
+    skill_name: str,
+    evidence: dict,
+    errors: list[str],
+    messages: list[str],
+) -> None:
+    criterion_commit = last_commit_for_paths(evidence["criterion"])
+    red_commit = last_commit_for_paths(
+        [evidence["red_result"], evidence["red_output"]]
+    )
+    production_commit = last_production_commit(skill_name)
+    green_commits = [last_commit_for_paths([path]) for path in evidence["green_outputs"]]
+    result_commit = last_commit_for_paths([evidence["green_result"]])
+    head_result = run_git(["rev-parse", "HEAD"])
+    head = head_result.stdout.strip() if head_result.returncode == 0 else None
+
+    failures: list[str] = []
+    if not is_ancestor(criterion_commit, red_commit):
+        failures.append("criterion<=current-red")
+    if not is_ancestor(red_commit, production_commit):
+        failures.append("current-red<=production")
+    for index, green_commit in enumerate(green_commits):
+        if not is_ancestor(production_commit, green_commit):
+            failures.append(f"production<=green-output:{evidence['fresh_cases'][index]}")
+        if not is_ancestor(green_commit, result_commit):
+            failures.append(f"green-output:{evidence['fresh_cases'][index]}<=green-result-review")
+    if not is_ancestor(result_commit, head):
+        failures.append("green-result-review<=HEAD")
+    if failures:
+        errors.append(
+            f"{skill_name}: clean freshness evidence is missing, stale, or incomparable: "
+            + ", ".join(failures)
+        )
+    else:
+        messages.append(f"{skill_name}: freshness clean-current")
+
+
+def validate_creation_only_freshness(
+    skill_name: str,
+    paths: set[str],
+    errors: list[str],
+    messages: list[str],
+) -> None:
+    if any(production_path_matches(path, skill_name) for path in paths):
+        errors.append(
+            f"{skill_name}: production changed after creation-only evidence; upgrade to a current-red profile"
+        )
+        return
+    production_commit = last_production_commit(skill_name)
+    result_path = f"evaluations/{skill_name}/green/result.json"
+    result_commit = last_commit_for_paths([result_path])
+    if production_commit is None or result_commit is None:
+        errors.append(f"{skill_name}: creation-only freshness evidence is incomplete")
+    elif not is_ancestor(production_commit, result_commit):
+        errors.append(
+            f"{skill_name}: production is newer than creation-only GREEN/review evidence; upgrade the profile"
+        )
+    else:
+        messages.append(f"{skill_name}: freshness clean-current")
+
+
+def validate_skill_freshness(
+    skill_name: str,
+    entry: dict[str, str],
+    require_freshness: bool,
+    errors: list[str],
+    messages: list[str],
+) -> None:
+    if entry["stage"] == "baseline-only":
+        return
+    if not git_worktree_available():
+        message = f"{skill_name}: freshness unverified-non-git"
+        if require_freshness:
+            errors.append(message)
+        else:
+            messages.append(message)
+        return
+
+    paths = changed_paths()
+    if entry["evidence_profile"] in {
+        "creation-plus-current-red",
+        "imported-plus-current-red",
+    }:
+        evidence = freshness_evidence(skill_name)
+        if evidence is None:
+            errors.append(f"{skill_name}: freshness evidence structure is incomplete")
+            return
+        if validate_worktree_freshness(
+            skill_name, evidence, paths, errors, messages
+        ):
+            return
+        validate_clean_freshness(skill_name, evidence, errors, messages)
+        return
+    validate_creation_only_freshness(skill_name, paths, errors, messages)
+
+
+def validate(
+    evidence_only: Optional[str] = None,
+    reviewed_skill: Optional[str] = None,
+    require_freshness: bool = False,
+    freshness_messages: Optional[list[str]] = None,
+) -> list[str]:
     errors: list[str] = []
+    messages = freshness_messages if freshness_messages is not None else []
 
     for relative in REQUIRED_ROOT_FILES:
         if not (ROOT / relative).is_file():
@@ -475,15 +822,18 @@ def validate(evidence_only: Optional[str] = None) -> list[str]:
 
     skills_root = ROOT / "skills"
     registry = load_evaluation_registry(errors)
-    if evidence_only is not None:
-        entry = registry.get(evidence_only)
+    target_skill = evidence_only or reviewed_skill
+    if target_skill is not None:
+        entry = registry.get(target_skill)
         if entry is None or not (
             entry.get("evaluation_mode") == "managed"
             or entry.get("evidence_profile") == "imported-plus-current-red"
         ):
-            errors.append(f"{evidence_only}: evidence-only target has no current evidence profile")
-        elif entry.get("stage") != "implemented":
-            errors.append(f"{evidence_only}: evidence-only requires implemented stage")
+            errors.append(f"{target_skill}: target has no current evidence profile")
+        elif evidence_only is not None and entry.get("stage") != "implemented":
+            errors.append(f"{target_skill}: evidence-only requires implemented stage")
+        elif reviewed_skill is not None and entry.get("stage") != "review-approved":
+            errors.append(f"{target_skill}: reviewed-skill requires review-approved stage")
 
     for skill_name, entry in registry.items():
         has_current_evidence = (
@@ -492,7 +842,7 @@ def validate(evidence_only: Optional[str] = None) -> list[str]:
         )
         if not has_current_evidence:
             continue
-        if evidence_only is not None and skill_name != evidence_only:
+        if target_skill is not None and skill_name != target_skill:
             continue
         validate_managed_evaluation(
             skill_name,
@@ -501,6 +851,9 @@ def validate(evidence_only: Optional[str] = None) -> list[str]:
             evidence_only == skill_name,
             errors,
             require_creation_evidence=entry["evaluation_mode"] == "managed",
+        )
+        validate_skill_freshness(
+            skill_name, entry, require_freshness, errors, messages
         )
 
     evaluation_dirs = {
@@ -595,17 +948,28 @@ def validate(evidence_only: Optional[str] = None) -> list[str]:
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--evidence-only")
+    target = parser.add_mutually_exclusive_group()
+    target.add_argument("--evidence-only")
+    target.add_argument("--reviewed-skill")
+    parser.add_argument("--require-freshness", action="store_true")
     return parser.parse_args(argv)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
-    errors = validate(args.evidence_only)
+    freshness_messages: list[str] = []
+    errors = validate(
+        args.evidence_only,
+        args.reviewed_skill,
+        args.require_freshness,
+        freshness_messages,
+    )
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
+    for message in freshness_messages:
+        print(message)
     print("repository validation passed")
     return 0
 

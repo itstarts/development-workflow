@@ -41,11 +41,11 @@ python3 \
 
 ## 工作流
 
-1. `creating-product-requirements` 在理解置信度达到 95% 且用户确认摘要后创建 PRD；PRD 经独立评审和用户批准后，验证 requirements 八字段并在同一会话自动进入 spec workflow。
-2. `creating-development-specs-and-plans` 复验 PRD，先生成并批准技术 spec，再生成经独立评审的 plan；双门打开后验证并冻结十四字段，自动进入会话路由。
-3. `generating-development-prompts` 基于已验证十四字段和当前会话证据输出 `current-session`、`new-session` 或 `blocked`；`current-session` 只建议继续并等待用户显式实施批准，不自动开始实施，只有 `new-session` 才生成单一代码框中的自包含提示词。显式手动请求仍可在 plan 未批准或状态未知时生成带实施阻断门的提示词。
+1. `creating-product-requirements` 在理解置信度达到 95% 且用户确认摘要后创建 PRD；互不依赖的产品问题一轮最多询问三个，依赖问题仍逐问。PRD 经独立评审和用户批准后，验证 requirements 八字段并在同一会话自动进入 spec workflow。
+2. `creating-development-specs-and-plans` 复验 PRD，以相同的依赖感知规则澄清技术选择，先生成并批准 technical spec，再生成经独立评审的 plan；双门打开后验证并冻结十四字段，自动进入会话路由。
+3. `generating-development-prompts` 基于已验证十四字段和当前会话证据输出 `current-session`、`new-session` 或 `blocked`；`current-session` 只建议继续并等待用户显式实施批准，不自动开始实施，只有 `new-session` 才生成单一代码框中的自包含提示词。目标会话只在首次实际委派时建立 Agent inventory，后续复用并仅在配置或能力证据变化时刷新。显式手动请求仍可在 plan 未批准或状态未知时生成带实施阻断门的提示词。
 
-自动交接的用户可见状态块使用中文字段和语境化中文值；内部英文 canonical 字段、门禁计算与旧英文输入兼容性保持不变。完整契约见[工作流与文档契约](docs/workflow.md)。
+普通非阻塞澄清只显示固定三行“当前阶段 / 主题 / 下一步”；暂停、阻塞、摘要确认、批准、文档阶段完成与跨 skill 交接继续显示完整中文八字段或十四字段。内部英文 canonical 字段、门禁计算与旧英文输入兼容性保持不变。完整契约见[工作流与文档契约](docs/workflow.md)。
 
 对于不需要 PRD、spec 和 plan 的已确认小改动，`implementing-bounded-changes` 在用户明确批准推进后冻结改动点、方案、非目标、验证和文档边界，再执行最小 TDD、定向验证、相关文档更新和独立评审；发现范围或设计必须扩大时停止并重新请求批准。
 
@@ -68,6 +68,9 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s skills/generating-development-prompts/tests -v
 .venv/bin/python -m unittest discover -s skills/implementing-bounded-changes/tests -v
 .venv/bin/python -m unittest discover -s skills/managing-agents-rules/tests -v
+
+# 当前 evaluation stage 对应的定向检查；全部 review-approved 后可使用 --full
+.venv/bin/python scripts/check.py --skill creating-product-requirements
 ```
 
 完整验证命令见 [Agent 开发指南](docs/agent-development.md#发布前验证)。支持 Python 3.9 及以上；维护矩阵至少覆盖 Python 3.9 和 Python 3.14。

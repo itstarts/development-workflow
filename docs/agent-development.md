@@ -35,6 +35,8 @@
 
 每个 skill 必须自包含，不能依赖 `~/.codex/plugins/cache/`、其他用户目录、固定外部版本或兄弟 skill 的源码。
 
+GREEN 结果必须用 `fresh_cases` 列出 production 变化后真实重跑且纳入本次评审的 case，并包含 current RED 的 selected case。严格 freshness 不绑定固定内容哈希：干净 Git 树按 commit 祖先关系验证证据顺序；dirty worktree 要求 current RED、production、green result 与全部 fresh outputs 同时出现在当前 bundle；非 Git 副本标记为未验证。
+
 ## Reviewer 角色
 
 `.codex/agents/` 中的三个角色仍稳定可用。它们在 diff、验证和完成门上有部分职责重叠，但项目专属证据范围、评审时点和批准条件不同；这些差异仍有必要，因此配置全部保留：
@@ -59,6 +61,15 @@
 可版本化评估必须使用虚构路径或仓库相对路径，并通过 `scripts/validate_repo.py` 的敏感信息检查。项目级 `.codex/agents/` 是有意发布的 reviewer 源码，不应被整体加入 `.gitignore`。
 
 ## 发布前验证
+
+日常优先使用 stage-aware 统一入口：
+
+```bash
+.venv/bin/python scripts/check.py --skill <skill-name>
+.venv/bin/python scripts/check.py --full
+```
+
+定向模式根据 registry 的 `implemented | review-approved` 自动选择 freshness validator 目标；完整模式要求全部 exposed skill 已 `review-approved`。各 subprocess 独立超时且最终按固定顺序汇总，不跳过官方 validator。下面的展开命令仍是权威组成项和故障定位入口。
 
 ```bash
 .venv/bin/python -m unittest discover -s tests -v
