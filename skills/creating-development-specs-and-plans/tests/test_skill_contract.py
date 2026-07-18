@@ -191,6 +191,99 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
         self.assertNotIn("## Goals", spec_template)
         self.assertNotIn("**Goal:**", plan_template)
 
+    def test_spec_and_plan_templates_use_complete_chinese_frontmatter_contract(self):
+        spec_metadata = parse_frontmatter(read("assets/spec-template.md"))
+        self.assertEqual(
+            {
+                "文档类型": "技术规格",
+                "主题": "<stable-topic>",
+                "需求文档": "<repository-relative-requirements-path>",
+                "需求主题": "<stable-topic>",
+                "需求范围": "<产品-阶段-或-功能>",
+                "需求理解置信度": "<95-100-整数>",
+                "需求理解确认": "已确认",
+                "需求文档用户批准": "已批准",
+                "需求文档独立评审": "已通过",
+                "技术规格门禁": "已开放",
+                "技术规格用户批准": "待批准",
+                "技术规格独立评审": "待评审",
+            },
+            spec_metadata,
+        )
+        plan_metadata = parse_frontmatter(read("assets/plan-template.md"))
+        self.assertEqual(
+            {
+                "文档类型": "实施计划",
+                "主题": "<stable-topic>",
+                "技术规格": "<repository-relative-spec-path>",
+                "技术规格用户批准": "已批准",
+                "计划评审状态": "待评审",
+            },
+            plan_metadata,
+        )
+        contracts = read("references/document-contracts.md")
+        for required in (
+            "chinese-current",
+            "english-legacy",
+            "技术规格批准日期",
+            "技术规格独立评审角色",
+            "技术规格独立评审日期",
+            "计划评审角色",
+            "计划评审日期",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, contracts)
+
+    def test_existing_english_documents_keep_their_schema(self):
+        contracts = read("references/document-contracts.md").casefold()
+        for required in (
+            "english-legacy",
+            "existing spec",
+            "existing plan",
+            "same schema",
+            "no implicit migration",
+            "do not convert",
+            "review_status",
+            "independent_review",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, contracts)
+
+    def test_authoring_write_outcomes_require_readback_reconciliation(self):
+        contracts = read("references/document-contracts.md").casefold()
+        for required in (
+            "target path already exists",
+            "precondition",
+            "confirmed not applied",
+            "completion result is uncertain",
+            "read the target back",
+            "exact expected content",
+            "original content",
+            "partially changed",
+            "do not repeat the write",
+            "do not use partial approval",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, contracts)
+
+    def test_mixed_localized_spec_blocks_plan(self):
+        text = (
+            read("SKILL.md")
+            + read("references/document-contracts.md")
+            + read("references/review-and-handoff.md")
+        ).casefold()
+        for required in (
+            "mixed schema",
+            "semantic duplicate",
+            "malformed",
+            "unsupported",
+            "complete chinese-current spec",
+            "do not create the plan",
+            "implementation_gate",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+
     def test_approved_upstream_handoff_preserves_reliable_default_paths(self):
         text = (
             read("SKILL.md")
@@ -472,18 +565,18 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
         plan_template = read("assets/plan-template.md")
         self.assertTrue(spec_template.startswith("---\n"))
         spec_metadata = parse_frontmatter(spec_template)
-        self.assertEqual("pending", spec_metadata["user_approval"])
-        self.assertEqual("pending", spec_metadata["independent_review"])
-        self.assertEqual("approved", spec_metadata["requirements_user_approval"])
+        self.assertEqual("待批准", spec_metadata["技术规格用户批准"])
+        self.assertEqual("待评审", spec_metadata["技术规格独立评审"])
+        self.assertEqual("已批准", spec_metadata["需求文档用户批准"])
         self.assertTrue(plan_template.startswith("---\n"))
-        self.assertIn("review_status: pending", plan_template)
-        self.assertIn("spec_path:", plan_template)
+        self.assertIn("计划评审状态: 待评审", plan_template)
+        self.assertIn("技术规格:", plan_template)
 
-        self.assertEqual("pending", parse_frontmatter(plan_template)["review_status"])
+        self.assertEqual("待评审", parse_frontmatter(plan_template)["计划评审状态"])
         approved = plan_template.replace(
-            "review_status: pending", "review_status: approved", 1
+            "计划评审状态: 待评审", "计划评审状态: 已通过", 1
         )
-        self.assertEqual("approved", parse_frontmatter(approved)["review_status"])
+        self.assertEqual("已通过", parse_frontmatter(approved)["计划评审状态"])
 
     def test_plan_template_requires_docs_and_risk_batched_review(self):
         template = read("assets/plan-template.md").casefold()
@@ -501,6 +594,62 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, template)
         self.assertNotIn("任务级独立评审", template)
+
+    def test_spec_and_plan_require_failure_and_guarantee_traceability(self):
+        contracts = read("references/document-contracts.md").casefold()
+        spec_template = read("assets/spec-template.md").casefold()
+        plan_template = read("assets/plan-template.md").casefold()
+
+        for required in (
+            "command outcome and failure matrix",
+            "every state-changing command",
+            "asynchronous completion",
+            "client-visible",
+            "local persistence failure",
+            "database engine",
+            "read-to-write",
+            "lock acquisition",
+            "lock hold duration",
+            "busy",
+            "deadlock",
+            "timeout",
+            "guarantee id",
+            "exact test",
+            "observable assertion",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, contracts)
+
+        for required in (
+            "命令结果与失败矩阵",
+            "数据库事务与锁语义",
+            "保证与测试追踪",
+            "保证 id",
+            "客户端可见结果",
+            "结果 id",
+            "结果类型",
+            "每个结果单独一行",
+            "不得在同一行合并",
+            "调用方动作",
+            "一致性效果",
+            "对应结果 id",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, spec_template)
+        self.assertNotIn(
+            "成功或无变化结果 | 失败分类",
+            spec_template,
+        )
+
+        for required in (
+            "覆盖保证",
+            "覆盖结果",
+            "精确测试",
+            "可观察断言",
+            "无遗漏保证",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, plan_template)
 
     def test_security_detail_is_required_only_when_relevant(self):
         contracts = read("references/document-contracts.md").casefold()

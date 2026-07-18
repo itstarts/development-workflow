@@ -1,8 +1,8 @@
 # Migration Baseline Case 04 — Selected Output
 
-Sanitization: the ephemeral fixture prefix was replaced with `/workspace/order-service`.
+Sanitization: the ephemeral fixture prefix was replaced with `/workspace/fixture`.
 
-已生成 implementation plan：[2026-07-15-order-approval-implementation-plan.md](/workspace/order-service/docs/plans/2026-07-15-order-approval-implementation-plan.md)。
+已生成 implementation plan：[2026-07-15-order-approval-implementation-plan.md](/workspace/fixture/docs/plans/2026-07-15-order-approval-implementation-plan.md)。
 
 - 状态为 draft，独立评审 pending。
 - 未修改或实现任何代码。

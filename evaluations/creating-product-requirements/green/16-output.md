@@ -1,0 +1,1 @@
+旁白已完成并写入 [deliverables/single-narration.md](/workspace/fixture/deliverables/single-narration.md)。全文约 2010 字，适配约 8 分钟的舒缓口播节奏。

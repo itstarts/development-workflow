@@ -631,6 +631,117 @@ class DiscoverContextReviewTests(DiscoverContextTestSupport, unittest.TestCase):
             actual,
         )
 
+    def test_chinese_plan_frontmatter_maps_review_lifecycle(self):
+        approved = self.review(
+            "---\n"
+            "文档类型: 实施计划\n"
+            "主题: localized-metadata\n"
+            "技术规格: docs/specs/2026-07-19-localized-metadata-design.md\n"
+            "技术规格用户批准: 已批准\n"
+            "计划评审状态: 已通过\n"
+            "计划评审角色: skill-reviewer\n"
+            "计划评审日期: 2026-07-19\n"
+            "---\n# Plan\n"
+        )
+        self.assertEqual(
+            {
+                "status": "approved",
+                "reviewer": "skill-reviewer",
+                "reviewed_at": "2026-07-19",
+            },
+            approved,
+        )
+
+        pending = self.review(
+            "---\n"
+            "文档类型: 实施计划\n"
+            "主题: localized-metadata\n"
+            "技术规格: docs/specs/2026-07-19-localized-metadata-design.md\n"
+            "技术规格用户批准: 已批准\n"
+            "计划评审状态: 待评审\n"
+            "---\n# Plan\n"
+        )
+        self.assertEqual(
+            {"status": "not-approved", "reviewer": None, "reviewed_at": None},
+            pending,
+        )
+
+    def test_mixed_or_invalid_chinese_plan_metadata_is_unknown(self):
+        cases = (
+            (
+                "---\n文档类型: 实施计划\n主题: localized-metadata\n"
+                "技术规格: docs/specs/example-design.md\n技术规格用户批准: 已批准\n"
+                "计划评审状态: 已通过\n计划评审角色: skill-reviewer\n"
+                "计划评审日期: 2026-07-19\nreview_status: approved\n---\n"
+            ),
+            (
+                "---\n文档类型: 实施计划\n主题: localized-metadata\n"
+                "技术规格: docs/specs/example-design.md\n技术规格用户批准: 已批准\n"
+                "计划评审状态: 已通过\n计划评审状态: 已通过\n"
+                "计划评审角色: skill-reviewer\n计划评审日期: 2026-07-19\n---\n"
+            ),
+            (
+                "---\n文档类型: 实施计划\n主题: localized-metadata\n"
+                "技术规格: docs/specs/example-design.md\n技术规格用户批准: 已批准\n"
+                "计划评审状态: 已通过\n计划评审角色: skill-reviewer\n"
+                "计划评审日期: 2026-07-19\n额外字段: 值\n---\n"
+            ),
+            (
+                "---\n文档类型: 实施计划\n主题: localized-metadata\n"
+                "技术规格: docs/specs/example-design.md\n技术规格用户批准: 已批准\n"
+                "计划评审状态: approved\n计划评审角色: skill-reviewer\n"
+                "计划评审日期: 2026-07-19\n---\n"
+            ),
+            (
+                "---\n文档类型: 实施计划\n主题: localized-metadata\n"
+                "技术规格: docs/specs/example-design.md\n技术规格用户批准: 已批准\n"
+                "计划评审状态: \"已通过\"\n计划评审角色: skill-reviewer\n"
+                "计划评审日期: 2026-07-19\n---\n"
+            ),
+        )
+        for text in cases:
+            with self.subTest(text=text):
+                self.assertEqual("unknown", self.review(text)["status"])
+
+    def test_incomplete_chinese_plan_or_approved_without_review_metadata_is_unknown(self):
+        complete_pending_lines = [
+            "文档类型: 实施计划",
+            "主题: localized-metadata",
+            "技术规格: docs/specs/example-design.md",
+            "技术规格用户批准: 已批准",
+            "计划评审状态: 待评审",
+        ]
+        for missing_index in range(len(complete_pending_lines)):
+            lines = [
+                line
+                for index, line in enumerate(complete_pending_lines)
+                if index != missing_index
+            ]
+            with self.subTest(missing=complete_pending_lines[missing_index]):
+                self.assertEqual(
+                    "unknown",
+                    self.review("---\n" + "\n".join(lines) + "\n---\n")["status"],
+                )
+
+        for lifecycle in (
+            complete_pending_lines[:-1] + ["计划评审状态: 已通过"],
+            complete_pending_lines
+            + ["计划评审角色: stale-reviewer", "计划评审日期: 2026-07-19"],
+        ):
+            with self.subTest(lifecycle=lifecycle):
+                self.assertEqual(
+                    "unknown",
+                    self.review("---\n" + "\n".join(lifecycle) + "\n---\n")["status"],
+                )
+
+    def test_chinese_legacy_header_is_not_accepted(self):
+        text = (
+            "计划评审角色: skill-reviewer\n"
+            "计划评审日期: 2026-07-19\n"
+            "计划评审状态: 已通过\n\n# Plan\n"
+        )
+        self.assertEqual("unknown", self.review(text)["status"])
+
     def test_frontmatter_explicit_other_status_is_not_approved(self):
         self.assertEqual(
             "not-approved",

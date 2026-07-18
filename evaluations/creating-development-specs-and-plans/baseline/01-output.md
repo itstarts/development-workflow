@@ -1,8 +1,8 @@
 # Migration Baseline Case 01 — Selected Output
 
-Sanitization: the ephemeral fixture prefix was replaced with `/workspace/order-service`.
+Sanitization: the ephemeral fixture prefix was replaced with `/workspace/fixture`.
 
-已完成 [订单审批 spec](/workspace/order-service/specs/order-approval.md)，并通过真实独立评审，无剩余阻塞问题。
+已完成 [订单审批 spec](/workspace/fixture/specs/order-approval.md)，并通过真实独立评审，无剩余阻塞问题。
 
 建议默认决策包括：外部授权策略、禁止自审批、驳回可重提、批准/驳回通知所有者与提交人、v1 只返回通知事件、不支持撤销批准。
 

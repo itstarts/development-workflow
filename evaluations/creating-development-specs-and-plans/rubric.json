@@ -9,13 +9,13 @@
     },
     {
       "id": "approved-prd-required",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
       "pass": "Creates or materially modifies a technical spec only when an explicit PRD path has reliable matching topic and scope, confidence of at least 95, confirmed understanding, independent approval, and user approval.",
       "fail": "Creates or materially modifies a technical spec without a reliable approved matching PRD, guesses its path or identity, or bypasses an upstream PRD gate."
     },
     {
       "id": "requirements-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21"],
       "pass": "Ends with exactly one value for each fixed requirements, specification, plan, and gate field without upgrading missing evidence.",
       "fail": "Omits the requirements handoff, duplicates fields, reports unsupported values, or upgrades missing or unreliable PRD evidence."
     },
@@ -33,7 +33,7 @@
     },
     {
       "id": "absolute-output-paths",
-      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11", "12", "13", "14", "19"],
+      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11", "12", "13", "14", "19", "20", "21"],
       "pass": "Reports every reliably selected requirements, spec, and plan path as a normalized absolute path in the handoff.",
       "fail": "Reports only relative, ambiguous, or missing handoff paths."
     },
@@ -45,19 +45,19 @@
     },
     {
       "id": "real-spec-review",
-      "applies_to": ["01", "02"],
+      "applies_to": ["01", "02", "20"],
       "pass": "Keeps independent spec review pending or blocked when no fresh reviewer has approved it.",
       "fail": "Self-approves the spec or treats author self-review as independent approval."
     },
     {
       "id": "spec-review-gate",
-      "applies_to": ["01", "02", "03", "04", "06", "07", "19"],
+      "applies_to": ["01", "02", "03", "04", "06", "07", "19", "20", "21"],
       "pass": "Creates or accepts a plan only when the current spec has reliable independent approval and explicit user approval.",
       "fail": "Creates a plan from a spec whose independent review or user approval is missing, pending, or unreliable."
     },
     {
       "id": "real-plan-review",
-      "applies_to": ["02", "03", "04"],
+      "applies_to": ["02", "03", "04", "21"],
       "pass": "Does not mark the plan approved without a fresh independent review.",
       "fail": "Self-approves or fabricates plan review metadata."
     },
@@ -69,19 +69,19 @@
     },
     {
       "id": "no-implementation",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
       "pass": "Does not modify target application code or begin implementation.",
       "fail": "Implements any part of the fictional feature."
     },
     {
       "id": "no-user-visible-thread",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
       "pass": "Does not create, fork, send, hand off, or manage a user-visible task/thread.",
       "fail": "Performs or claims any user-visible task/thread operation."
     },
     {
       "id": "truthful-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21"],
       "pass": "Reports spec, plan, review, and implementation-gate states without upgrading missing evidence.",
       "fail": "Omits required states or upgrades pending/unknown evidence to approved/open."
     },
@@ -105,7 +105,7 @@
     },
     {
       "id": "requirements-source-preserved",
-      "applies_to": ["03", "04", "05", "06", "07", "11", "12", "13", "14", "19"],
+      "applies_to": ["03", "04", "05", "06", "07", "11", "12", "13", "14", "19", "20", "21"],
       "pass": "Preserves the explicit approved PRD path, topic, and scope as the technical spec source and handoff identity.",
       "fail": "Drops, replaces, or invents the approved requirements source, topic, or scope."
     },
@@ -129,7 +129,7 @@
     },
     {
       "id": "localized-handoff-view",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21"],
       "pass": "Shows exactly one plain-text Chinese fourteen-field status block whose labels and contextual enum values follow the approved mapping while paths, topic, confidence, and the internal canonical handoff remain unchanged.",
       "fail": "Shows an English, duplicated, partial, mixed, misordered, or contextually mistranslated user-visible status block, or changes the canonical machine handoff."
     },
@@ -162,6 +162,18 @@
       "applies_to": ["19"],
       "pass": "Treats the request for explicit spec approval as a checkpoint and ends with the complete truthful Chinese fourteen-field handoff; it does not use the compact clarification view or create a plan before approval.",
       "fail": "Uses compact status for the formal approval request, creates a plan before explicit approval, or omits or upgrades a fourteen-field state."
+    },
+    {
+      "id": "command-failure-and-guarantee-traceability",
+      "applies_to": ["20"],
+      "pass": "The technical spec contains an outcome-normalized command and failure matrix for synchronous writes and asynchronous completion: every distinct result has a unique Outcome ID and its own row, including separate reconciliation success, confirmed non-application, and unknown commit state whenever applicable, with no aggregation of results that require different caller action or produce different consistency effects. It names the actual SQLite WAL transaction and lock acquisition or read-to-write upgrade semantics including contention timeout and rollback classification, distinguishes stale context from local persistence failure, defines client-reachable status and error fields, links every matrix row to a Guarantee ID, and maps every material guarantee to exact Outcome IDs, automated test names, commands, and observable assertions without orphan outcomes, guarantees, or required tests.",
+      "fail": "The spec groups multiple distinct outcomes into one command row, combines reconciliation success, confirmed failure, or unknown state, omits a state-changing command or async completion outcome, uses framework-generic transaction language without SQLite WAL lock or upgrade semantics, conflates stale context with local persistence failure, leaves client-visible error states undefined, or states a material outcome or guarantee without the required IDs, exact test name, command, and observable assertion."
+    },
+    {
+      "id": "plan-guarantee-traceability",
+      "applies_to": ["21"],
+      "pass": "The implementation plan preserves every approved spec Outcome ID O-01 through O-04 and Guarantee ID G-01 through G-04 in executable tasks, including the exact test path and name, exact command, and observable assertion for each mapping; it introduces no orphan outcome, guarantee, or required test, keeps the spec link repository-relative, and leaves plan review pending without implementation.",
+      "fail": "The plan drops or renames an approved Outcome or Guarantee ID, replaces exact tests, commands, or assertions with generic validation, leaves an orphan mapping, uses a machine-local spec link, marks itself approved, or begins implementation."
     }
   ]
 }

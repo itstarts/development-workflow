@@ -310,6 +310,21 @@ class SkillContractTests(unittest.TestCase):
                 self.assertIn(phrase, text)
         self.assertNotIn("每次委派前检查", text)
 
+    def test_discovery_policy_separates_chinese_frontmatter_from_english_header(self):
+        policy = read("references/discovery-policy.md").casefold()
+        for required in (
+            "chinese-current",
+            "english-legacy",
+            "complete chinese plan",
+            "exact chinese key",
+            "semantic duplicate",
+            "unsupported localized value",
+            "ascii-only legacy header",
+            "do not accept chinese metadata in the legacy header",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, policy)
+
 
 if __name__ == "__main__":
     unittest.main()

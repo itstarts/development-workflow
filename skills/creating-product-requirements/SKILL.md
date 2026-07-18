@@ -1,9 +1,24 @@
 ---
 name: creating-product-requirements
-description: Use when users need to define product requirements or a PRD, clarify product scope, capture user scenarios and acceptance criteria, or review product requirements before technical design.
+description: Use when and only when the requested deliverable is a product requirements document or PRD, or the user explicitly wants product scope, user scenarios, business rules, success measures, and acceptance criteria formalized before technical design. Do not use for content-only deliverables such as narration, scripts, copy, outlines, or articles merely because their structure, duration, or scope changes.
 ---
 
 # Creating Product Requirements
+
+## Applicability Gate
+
+Before establishing any PRD workflow state, reading workflow references, selecting a topic or document path, or rendering status, identify the final requested deliverable.
+
+This skill applies only when the final deliverable is a PRD, or when the user explicitly asks to formalize product behavior or development scope as product requirements before technical design. If the final deliverable is only narration, a script, copy, an outline, an article, or another content document, and the user has not explicitly requested a PRD or downstream product behavior or development scope, this skill does not apply. Changes to content structure, duration, or scope do not by themselves turn a content task into product-requirements work.
+
+When this skill does not apply:
+
+- Do not create a PRD.
+- Do not emit the eight-field status in compact or full form.
+- Do not transition to a spec or plan.
+- Return to the original task and produce the requested content directly.
+
+Only after this gate passes may the workflow below begin.
 
 ## Overview
 

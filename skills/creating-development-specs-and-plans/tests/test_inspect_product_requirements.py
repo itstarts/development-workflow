@@ -26,6 +26,24 @@ def prd(**overrides: str) -> str:
     return f"---\n{metadata}\n---\n\n# Order Approval Requirements\n"
 
 
+def chinese_prd(**overrides: str) -> str:
+    fields = {
+        "文档类型": "产品需求",
+        "主题": "order-approval",
+        "范围类型": "功能",
+        "理解置信度": "97",
+        "需求理解确认": "已确认",
+        "用户批准": "已批准",
+        "批准日期": "2026-07-19",
+        "独立评审": "已通过",
+        "独立评审角色": "product-analyst",
+        "独立评审日期": "2026-07-19",
+    }
+    fields.update(overrides)
+    metadata = "\n".join(f"{key}: {value}" for key, value in fields.items())
+    return f"---\n{metadata}\n---\n\n# 订单审批产品需求\n"
+
+
 class InspectProductRequirementsTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -88,6 +106,70 @@ class InspectProductRequirementsTests(unittest.TestCase):
         self.assertEqual("approved", payload["status"])
         self.assertEqual("open", payload["specification_gate"])
         self.assertEqual([], payload["issues"])
+
+    def test_approved_chinese_prd_opens_gate(self):
+        self.requirements.write_text(chinese_prd(), encoding="utf-8")
+
+        completed, payload = self.run_inspector()
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual("product-requirements", payload["document_type"])
+        self.assertEqual("order-approval", payload["requirements_topic"])
+        self.assertEqual("feature", payload["requirements_scope"])
+        self.assertEqual(97, payload["understanding_confidence"])
+        self.assertEqual("approved", payload["understanding_user_confirmation"])
+        self.assertEqual("approved", payload["requirements_user_approval"])
+        self.assertEqual("approved", payload["requirements_independent_review"])
+        self.assertEqual("approved", payload["status"])
+        self.assertEqual("open", payload["specification_gate"])
+        self.assertEqual([], payload["issues"])
+
+    def test_legacy_english_prd_still_opens_gate(self):
+        self.requirements.write_text(prd(), encoding="utf-8")
+
+        completed, payload = self.run_inspector()
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        self.assertEqual("approved", payload["status"])
+        self.assertEqual("open", payload["specification_gate"])
+        self.assertEqual([], payload["issues"])
+
+    def test_mixed_or_duplicate_localized_prd_is_unknown(self):
+        cases = {
+            "mixed-schema": (
+                chinese_prd().replace(
+                    "用户批准: 已批准",
+                    "用户批准: 已批准\nuser_approval: approved",
+                ),
+                "mixed_schema",
+            ),
+            "duplicate-semantic-key": (
+                chinese_prd().replace(
+                    "用户批准: 已批准",
+                    "用户批准: 已批准\n用户批准: 已批准",
+                ),
+                "duplicate_key",
+            ),
+            "unsupported-localized-value": (
+                chinese_prd(用户批准="已生效"),
+                "unsupported_localized_value",
+            ),
+            "unknown-unicode-key": (
+                chinese_prd().replace(
+                    "独立评审日期: 2026-07-19",
+                    "独立评审日期: 2026-07-19\n未知字段: 值",
+                ),
+                "malformed_frontmatter",
+            ),
+        }
+        for label, (document, expected_issue) in cases.items():
+            with self.subTest(label=label):
+                self.requirements.write_text(document, encoding="utf-8")
+                completed, payload = self.run_inspector()
+                self.assertEqual(0, completed.returncode, completed.stderr)
+                self.assertEqual("unknown", payload["status"])
+                self.assertEqual("blocked", payload["specification_gate"])
+                self.assertIn(expected_issue, payload["issues"])
 
     def test_reliable_pending_is_not_approved(self):
         self.requirements.write_text(prd(user_approval="pending"), encoding="utf-8")

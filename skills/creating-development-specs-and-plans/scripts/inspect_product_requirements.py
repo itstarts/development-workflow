@@ -2,6 +2,7 @@
 """Inspect one PRD as a deterministic prerequisite for technical specification work."""
 
 import argparse
+import datetime
 import json
 import os
 import re
@@ -14,6 +15,37 @@ APPROVAL_STATES = ("pending", "approved")
 KEY_PATTERN = re.compile(r"[A-Za-z_][A-Za-z0-9_-]*")
 TOPIC_PATTERN = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 RESERVED_TOPICS = {"null", "unknown", "pending"}
+PRD_ENGLISH_KEYS = {
+    "document_type",
+    "topic",
+    "scope_type",
+    "understanding_confidence",
+    "understanding_user_confirmation",
+    "user_approval",
+    "approved_at",
+    "independent_review",
+    "independent_reviewer",
+    "independent_reviewed_at",
+}
+PRD_CHINESE_KEYS = {
+    "文档类型": "document_type",
+    "主题": "topic",
+    "范围类型": "scope_type",
+    "理解置信度": "understanding_confidence",
+    "需求理解确认": "understanding_user_confirmation",
+    "用户批准": "user_approval",
+    "批准日期": "approved_at",
+    "独立评审": "independent_review",
+    "独立评审角色": "independent_reviewer",
+    "独立评审日期": "independent_reviewed_at",
+}
+PRD_CHINESE_VALUES = {
+    "document_type": {"产品需求": "product-requirements"},
+    "scope_type": {"产品": "product", "阶段": "phase", "功能": "feature"},
+    "understanding_user_confirmation": {"已确认": "approved"},
+    "user_approval": {"待批准": "pending", "已批准": "approved"},
+    "independent_review": {"待评审": "pending", "已通过": "approved"},
+}
 
 
 def stable_topic(value: str) -> str:
@@ -69,25 +101,40 @@ def empty_payload(
 
 def parse_frontmatter(
     text: str,
-) -> Tuple[Optional[Dict[str, str]], List[str], Set[str]]:
+) -> Tuple[Optional[Dict[str, str]], List[str], Set[str], Optional[str]]:
     if not text.startswith("---\n"):
-        return None, ["missing_frontmatter"], set()
+        return None, ["missing_frontmatter"], set(), None
     end = text.find("\n---\n", 4)
     if end < 0:
-        return None, ["malformed_frontmatter"], set()
+        return None, ["malformed_frontmatter"], set(), None
 
     fields: Dict[str, str] = {}
     issues: List[str] = []
     unreliable_keys: Set[str] = set()
+    schema_languages: Set[str] = set()
     for raw_line in text[4:end].splitlines():
         if not raw_line or raw_line[:1].isspace() or ":" not in raw_line:
             issues.append("malformed_frontmatter")
             continue
-        key, value = raw_line.split(":", 1)
+        raw_key, value = raw_line.split(":", 1)
         value = value.strip()
-        if KEY_PATTERN.fullmatch(key) is None or not value:
+        language: Optional[str] = None
+        if raw_key in PRD_CHINESE_KEYS:
+            key = PRD_CHINESE_KEYS[raw_key]
+            language = "chinese-current"
+        elif KEY_PATTERN.fullmatch(raw_key) is not None:
+            key = raw_key
+            if raw_key in PRD_ENGLISH_KEYS:
+                language = "english-legacy"
+        else:
             issues.append("malformed_frontmatter")
             continue
+        if not value:
+            issues.append("malformed_frontmatter")
+            unreliable_keys.add(key)
+            continue
+        if language is not None:
+            schema_languages.add(language)
         if key in fields:
             issues.append("duplicate_key")
             unreliable_keys.add(key)
@@ -97,7 +144,23 @@ def parse_frontmatter(
             unreliable_keys.add(key)
             continue
         fields[key] = value
-    return fields, sorted(set(issues)), unreliable_keys
+    schema: Optional[str] = None
+    if len(schema_languages) > 1:
+        issues.append("mixed_schema")
+        schema = "mixed_schema"
+    elif schema_languages:
+        schema = next(iter(schema_languages))
+    return fields, sorted(set(issues)), unreliable_keys, schema
+
+
+def valid_iso_date(value: Optional[str]) -> bool:
+    if value is None or re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) is None:
+        return False
+    try:
+        datetime.date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
 
 
 def inspect(args: argparse.Namespace) -> Dict[str, object]:
@@ -134,25 +197,40 @@ def inspect(args: argparse.Namespace) -> Dict[str, object]:
         issues.append("unreadable_file")
         return payload
 
-    fields, parse_issues, unreliable_keys = parse_frontmatter(text)
+    fields, parse_issues, unreliable_keys, schema = parse_frontmatter(text)
     issues.extend(parse_issues)
     if fields is None:
         return payload
 
-    globally_unreliable = "malformed_frontmatter" in parse_issues
+    globally_unreliable = any(
+        issue in parse_issues for issue in ("malformed_frontmatter", "mixed_schema")
+    )
 
     def field(name: str) -> Optional[str]:
         if globally_unreliable or name in unreliable_keys:
             return None
         return fields.get(name)
 
-    document_type = field("document_type")
+    def normalized_field(name: str) -> Optional[str]:
+        value = field(name)
+        if value is None or schema != "chinese-current":
+            return value
+        aliases = PRD_CHINESE_VALUES.get(name)
+        if aliases is None:
+            return value
+        normalized = aliases.get(value)
+        if normalized is None:
+            issues.append("unsupported_localized_value")
+            unreliable_keys.add(name)
+        return normalized
+
+    document_type = normalized_field("document_type")
     topic = field("topic")
-    scope = field("scope_type")
+    scope = normalized_field("scope_type")
     confidence_text = field("understanding_confidence")
-    confirmation = field("understanding_user_confirmation")
-    user_approval = field("user_approval")
-    independent_review = field("independent_review")
+    confirmation = normalized_field("understanding_user_confirmation")
+    user_approval = normalized_field("user_approval")
+    independent_review = normalized_field("independent_review")
 
     topic_is_valid = (
         topic is not None
@@ -212,6 +290,23 @@ def inspect(args: argparse.Namespace) -> Dict[str, object]:
         )
     ):
         issues.append("invalid_approval_state")
+
+    if schema == "chinese-current" and not globally_unreliable:
+        approved_at = field("approved_at")
+        reviewer = field("independent_reviewer")
+        reviewed_at = field("independent_reviewed_at")
+        if user_approval == "approved":
+            if not valid_iso_date(approved_at):
+                issues.append("invalid_approval_metadata")
+        elif user_approval == "pending" and approved_at is not None:
+            issues.append("invalid_approval_metadata")
+        if independent_review == "approved":
+            if reviewer is None or not valid_iso_date(reviewed_at):
+                issues.append("invalid_review_metadata")
+        elif independent_review == "pending" and (
+            reviewer is not None or reviewed_at is not None
+        ):
+            issues.append("invalid_review_metadata")
 
     issues[:] = sorted(set(issues))
     unreliable = any(

@@ -62,6 +62,44 @@ class CreatingProductRequirementsContractTests(unittest.TestCase):
             with self.subTest(trigger=trigger):
                 self.assertIn(trigger, description.casefold())
 
+    def test_content_only_deliverables_are_rejected_before_workflow_state(self):
+        skill = read("SKILL.md")
+        metadata = parse_frontmatter(skill)
+        description = metadata["description"].casefold()
+        self.assertTrue(description.startswith("use when and only when"))
+        for required in (
+            "requested deliverable",
+            "business rules",
+            "success measures",
+            "before technical design",
+            "content-only deliverables",
+            "narration",
+            "scripts",
+            "copy",
+            "outlines",
+            "articles",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, description)
+
+        lowered = skill.casefold()
+        applicability_gate = lowered.index("## applicability gate")
+        workflow = lowered.index("## workflow")
+        self.assertLess(applicability_gate, workflow)
+        for required in (
+            "identify the final requested deliverable",
+            "before establishing any prd workflow state",
+            "this skill does not apply",
+            "do not create a prd",
+            "do not emit the eight-field status",
+            "do not transition to a spec or plan",
+            "return to the original task",
+            "produce the requested content directly",
+            "structure, duration, or scope",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, lowered)
+
     def test_required_resources_are_linked_and_exist(self):
         skill = read("SKILL.md")
         for relative_path in (
@@ -270,6 +308,79 @@ class CreatingProductRequirementsContractTests(unittest.TestCase):
             with self.subTest(legacy_heading=legacy_heading):
                 self.assertNotIn(legacy_heading, template)
 
+    def test_prd_template_uses_complete_chinese_frontmatter_contract(self):
+        template = read("assets/prd-template.md")
+        metadata = parse_frontmatter(template)
+        self.assertEqual(
+            {
+                "文档类型": "产品需求",
+                "主题": "<stable-kebab-topic>",
+                "范围类型": "<产品-阶段-或-功能>",
+                "理解置信度": "<95-100-整数>",
+                "需求理解确认": "已确认",
+                "用户批准": "待批准",
+                "独立评审": "待评审",
+            },
+            metadata,
+        )
+        frontmatter = re.match(r"\A---\n(.*?)\n---\n", template, re.DOTALL)
+        self.assertIsNotNone(frontmatter)
+        for legacy_key in (
+            "document_type",
+            "topic",
+            "scope_type",
+            "understanding_confidence",
+            "understanding_user_confirmation",
+            "user_approval",
+            "independent_review",
+        ):
+            with self.subTest(legacy_key=legacy_key):
+                self.assertNotRegex(frontmatter.group(1), rf"(?m)^{legacy_key}:")
+
+        contract = read("references/document-contract.md")
+        for required in (
+            "chinese-current",
+            "english-legacy",
+            "批准日期",
+            "独立评审角色",
+            "独立评审日期",
+            "已批准",
+            "已通过",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, contract)
+
+    def test_existing_english_documents_keep_their_schema(self):
+        contract = read("references/document-contract.md").casefold()
+        for required in (
+            "english-legacy",
+            "existing",
+            "same schema",
+            "no implicit migration",
+            "user_approval",
+            "independent_review",
+            "do not convert",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, contract)
+
+    def test_authoring_write_outcomes_require_readback_reconciliation(self):
+        contract = read("references/document-contract.md").casefold()
+        for required in (
+            "target path already exists",
+            "precondition",
+            "confirmed not applied",
+            "completion result is uncertain",
+            "read the target back",
+            "exact expected content",
+            "original content",
+            "partially changed",
+            "do not repeat the write",
+            "do not use partial approval",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, contract)
+
     def test_approved_prd_transitions_to_runtime_exposed_spec_workflow(self):
         text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
         for required in (
@@ -316,11 +427,11 @@ class CreatingProductRequirementsContractTests(unittest.TestCase):
         template = read("assets/prd-template.md")
         self.assertTrue(template.startswith("---\n"))
         metadata = parse_frontmatter(template)
-        self.assertEqual("product-requirements", metadata["document_type"])
-        self.assertEqual("<scope-type>", metadata["scope_type"])
-        self.assertEqual("approved", metadata["understanding_user_confirmation"])
-        self.assertEqual("pending", metadata["user_approval"])
-        self.assertEqual("pending", metadata["independent_review"])
+        self.assertEqual("产品需求", metadata["文档类型"])
+        self.assertEqual("<产品-阶段-或-功能>", metadata["范围类型"])
+        self.assertEqual("已确认", metadata["需求理解确认"])
+        self.assertEqual("待批准", metadata["用户批准"])
+        self.assertEqual("待评审", metadata["独立评审"])
 
     def test_references_are_loaded_progressively_by_stage(self):
         text = read("SKILL.md").casefold()

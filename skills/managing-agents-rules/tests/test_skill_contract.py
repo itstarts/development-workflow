@@ -333,6 +333,23 @@ class ManagingAgentsRulesContractTests(unittest.TestCase):
             ),
         )
 
+    def test_approval_reference_requires_ui_safe_complete_diff_rendering(self):
+        approval = read("references/approval-and-write-safety.md").casefold()
+        assert_terms(
+            self,
+            approval,
+            (
+                "dynamic markdown fence",
+                "longest consecutive backtick run",
+                "complete unified diff",
+                "exactly once",
+                "approval request after the closing fence",
+                "do not use html disclosure",
+                "<details>",
+                "<summary>",
+            ),
+        )
+
     def test_approval_reference_delays_permissions_and_stops_sensitive_candidates(self):
         approval = read("references/approval-and-write-safety.md").casefold()
         assert_terms(

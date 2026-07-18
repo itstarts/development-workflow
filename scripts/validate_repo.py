@@ -47,9 +47,36 @@ PLACEHOLDER_PATTERN = re.compile(
     re.IGNORECASE,
 )
 EVALUATION_SENSITIVE_PATTERN = re.compile(
-    r"/Users/|OPENAI_API_KEY\s*[:=]\s*\S+|(?:^|[^A-Za-z])sk-[A-Za-z0-9]{10}|(?:task|thread)[_ /-]?id\s*[:=]\s*[\"']?[0-9a-f-]{8,}",
+    r"OPENAI_API_KEY\s*[:=]\s*\S+|(?:^|[^A-Za-z])sk-[A-Za-z0-9]{10}|(?:task|thread)[_ /-]?id\s*[:=]\s*[\"']?[0-9a-f-]{8,}",
     re.IGNORECASE,
 )
+EVALUATION_MACHINE_LOCAL_PATH_PATTERN = re.compile(
+    r"(?:"
+    r"(?:[A-Za-z]:)?[\\/]+Users[\\/]+"
+    r"|/(?:private/)?var/folders/"
+    r"|/(?:private/)?tmp/"
+    r"|/home/[^/\s]+/"
+    r")",
+    re.IGNORECASE,
+)
+EVALUATION_WORKSPACE_PATH_PATTERN = re.compile(r"/workspace/[A-Za-z0-9._~/-]+")
+EVALUATION_SYNTHETIC_ROOT = "/workspace/fixture"
+
+
+def contains_sensitive_or_machine_local_evaluation_text(text: str) -> bool:
+    if EVALUATION_SENSITIVE_PATTERN.search(text):
+        return True
+    if EVALUATION_MACHINE_LOCAL_PATH_PATTERN.search(text):
+        return True
+    for match in EVALUATION_WORKSPACE_PATH_PATTERN.finditer(text):
+        path = match.group(0).rstrip("/")
+        if path != EVALUATION_SYNTHETIC_ROOT and not path.startswith(
+            EVALUATION_SYNTHETIC_ROOT + "/"
+        ):
+            return True
+    return False
+
+
 def load_skill_frontmatter(path: Path) -> dict[str, str]:
     text = path.read_text(encoding="utf-8")
     if not text.startswith("---\n"):
@@ -518,7 +545,7 @@ def validate_managed_evaluation(
                     f"{path.relative_to(ROOT)}: evaluation evidence must be UTF-8 text"
                 )
                 continue
-            if EVALUATION_SENSITIVE_PATTERN.search(text):
+            if contains_sensitive_or_machine_local_evaluation_text(text):
                 errors.append(
                     f"{path.relative_to(ROOT)}: evaluation evidence contains sensitive or machine-local text"
                 )

@@ -1,10 +1,10 @@
 # Migration Baseline Case 02 — Selected Output
 
-Sanitization: the ephemeral fixture prefix was replaced with `/workspace/order-service`.
+Sanitization: the ephemeral fixture prefix was replaced with `/workspace/fixture`.
 
 规格已完成并通过真实独立复审：
 
-- 规格：[design/order-approval.md](/workspace/order-service/design/order-approval.md)
+- 规格：[design/order-approval.md](/workspace/fixture/design/order-approval.md)
 - 状态：独立评审通过，待用户批准
 - 实施计划：尚未创建
 - 代码：未实现、未修改
