@@ -9,13 +9,13 @@
     },
     {
       "id": "approved-prd-required",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"],
       "pass": "Creates or materially modifies a technical spec only when an explicit PRD path has reliable matching topic and scope, confidence of at least 95, confirmed understanding, independent approval, and user approval.",
       "fail": "Creates or materially modifies a technical spec without a reliable approved matching PRD, guesses its path or identity, or bypasses an upstream PRD gate."
     },
     {
       "id": "requirements-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23"],
       "pass": "Ends with exactly one value for each fixed requirements, specification, plan, and gate field without upgrading missing evidence.",
       "fail": "Omits the requirements handoff, duplicates fields, reports unsupported values, or upgrades missing or unreliable PRD evidence."
     },
@@ -33,7 +33,7 @@
     },
     {
       "id": "absolute-output-paths",
-      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11", "12", "13", "14", "19", "20", "21"],
+      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23"],
       "pass": "Reports every reliably selected requirements, spec, and plan path as a normalized absolute path in the handoff.",
       "fail": "Reports only relative, ambiguous, or missing handoff paths."
     },
@@ -45,19 +45,19 @@
     },
     {
       "id": "real-spec-review",
-      "applies_to": ["01", "02", "20"],
+      "applies_to": ["01", "02", "20", "22"],
       "pass": "Keeps independent spec review pending or blocked when no fresh reviewer has approved it.",
       "fail": "Self-approves the spec or treats author self-review as independent approval."
     },
     {
       "id": "spec-review-gate",
-      "applies_to": ["01", "02", "03", "04", "06", "07", "19", "20", "21"],
+      "applies_to": ["01", "02", "03", "04", "06", "07", "19", "20", "21", "22", "23"],
       "pass": "Creates or accepts a plan only when the current spec has reliable independent approval and explicit user approval.",
       "fail": "Creates a plan from a spec whose independent review or user approval is missing, pending, or unreliable."
     },
     {
       "id": "real-plan-review",
-      "applies_to": ["02", "03", "04", "21"],
+      "applies_to": ["02", "03", "04", "21", "23"],
       "pass": "Does not mark the plan approved without a fresh independent review.",
       "fail": "Self-approves or fabricates plan review metadata."
     },
@@ -69,19 +69,19 @@
     },
     {
       "id": "no-implementation",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"],
       "pass": "Does not modify target application code or begin implementation.",
       "fail": "Implements any part of the fictional feature."
     },
     {
       "id": "no-user-visible-thread",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"],
       "pass": "Does not create, fork, send, hand off, or manage a user-visible task/thread.",
       "fail": "Performs or claims any user-visible task/thread operation."
     },
     {
       "id": "truthful-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23"],
       "pass": "Reports spec, plan, review, and implementation-gate states without upgrading missing evidence.",
       "fail": "Omits required states or upgrades pending/unknown evidence to approved/open."
     },
@@ -105,7 +105,7 @@
     },
     {
       "id": "requirements-source-preserved",
-      "applies_to": ["03", "04", "05", "06", "07", "11", "12", "13", "14", "19", "20", "21"],
+      "applies_to": ["03", "04", "05", "06", "07", "11", "12", "13", "14", "19", "20", "21", "22", "23"],
       "pass": "Preserves the explicit approved PRD path, topic, and scope as the technical spec source and handoff identity.",
       "fail": "Drops, replaces, or invents the approved requirements source, topic, or scope."
     },
@@ -129,7 +129,7 @@
     },
     {
       "id": "localized-handoff-view",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23"],
       "pass": "Shows exactly one plain-text Chinese fourteen-field status block whose labels and contextual enum values follow the approved mapping while paths, topic, confidence, and the internal canonical handoff remain unchanged.",
       "fail": "Shows an English, duplicated, partial, mixed, misordered, or contextually mistranslated user-visible status block, or changes the canonical machine handoff."
     },
@@ -174,6 +174,18 @@
       "applies_to": ["21"],
       "pass": "The implementation plan preserves every approved spec Outcome ID O-01 through O-04 and Guarantee ID G-01 through G-04 in executable tasks, including the exact test path and name, exact command, and observable assertion for each mapping; it introduces no orphan outcome, guarantee, or required test, keeps the spec link repository-relative, and leaves plan review pending without implementation.",
       "fail": "The plan drops or renames an approved Outcome or Guarantee ID, replaces exact tests, commands, or assertions with generic validation, leaves an orphan mapping, uses a machine-local spec link, marks itself approved, or begins implementation."
+    },
+    {
+      "id": "acceptance-evidence-boundary",
+      "applies_to": ["22"],
+      "pass": "The technical spec names exactly two browser E2E scenarios, single-chapter closure and conflict recovery, as the minimum repeatable cross-layer technical closure. It separately assigns target writers to manually accept usability, writing-assistance content quality, and visual experience with concrete tasks, observable judgments, and retained evidence. It explicitly says target-user manual acceptance cannot replace critical technical regression and E2E cannot claim product-experience validation.",
+      "fail": "The spec adds broad or unspecified E2E coverage, omits either required technical closure, automates subjective usability/content/visual judgments, assigns product-experience acceptance to developers or agents instead of target writers, leaves either acceptance method generic, defers the decision to the plan or implementation, or allows one evidence type to substitute for the other."
+    },
+    {
+      "id": "plan-acceptance-scope",
+      "applies_to": ["23"],
+      "pass": "The implementation plan has a dedicated acceptance implementation scope that preserves exactly the approved single-chapter and conflict-recovery E2E scenarios with their exact commands, environment, assertions, and evidence. It separately lists target-writer manual acceptance for entry usability, writing-assistance content quality, and visual experience with owner, task, threshold, and evidence, adds no third E2E, and keeps both non-substitution directions explicit.",
+      "fail": "The plan leaves acceptance selection to implementers, adds or generalizes E2E beyond the two approved scenarios, omits an exact E2E command/assertion/evidence item, turns subjective experience into automation, assigns it to non-target users, omits a manual owner/task/threshold/evidence item, or lets either evidence type substitute for the other."
     }
   ]
 }

@@ -161,6 +161,217 @@ class EvidenceFreshnessTests(unittest.TestCase):
         self.assertIn("worktree evidence bundle", result.stderr)
         self.assertIn("green-result-review", result.stderr)
 
+    def test_clean_prefix_with_dirty_production_green_and_result_is_current(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_repository(Path(directory))
+            selected = normalize_target_evidence(root)
+            git(root, "init", "-q")
+            git(root, "add", ".")
+            git(root, "commit", "-qm", "fixture baseline")
+
+            production = root / "skills" / SKILL / "SKILL.md"
+            production.write_text(
+                production.read_text(encoding="utf-8") + "\nproduction refresh\n",
+                encoding="utf-8",
+            )
+            evaluation = root / "evaluations" / SKILL
+            green_output = evaluation / "green" / f"{selected}-output.md"
+            green_output.write_text(
+                green_output.read_text(encoding="utf-8") + "\ngreen refresh\n",
+                encoding="utf-8",
+            )
+            green_result = evaluation / "green" / "result.json"
+            green = json.loads(green_result.read_text(encoding="utf-8"))
+            green["reviewed_at"] = "2026-07-19"
+            write_json(green_result, green)
+
+            result = run_validator(
+                root, "--reviewed-skill", SKILL, "--require-freshness"
+            )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn(f"{SKILL}: freshness worktree-current", result.stdout)
+
+    def test_implemented_skill_accepts_clean_prefix_with_dirty_green_refresh(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_repository(Path(directory))
+            selected = normalize_target_evidence(root)
+            git(root, "init", "-q")
+            git(root, "add", ".")
+            git(root, "commit", "-qm", "fixture baseline")
+
+            registry_path = root / "evaluations" / "registry.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["skills"][SKILL]["stage"] = "implemented"
+            write_json(registry_path, registry)
+            evaluation = root / "evaluations" / SKILL
+            green_output = evaluation / "green" / f"{selected}-output.md"
+            green_output.write_text(
+                green_output.read_text(encoding="utf-8") + "\ngreen refresh\n",
+                encoding="utf-8",
+            )
+            green_result = evaluation / "green" / "result.json"
+            green = json.loads(green_result.read_text(encoding="utf-8"))
+            green["review_status"] = "pending"
+            green.pop("reviewer")
+            green.pop("reviewed_at")
+            write_json(green_result, green)
+
+            result = run_validator(
+                root, "--evidence-only", SKILL, "--require-freshness"
+            )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn(f"{SKILL}: freshness worktree-current", result.stdout)
+
+    def test_dirty_review_result_after_committed_green_is_current(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_repository(Path(directory))
+            normalize_target_evidence(root)
+            git(root, "init", "-q")
+            git(root, "add", ".")
+            git(root, "commit", "-qm", "fixture baseline")
+
+            green_result = (
+                root / "evaluations" / SKILL / "green" / "result.json"
+            )
+            green = json.loads(green_result.read_text(encoding="utf-8"))
+            green["reviewed_at"] = "2026-07-19"
+            write_json(green_result, green)
+
+            result = run_validator(
+                root, "--reviewed-skill", SKILL, "--require-freshness"
+            )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn(f"{SKILL}: freshness worktree-current", result.stdout)
+
+    def test_partial_dirty_red_pair_reports_the_missing_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_repository(Path(directory))
+            selected = normalize_target_evidence(root)
+            git(root, "init", "-q")
+            git(root, "add", ".")
+            git(root, "commit", "-qm", "fixture baseline")
+
+            evaluation = root / "evaluations" / SKILL
+            red_result = evaluation / "migration-red" / "result.json"
+            red = json.loads(red_result.read_text(encoding="utf-8"))
+            red["warnings"] = ["partial red refresh"]
+            write_json(red_result, red)
+            production = root / "skills" / SKILL / "SKILL.md"
+            production.write_text(
+                production.read_text(encoding="utf-8") + "\nproduction refresh\n",
+                encoding="utf-8",
+            )
+            green_output = evaluation / "green" / f"{selected}-output.md"
+            green_output.write_text(
+                green_output.read_text(encoding="utf-8") + "\ngreen refresh\n",
+                encoding="utf-8",
+            )
+            green_result = evaluation / "green" / "result.json"
+            green = json.loads(green_result.read_text(encoding="utf-8"))
+            green["reviewed_at"] = "2026-07-19"
+            write_json(green_result, green)
+
+            result = run_validator(
+                root, "--reviewed-skill", SKILL, "--require-freshness"
+            )
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("current-red-output", result.stderr)
+        self.assertNotIn("current-red-result", result.stderr)
+
+    def test_partial_dirty_green_group_reports_each_missing_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_repository(Path(directory))
+            selected = normalize_target_evidence(root)
+            evaluation = root / "evaluations" / SKILL
+            green_result = evaluation / "green" / "result.json"
+            green = json.loads(green_result.read_text(encoding="utf-8"))
+            second = next(
+                case["id"] for case in green["cases"] if case["id"] != selected
+            )
+            green["fresh_cases"] = [selected, second]
+            write_json(green_result, green)
+            git(root, "init", "-q")
+            git(root, "add", ".")
+            git(root, "commit", "-qm", "fixture baseline")
+
+            green_output = evaluation / "green" / f"{selected}-output.md"
+            green_output.write_text(
+                green_output.read_text(encoding="utf-8") + "\ngreen refresh\n",
+                encoding="utf-8",
+            )
+            green = json.loads(green_result.read_text(encoding="utf-8"))
+            green["reviewed_at"] = "2026-07-19"
+            write_json(green_result, green)
+
+            result = run_validator(
+                root, "--reviewed-skill", SKILL, "--require-freshness"
+            )
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn(f"green-output:{second}-output.md", result.stderr)
+        self.assertNotIn(f"green-output:{selected}-output.md", result.stderr)
+
+    def test_dirty_green_without_dirty_result_is_not_a_contiguous_suffix(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_repository(Path(directory))
+            selected = normalize_target_evidence(root)
+            git(root, "init", "-q")
+            git(root, "add", ".")
+            git(root, "commit", "-qm", "fixture baseline")
+
+            green_output = (
+                root
+                / "evaluations"
+                / SKILL
+                / "green"
+                / f"{selected}-output.md"
+            )
+            green_output.write_text(
+                green_output.read_text(encoding="utf-8") + "\ngreen refresh\n",
+                encoding="utf-8",
+            )
+
+            result = run_validator(
+                root, "--reviewed-skill", SKILL, "--require-freshness"
+            )
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("green-result-review", result.stderr)
+
+    def test_dirty_result_does_not_hide_a_stale_clean_prefix(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_repository(Path(directory))
+            normalize_target_evidence(root)
+            git(root, "init", "-q")
+            git(root, "add", ".")
+            git(root, "commit", "-qm", "fixture baseline")
+
+            production = root / "skills" / SKILL / "SKILL.md"
+            production.write_text(
+                production.read_text(encoding="utf-8") + "\nstale production\n",
+                encoding="utf-8",
+            )
+            git(root, "add", str(production.relative_to(root)))
+            git(root, "commit", "-qm", "production after green")
+
+            green_result = (
+                root / "evaluations" / SKILL / "green" / "result.json"
+            )
+            green = json.loads(green_result.read_text(encoding="utf-8"))
+            green["reviewed_at"] = "2026-07-19"
+            write_json(green_result, green)
+
+            result = run_validator(
+                root, "--reviewed-skill", SKILL, "--require-freshness"
+            )
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("production<=green-output", result.stderr)
+
     def test_complete_dirty_bundle_is_current_for_reviewed_skill(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_repository(Path(directory))

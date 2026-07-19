@@ -595,6 +595,48 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
                 self.assertIn(required, template)
         self.assertNotIn("任务级独立评审", template)
 
+    def test_spec_and_plan_separate_critical_e2e_from_target_user_acceptance(self):
+        contracts = read("references/document-contracts.md").casefold()
+        spec_template = read("assets/spec-template.md").casefold()
+        plan_template = read("assets/plan-template.md").casefold()
+
+        for required in (
+            "repeatable cross-layer technical closure",
+            "minimum critical e2e",
+            "target-user manual acceptance",
+            "usability",
+            "content quality",
+            "visual experience",
+            "acting as the named target-user cohort",
+            "developer or reviewer may participate only if",
+            "role alone",
+            "manual acceptance cannot replace critical technical regression",
+            "e2e cannot claim product-experience validation",
+        ):
+            with self.subTest(contract=required):
+                self.assertIn(required, contracts)
+
+        for required in (
+            "验收类型与证据",
+            "关键 e2e",
+            "目标用户人工验收",
+            "可重复验证的跨层技术闭环",
+            "易用性、内容质量和视觉体验",
+            "不得互相替代",
+        ):
+            with self.subTest(spec_template=required):
+                self.assertIn(required, spec_template)
+
+        for required in (
+            "关键 e2e 场景",
+            "人工验收场景",
+            "逐条列出",
+            "人工验收不能替代关键技术回归",
+            "e2e 不能冒充产品体验验证",
+        ):
+            with self.subTest(plan_template=required):
+                self.assertIn(required, plan_template)
+
     def test_spec_and_plan_require_failure_and_guarantee_traceability(self):
         contracts = read("references/document-contracts.md").casefold()
         spec_template = read("assets/spec-template.md").casefold()
