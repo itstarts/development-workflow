@@ -2125,8 +2125,27 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual("PyYAML==6.0.3\n", requirements)
         for text in (readme, rules):
             self.assertIn(".venv/bin/python", text)
-        self.assertIn("Python 3.9", readme)
-        self.assertIn("Python 3.14", readme)
+        self.assertIn("支持 Python 3.9 及以上", readme)
+        self.assertIn("使用项目当前 `.venv`", readme)
+        self.assertNotIn("维护矩阵至少覆盖 Python 3.9 和 Python 3.14", readme)
+
+    def test_agent_development_batches_checks_and_accepts_dirty_evidence_suffix(self):
+        guide = (ROOT / "docs" / "agent-development.md").read_text()
+
+        self.assertIn(
+            "scripts/check.py --skill <skill-name> [--skill <skill-name> ...]",
+            guide,
+        )
+        self.assertIn("干净前序", guide)
+        self.assertIn("连续 dirty 后序", guide)
+        self.assertIn("直接运行一次统一完整门", guide)
+
+    def test_public_workflow_describes_contiguous_dirty_evidence_suffix(self):
+        workflow = (ROOT / "docs" / "workflow.md").read_text()
+
+        self.assertIn("干净前序", workflow)
+        self.assertIn("连续 dirty 后序", workflow)
+        self.assertNotIn("要求完整 worktree evidence bundle", workflow)
 
 
 if __name__ == "__main__":

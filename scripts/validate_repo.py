@@ -723,6 +723,41 @@ def freshness_evidence(skill_name: str) -> Optional[dict]:
     }
 
 
+def committed_freshness_failures(
+    skill_name: str, evidence: dict, clean_stage_count: int
+) -> list[str]:
+    criterion_commit = last_commit_for_paths(evidence["criterion"])
+    red_commit = last_commit_for_paths(
+        [evidence["red_result"], evidence["red_output"]]
+    )
+    production_commit = last_production_commit(skill_name)
+    green_commits = [last_commit_for_paths([path]) for path in evidence["green_outputs"]]
+    result_commit = last_commit_for_paths([evidence["green_result"]])
+    head_result = run_git(["rev-parse", "HEAD"])
+    head = head_result.stdout.strip() if head_result.returncode == 0 else None
+
+    failures: list[str] = []
+    if clean_stage_count >= 2 and not is_ancestor(criterion_commit, red_commit):
+        failures.append("criterion<=current-red")
+    if clean_stage_count >= 3 and not is_ancestor(red_commit, production_commit):
+        failures.append("current-red<=production")
+    if clean_stage_count >= 4:
+        for index, green_commit in enumerate(green_commits):
+            if not is_ancestor(production_commit, green_commit):
+                failures.append(
+                    f"production<=green-output:{evidence['fresh_cases'][index]}"
+                )
+    if clean_stage_count >= 5:
+        for index, green_commit in enumerate(green_commits):
+            if not is_ancestor(green_commit, result_commit):
+                failures.append(
+                    f"green-output:{evidence['fresh_cases'][index]}<=green-result-review"
+                )
+        if not is_ancestor(result_commit, head):
+            failures.append("green-result-review<=HEAD")
+    return failures
+
+
 def validate_worktree_freshness(
     skill_name: str,
     evidence: dict,
@@ -733,30 +768,67 @@ def validate_worktree_freshness(
     production_changed = any(
         production_path_matches(path, skill_name) for path in paths
     )
-    relevant = set(evidence["criterion"])
-    relevant.update(
-        [evidence["red_result"], evidence["red_output"], evidence["green_result"]]
-    )
-    relevant.update(evidence["green_outputs"])
-    if not production_changed and not relevant.intersection(paths):
+    criterion_changed = any(path in paths for path in evidence["criterion"])
+    red_paths = [evidence["red_result"], evidence["red_output"]]
+    red_changes = [path in paths for path in red_paths]
+    green_changes = [path in paths for path in evidence["green_outputs"]]
+    result_changed = evidence["green_result"] in paths
+    if not any(
+        [
+            criterion_changed,
+            *red_changes,
+            production_changed,
+            *green_changes,
+            result_changed,
+        ]
+    ):
         return False
 
     missing: list[str] = []
-    if not production_changed:
-        missing.append("production")
-    if evidence["red_result"] not in paths:
-        missing.append("current-red-result")
-    if evidence["red_output"] not in paths:
-        missing.append("current-red-output")
-    if evidence["green_result"] not in paths:
-        missing.append("green-result-review")
-    for path in evidence["green_outputs"]:
-        if path not in paths:
-            missing.append(f"green-output:{Path(path).name}")
+    if any(red_changes) and not all(red_changes):
+        if not red_changes[0]:
+            missing.append("current-red-result")
+        if not red_changes[1]:
+            missing.append("current-red-output")
+    if any(green_changes) and not all(green_changes):
+        for changed, path in zip(green_changes, evidence["green_outputs"]):
+            if not changed:
+                missing.append(f"green-output:{Path(path).name}")
+
+    dirty_stages = [
+        criterion_changed,
+        any(red_changes),
+        production_changed,
+        any(green_changes),
+        result_changed,
+    ]
+    first_dirty = dirty_stages.index(True)
+    for index in range(first_dirty, len(dirty_stages)):
+        if dirty_stages[index]:
+            continue
+        if index == 1:
+            missing.extend(["current-red-result", "current-red-output"])
+        elif index == 2:
+            missing.append("production")
+        elif index == 3:
+            missing.extend(
+                f"green-output:{Path(path).name}"
+                for path in evidence["green_outputs"]
+            )
+        elif index == 4:
+            missing.append("green-result-review")
     if missing:
         errors.append(
             f"{skill_name}: worktree evidence bundle is incomplete; missing "
-            + ", ".join(missing)
+            + ", ".join(dict.fromkeys(missing))
+        )
+        return True
+
+    failures = committed_freshness_failures(skill_name, evidence, first_dirty)
+    if failures:
+        errors.append(
+            f"{skill_name}: worktree evidence clean prefix is stale or incomparable: "
+            + ", ".join(failures)
         )
         return True
     messages.append(f"{skill_name}: freshness worktree-current")
@@ -769,28 +841,7 @@ def validate_clean_freshness(
     errors: list[str],
     messages: list[str],
 ) -> None:
-    criterion_commit = last_commit_for_paths(evidence["criterion"])
-    red_commit = last_commit_for_paths(
-        [evidence["red_result"], evidence["red_output"]]
-    )
-    production_commit = last_production_commit(skill_name)
-    green_commits = [last_commit_for_paths([path]) for path in evidence["green_outputs"]]
-    result_commit = last_commit_for_paths([evidence["green_result"]])
-    head_result = run_git(["rev-parse", "HEAD"])
-    head = head_result.stdout.strip() if head_result.returncode == 0 else None
-
-    failures: list[str] = []
-    if not is_ancestor(criterion_commit, red_commit):
-        failures.append("criterion<=current-red")
-    if not is_ancestor(red_commit, production_commit):
-        failures.append("current-red<=production")
-    for index, green_commit in enumerate(green_commits):
-        if not is_ancestor(production_commit, green_commit):
-            failures.append(f"production<=green-output:{evidence['fresh_cases'][index]}")
-        if not is_ancestor(green_commit, result_commit):
-            failures.append(f"green-output:{evidence['fresh_cases'][index]}<=green-result-review")
-    if not is_ancestor(result_commit, head):
-        failures.append("green-result-review<=HEAD")
+    failures = committed_freshness_failures(skill_name, evidence, 5)
     if failures:
         errors.append(
             f"{skill_name}: clean freshness evidence is missing, stale, or incomparable: "

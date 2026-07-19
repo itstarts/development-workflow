@@ -128,4 +128,4 @@ PRD 阶段在内部固定维护 requirements 英文 canonical 八字段，对用
 
 `evaluations/` 只保存脱敏后的固定场景、判据和选中证据。可能包含用户上下文、原始 trace、stderr、task/thread 标识符或本机路径的材料只保存在被 `.gitignore` 排除的 `work/` 中。版本化输出中的 `/workspace/fixture` 是唯一允许的固定合成仓库根，不代表真实机器路径；公开扫描允许该前缀，并拒绝常见 macOS、Linux、Windows 本机用户或临时路径以及其它 `/workspace/...` 根。
 
-`green/result.json` 的 `fresh_cases` 记录 production 变化后实际重跑并纳入当前评审的场景。`scripts/validate_repo.py --require-freshness` 在干净 Git 树核对 RED → production → fresh GREEN → review 的祖先链，在有未提交变更时要求完整 worktree evidence bundle；非 Git 副本只能做结构检查，不能通过严格 freshness 门。
+`green/result.json` 的 `fresh_cases` 记录 production 变化后实际重跑并纳入当前评审的场景。`scripts/validate_repo.py --require-freshness` 在干净 Git 树核对 RED → production → fresh GREEN → review 的祖先链；工作区可以复用满足祖先关系的干净前序，但从第一个变化阶段起必须形成连续 dirty 后序，current RED 两份证据和全部 fresh GREEN outputs 各自保持完整。中间缺口、部分刷新或过期干净前序都会失败；非 Git 副本只能做结构检查，不能通过严格 freshness 门。

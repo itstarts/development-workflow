@@ -75,15 +75,17 @@
 
 ### Repository
 
+- evaluation freshness 允许复用已满足祖先关系的干净前序，并要求从第一个工作区变化阶段开始形成连续后序；GREEN 刷新和评审写回不再需要为了通过校验制造中间提交，缺口、部分刷新与过期前序仍失败。
+- 验证流程把受影响 skill 合并为一次定向门，只保留一位最终评审者，并在批准写回后直接运行一次完整门；日常和发布验证统一使用项目当前 `.venv`，不再要求重复执行 Python 3.9/3.14 双版本矩阵。
 - 新增 `.agents/plugins/marketplace.json` repo marketplace，以 Git URL source 暴露仓库根级 `development-workflow` plugin，并在 README、安装指南和仓库 validator 中同步安装入口与 catalog 契约。
-- 新增 Git-aware evaluation freshness：`fresh_cases`、clean commit 祖先链、dirty worktree evidence bundle 和 non-Git 严格失败，避免 production 晚于 RED/GREEN/review 仍误报完成。
+- 新增 Git-aware evaluation freshness：`fresh_cases`、clean commit 祖先链、工作区干净前序与连续 dirty 后序，以及 non-Git 严格失败，避免 production 晚于 RED/GREEN/review 仍误报完成。
 - 明确 `/workspace/fixture` 是版本化评估唯一允许的固定合成根，不是真实本机路径或隐私数据；验证器拒绝 macOS 用户与临时路径、Linux `/home/...` 与临时路径、Windows 用户路径及其它 `/workspace/...` 根。
 - 新增 `scripts/check.py` 统一定向/完整验证，以及只读 `scripts/verify_install.py` 安装 payload 差异检查；两者只编排现有权威验证，不安装依赖、不启动服务、不写真实 `CODEX_HOME`。
 - 建立 plugin-compatible 目录、项目级 agent 角色、分层 `AGENTS.md` 和仓库验证入口。
 - 增加 MIT License、贡献指南、安全策略、安装指南、工作流契约与 Agent 开发指南，形成公开仓库文档入口。
 - 补齐本机凭证、编辑器状态、Python 缓存、原始评估、构建测试产物和临时日志的 `.gitignore` 边界。
 - 将公开安装命令更新为 `itstarts/development-workflow`，并记录完整 Git 历史隐私审计要求。
-- 固定 validator 开发依赖并声明 Python 3.9/3.14 维护矩阵。
+- 固定 validator 开发依赖，仓库支持 Python 3.9 及以上并统一使用项目当前 `.venv` 验证。
 - 仓库验证器忽略 Python 缓存和系统元数据，保持 skill 测试后的重复验证稳定。
 - plugin 同时暴露 PRD → technical spec/plan → development prompt 完整交接链、approved bounded change → implementation 受控实施入口和 `managing-agents-rules` 规则治理入口；本地 staging 验证五个 skill 可单独或组合复制且拒绝覆盖已有目标。
 - 公开文档记录 PRD→spec 与 plan→三态路由的两段自动衔接、单一最终 handoff 和单 skill 能力缺口；plugin 保持未发布 `0.1.0`，本次不发布。

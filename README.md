@@ -80,7 +80,7 @@ python3 -m venv .venv
 .venv/bin/python scripts/check.py --skill creating-product-requirements
 ```
 
-完整验证命令见 [Agent 开发指南](docs/agent-development.md#发布前验证)。支持 Python 3.9 及以上；维护矩阵至少覆盖 Python 3.9 和 Python 3.14。
+完整验证命令见 [Agent 开发指南](docs/agent-development.md#发布前验证)。支持 Python 3.9 及以上；日常和发布验证使用项目当前 `.venv`，不要求重复运行第二个 Python 版本。
 
 ## 文档
 

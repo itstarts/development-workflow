@@ -72,19 +72,19 @@
 
 ## 验证
 
-受影响 skill 在独立评审写回前，先按当前 registry stage 运行统一定向门；同一任务涉及多个 skill 时重复 `--skill`：
+受影响 skill 在独立评审写回前，按当前 registry stage 运行一次统一定向门；同一任务涉及多个 skill 时，在同一命令中重复 `--skill`：
 
 ```bash
-.venv/bin/python scripts/check.py --skill <skill-name>
+.venv/bin/python scripts/check.py --skill <skill-name> [--skill <skill-name> ...]
 ```
 
-全部已公开 skill 均为 `review-approved` 后，运行统一完整门：
+独立评审批准并写回全部受影响 skill，且全部已公开 skill 均为 `review-approved` 后，直接运行一次统一完整门：
 
 ```bash
 .venv/bin/python scripts/check.py --full
 ```
 
-`check.py` 统一执行仓库测试、目标 skill 测试、stage-aware freshness 和官方 skill validator；`--full` 还执行 plugin validator。开发环境先运行 `python3 -m venv .venv` 和 `.venv/bin/python -m pip install -r requirements-dev.txt`。维护矩阵至少覆盖 Python 3.9 和 Python 3.14。新增 skill 后，把它加入仓库 validator、官方 skill validator、安装测试和 plugin 验证。
+`check.py` 统一执行仓库测试、目标 skill 测试、stage-aware freshness 和官方 skill validator；`--full` 还执行 plugin validator。开发环境先运行 `python3 -m venv .venv` 和 `.venv/bin/python -m pip install -r requirements-dev.txt`。仓库支持 Python 3.9 及以上；验证使用项目当前 `.venv`，不要求重复运行第二个 Python 版本。没有新 diff 或验证失败时，不在完整门前重复定向门。新增 skill 后，把它加入仓库 validator、官方 skill validator、安装测试和 plugin 验证。
 
 ## 评审
 
