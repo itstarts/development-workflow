@@ -644,7 +644,19 @@ def production_path_matches(path: str, skill_name: str) -> bool:
 def last_commit_for_paths(paths: Sequence[str]) -> Optional[str]:
     if not paths:
         return None
-    result = run_git(["log", "-1", "--format=%H", "HEAD", "--", *paths])
+    result = run_git(
+        [
+            "log",
+            "--full-history",
+            "--simplify-merges",
+            "--topo-order",
+            "-1",
+            "--format=%H",
+            "HEAD",
+            "--",
+            *paths,
+        ]
+    )
     if result.returncode != 0:
         return None
     value = result.stdout.strip()
