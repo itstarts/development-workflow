@@ -542,6 +542,51 @@ class EvidenceFreshnessTests(unittest.TestCase):
         self.assertEqual(1, result.returncode)
         self.assertIn("current-red<=production", result.stderr)
 
+    def test_merge_preserves_topic_review_commit_when_result_matches_first_parent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = copy_repository(Path(directory))
+            selected = normalize_target_evidence(root)
+            approved_result = (
+                root
+                / "evaluations"
+                / SKILL
+                / "green"
+                / "result.json"
+            ).read_text(encoding="utf-8")
+            git(root, "init", "-q")
+            git(root, "add", ".")
+            git(root, "commit", "-qm", "fixture baseline")
+            base_branch = git(root, "branch", "--show-current").stdout.strip()
+            git(root, "checkout", "-q", "-b", "topic")
+
+            evaluation = root / "evaluations" / SKILL
+            green_output = evaluation / "green" / f"{selected}-output.md"
+            green_output.write_text(
+                green_output.read_text(encoding="utf-8") + "\ngreen refresh\n",
+                encoding="utf-8",
+            )
+            green_result = evaluation / "green" / "result.json"
+            green = json.loads(green_result.read_text(encoding="utf-8"))
+            green["review_status"] = "pending"
+            green.pop("reviewer")
+            green.pop("reviewed_at")
+            write_json(green_result, green)
+            git(root, "add", str(green_output.relative_to(root)), str(green_result.relative_to(root)))
+            git(root, "commit", "-qm", "green refresh")
+
+            green_result.write_text(approved_result, encoding="utf-8")
+            git(root, "add", str(green_result.relative_to(root)))
+            git(root, "commit", "-qm", "review approval")
+            git(root, "checkout", "-q", base_branch)
+            git(root, "merge", "--no-ff", "-qm", "merge topic", "topic")
+
+            result = run_validator(
+                root, "--reviewed-skill", SKILL, "--require-freshness"
+            )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn(f"{SKILL}: freshness clean-current", result.stdout)
+
     def test_creation_only_profile_requires_upgrade_after_production_change(self):
         target = "implementing-bounded-changes"
         with tempfile.TemporaryDirectory() as directory:
