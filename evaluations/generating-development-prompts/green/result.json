@@ -12,7 +12,9 @@
     "05",
     "06"
   ],
-  "review_status": "pending",
+  "review_status": "approved",
+  "reviewer": "skill-reviewer",
+  "reviewed_at": "2026-07-19",
   "cases": [
     {
       "id": "01",
