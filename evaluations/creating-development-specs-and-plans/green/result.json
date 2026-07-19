@@ -5,11 +5,11 @@
   "all_runs_valid": true,
   "all_required_passed": true,
   "fresh_cases": [
-    "20",
-    "21"
+    "22",
+    "23"
   ],
   "review_status": "approved",
-  "reviewer": "skill-reviewer",
+  "reviewer": "workflow-final-reviewer",
   "reviewed_at": "2026-07-19",
   "cases": [
     {
@@ -321,6 +321,40 @@
         "requirements-source-preserved",
         "localized-handoff-view",
         "plan-guarantee-traceability"
+      ]
+    },
+    {
+      "id": "22",
+      "valid": true,
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "real-spec-review",
+        "spec-review-gate",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "requirements-source-preserved",
+        "localized-handoff-view",
+        "acceptance-evidence-boundary"
+      ]
+    },
+    {
+      "id": "23",
+      "valid": true,
+      "passed_criteria": [
+        "approved-prd-required",
+        "requirements-status-fields",
+        "absolute-output-paths",
+        "spec-review-gate",
+        "real-plan-review",
+        "no-implementation",
+        "no-user-visible-thread",
+        "truthful-status-fields",
+        "requirements-source-preserved",
+        "localized-handoff-view",
+        "plan-acceptance-scope"
       ]
     }
   ]

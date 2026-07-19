@@ -993,6 +993,7 @@ class RepositoryContractTests(unittest.TestCase):
             ROOT / "tests" / "AGENTS.md",
             ROOT / "evaluations" / "AGENTS.md",
             ROOT / ".codex-plugin" / "plugin.json",
+            ROOT / ".agents" / "plugins" / "marketplace.json",
             ROOT / ".codex" / "agents" / "skill-reviewer.toml",
             ROOT / ".codex" / "agents" / "final-reviewer.toml",
             ROOT / ".codex" / "agents" / "workflow-final-reviewer.toml",
@@ -1026,6 +1027,84 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertLessEqual(len(default_prompts), 3)
         self.assertTrue(all(isinstance(prompt, str) for prompt in default_prompts))
         self.assertTrue(all(len(prompt) <= 128 for prompt in default_prompts))
+
+    def test_plugin_marketplace_exposes_the_root_plugin_from_git(self):
+        marketplace = json.loads(
+            (ROOT / ".agents" / "plugins" / "marketplace.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual("development-workflow", marketplace["name"])
+        self.assertEqual(
+            "Development Workflow (dw)",
+            marketplace["interface"]["displayName"],
+        )
+        self.assertEqual(1, len(marketplace["plugins"]))
+
+        entry = marketplace["plugins"][0]
+        self.assertEqual("development-workflow", entry["name"])
+        self.assertEqual(
+            {
+                "source": "url",
+                "url": "https://github.com/itstarts/development-workflow.git",
+                "ref": "main",
+            },
+            entry["source"],
+        )
+        self.assertEqual(
+            {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+            entry["policy"],
+        )
+        self.assertEqual("Productivity", entry["category"])
+
+    def test_repository_validator_rejects_invalid_plugin_marketplace(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            marketplace = repository / ".agents" / "plugins" / "marketplace.json"
+            marketplace.parent.mkdir(parents=True, exist_ok=True)
+            marketplace.write_text(
+                '{"name":"wrong-marketplace","plugins":[]}\n',
+                encoding="utf-8",
+            )
+
+            result = run_repository_validator(repository)
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("invalid plugin marketplace", result.stderr)
+
+    def test_public_docs_include_marketplace_install_path(self):
+        text = (
+            (ROOT / "README.md").read_text(encoding="utf-8")
+            + (ROOT / "docs" / "install.md").read_text(encoding="utf-8")
+        )
+        self.assertIn(
+            "codex plugin marketplace add itstarts/development-workflow --ref main",
+            text,
+        )
+        self.assertIn(
+            "codex plugin add development-workflow@development-workflow",
+            text,
+        )
+        self.assertIn(
+            "只固定 marketplace catalog 的快照，不能覆盖 entry 自己的 plugin Git ref",
+            text,
+        )
+        self.assertIn(
+            "source.ref` 更新为同一个已验证 tag",
+            text,
+        )
+        self.assertIn(
+            "verify_install.py` 只验证 `skill-installer` 写入的 skill 目录",
+            text,
+        )
+        self.assertIn(
+            "plugins/cache/<marketplace-name>/<plugin-name>/<version-or-local>",
+            text,
+        )
+        self.assertIn(
+            "不能用远端 `main` 的安装结果替代当前候选证据",
+            text,
+        )
 
     def test_public_workflow_defines_exact_automatic_handoff_mapping(self):
         workflow = (ROOT / "docs" / "workflow.md").read_text(encoding="utf-8")

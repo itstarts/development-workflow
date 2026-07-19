@@ -16,6 +16,14 @@ When a database, transaction, lock, or durable queue affects correctness, name t
 
 Assign a unique Guarantee ID to every material invariant, consistency promise, rollback guarantee, and client-reachable failure guarantee. Link every outcome row to at least one Guarantee ID, then add one traceability row per Guarantee ID that names the exact Outcome IDs, exact test file and test name, exact test command, and observable assertion. Map every material matrix outcome, transaction or lock guarantee, and asynchronous publish or completion guarantee to at least one automated test, and map each required test back to its Guarantee ID. When no automated seam exists, state the evidence-backed reason and the required manual check; high-risk transaction, concurrency, persistence, and client-visible failure guarantees cannot rely only on manual validation.
 
+## Acceptance Evidence
+
+Classify every observable acceptance item by the evidence that can actually establish it. Use the minimum critical E2E set only for a repeatable cross-layer technical closure whose production-like entry point, component boundaries, and durable or externally visible result cannot be established by lower-level tests alone. Keep unit, component, API, integration, and other focused tests as the main technical regression layers; do not promote every guarantee or failure branch into E2E.
+
+Use target-user manual acceptance for usability, content quality, and visual experience. Name the target-user role, acceptance owner, release-candidate environment, concrete task, observable judgment or threshold, and retained evidence. Assign subjective product judgment only to people acting as the named target-user cohort. A developer or reviewer may participate only if they independently satisfy that target-user profile; their implementation or review role alone is not acceptance evidence. Automated assertions cannot establish subjective product judgment. When one product outcome contains both a technical closure and an experience judgment, split it into separate acceptance rows instead of forcing one evidence type to cover both.
+
+The specification must record the selected acceptance type and evidence boundary. The implementation plan must preserve that classification and turn it into exact scope: enumerate every E2E scenario by name with its command, environment, observable assertions, and evidence, then enumerate every manual acceptance scenario with its target users, owner, steps, pass condition, and evidence. Do not leave either list for implementers to decide. Manual acceptance cannot replace critical technical regression. E2E cannot claim product-experience validation.
+
 For a new `chinese-current` specification, write exactly these semantic fields and representations at creation:
 
 | Canonical semantic key | Chinese key | Initial Chinese value or format |
@@ -51,6 +59,8 @@ Each task is one independently testable execution slice. Task decomposition crea
 - executable commands, named tests, and observable expected results;
 - the approved spec Guarantee IDs covered by the task, with exact tests, commands, and observable assertions and no orphan guarantee or required test;
 - documentation synchronization.
+
+Preserve the approved spec's acceptance classification. List the exact minimum critical E2E scenarios and the exact target-user manual acceptance scenarios in a dedicated plan section before task decomposition. Carry each scenario into the responsible task and final validation without adding broader E2E coverage or converting subjective product experience into automated assertions.
 
 Define one implementation review strategy for the complete plan. By default, after all tasks are integrated and the relevant validation passes, one implementation-independent reviewer inspects the latest complete diff; in-scope findings are fixed, affected validation is rerun, and the same reviewer re-checks the updated diff until `APPROVED`, then review stops. Add an intermediate milestone review only when a task independently crosses a material public-contract, data, migration, permission, security, money, concurrency, transaction, or consistency boundary, or when later tasks depend on an otherwise unverified critical foundation. State each milestone's trigger, reason, and review scope. Never create per-task review gates merely because of task count.
 

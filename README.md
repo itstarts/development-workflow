@@ -8,7 +8,7 @@ approved bounded change → implementation
 substantive development → AGENTS rule governance
 ```
 
-仓库同时提供 plugin-compatible 打包、可复现验证和脱敏后的评估证据。五个 skill 职责独立；完整交接链通过文档路径和批准状态协作，受控实施入口直接执行用户已批准的边界，规则治理入口只处理有证据且逐 diff 批准的长期规则，均不依赖本机安装路径或插件缓存。
+仓库同时提供 plugin-compatible 打包、repo marketplace、可复现验证和脱敏后的评估证据。五个 skill 职责独立；完整交接链通过文档路径和批准状态协作，受控实施入口直接执行用户已批准的边界，规则治理入口只处理有证据且逐 diff 批准的长期规则，均不依赖本机安装路径或插件缓存。
 
 ## Skills
 
@@ -22,7 +22,14 @@ substantive development → AGENTS rule governance
 
 ## 快速安装
 
-一次安装全部 skill：
+通过 repo marketplace 安装完整 plugin bundle：
+
+```bash
+codex plugin marketplace add itstarts/development-workflow --ref main
+codex plugin add development-workflow@development-workflow
+```
+
+也可以通过 `skill-installer` 一次安装全部 skill：
 
 ```bash
 python3 \
@@ -37,12 +44,12 @@ python3 \
     skills/managing-agents-rules
 ```
 
-也可以只安装一个 skill。安装器在目标目录已存在时会停止，不会静默覆盖。完整步骤和安全更新方式见 [安装指南](docs/install.md)。
+还可以只安装一个 skill。安装器在目标目录已存在时会停止，不会静默覆盖。完整步骤、两种安装方式和安全更新边界见 [安装指南](docs/install.md)。
 
 ## 工作流
 
 1. `creating-product-requirements` 在理解置信度达到 95% 且用户确认摘要后创建 PRD；互不依赖的产品问题一轮最多询问三个，依赖问题仍逐问。PRD 经独立评审和用户批准后，验证 requirements 八字段并在同一会话自动进入 spec workflow。
-2. `creating-development-specs-and-plans` 复验 PRD，以相同的依赖感知规则澄清技术选择，先生成并批准 technical spec，再生成经独立评审的 plan；双门打开后验证并冻结十四字段，自动进入会话路由。
+2. `creating-development-specs-and-plans` 复验 PRD，以相同的依赖感知规则澄清技术选择，先生成并批准 technical spec，再生成经独立评审的 plan；spec/plan 把最小关键 E2E 与目标用户人工体验验收分开落位，双门打开后验证并冻结十四字段，自动进入会话路由。
 3. `generating-development-prompts` 基于已验证十四字段和当前会话证据输出 `current-session`、`new-session` 或 `blocked`；`current-session` 只建议继续并等待用户显式实施批准，不自动开始实施，只有 `new-session` 才生成单一代码框中的自包含提示词。目标会话只在首次实际委派时建立 Agent inventory，后续复用并仅在配置或能力证据变化时刷新。显式手动请求仍可在 plan 未批准或状态未知时生成带实施阻断门的提示词。
 
 普通非阻塞澄清只显示固定三行“当前阶段 / 主题 / 下一步”；暂停、阻塞、摘要确认、批准、文档阶段完成与跨 skill 交接继续显示完整中文八字段或十四字段。内部英文 canonical 字段、门禁计算与旧英文输入兼容性保持不变。完整契约见[工作流与文档契约](docs/workflow.md)。

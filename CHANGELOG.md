@@ -54,6 +54,7 @@
 
 ### creating-development-specs-and-plans
 
+- technical spec 和 implementation plan 现在把验收证据分为最小关键 E2E 与目标用户人工验收：跨层技术闭环使用可重复自动化，易用性、内容质量和视觉体验保留目标用户判断，并明确两类证据不得互相替代。
 - 新建 technical spec 与 implementation plan 使用完整中文 frontmatter；历史英文文档继续按原 schema 写回，不进行仅本地化迁移。
 - PRD inspector 在 raw frontmatter 阶段接受精确中文键和值并归一化为现有英文 JSON；历史英文输入保持兼容，mixed、语义重复、畸形、未知 Unicode key 和不受支持中文值失败关闭。
 - 普通非阻塞技术澄清从完整十四字段后缀改为固定三行 compact 状态，属于 `breaking contract change`；spec 批准、阻塞、阶段完成和路由继续使用完整十四字段。
@@ -74,6 +75,7 @@
 
 ### Repository
 
+- 新增 `.agents/plugins/marketplace.json` repo marketplace，以 Git URL source 暴露仓库根级 `development-workflow` plugin，并在 README、安装指南和仓库 validator 中同步安装入口与 catalog 契约。
 - 新增 Git-aware evaluation freshness：`fresh_cases`、clean commit 祖先链、dirty worktree evidence bundle 和 non-Git 严格失败，避免 production 晚于 RED/GREEN/review 仍误报完成。
 - 明确 `/workspace/fixture` 是版本化评估唯一允许的固定合成根，不是真实本机路径或隐私数据；验证器拒绝 macOS 用户与临时路径、Linux `/home/...` 与临时路径、Windows 用户路径及其它 `/workspace/...` 根。
 - 新增 `scripts/check.py` 统一定向/完整验证，以及只读 `scripts/verify_install.py` 安装 payload 差异检查；两者只编排现有权威验证，不安装依赖、不启动服务、不写真实 `CODEX_HOME`。

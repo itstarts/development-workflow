@@ -24,6 +24,7 @@ REQUIRED_ROOT_FILES = (
     "tests/AGENTS.md",
     "evaluations/AGENTS.md",
     ".codex-plugin/plugin.json",
+    ".agents/plugins/marketplace.json",
     ".codex/agents/skill-reviewer.toml",
     ".codex/agents/final-reviewer.toml",
     ".codex/agents/workflow-final-reviewer.toml",
@@ -111,6 +112,54 @@ def production_files(skill_root: Path) -> list[Path]:
                 and path.suffix.lower() not in NON_PUBLISHABLE_FILE_SUFFIXES
             )
     return sorted(found)
+
+
+def validate_plugin_marketplace(
+    path: Path, manifest: Optional[dict], errors: list[str]
+) -> None:
+    try:
+        marketplace = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"invalid plugin marketplace: {exc}")
+        return
+
+    if not isinstance(marketplace, dict):
+        errors.append("invalid plugin marketplace: root must be an object")
+        return
+    if marketplace.get("name") != "development-workflow":
+        errors.append("invalid plugin marketplace: name must be development-workflow")
+    interface = marketplace.get("interface")
+    if not isinstance(interface, dict) or interface.get("displayName") != (
+        "Development Workflow (dw)"
+    ):
+        errors.append("invalid plugin marketplace: displayName is missing or incorrect")
+
+    plugins = marketplace.get("plugins")
+    if not isinstance(plugins, list) or len(plugins) != 1 or not isinstance(
+        plugins[0] if plugins else None, dict
+    ):
+        errors.append("invalid plugin marketplace: exactly one plugin entry is required")
+        return
+
+    entry = plugins[0]
+    manifest_name = manifest.get("name") if isinstance(manifest, dict) else None
+    if entry.get("name") != "development-workflow" or (
+        manifest_name is not None and entry.get("name") != manifest_name
+    ):
+        errors.append("invalid plugin marketplace: plugin name must match the manifest")
+    if entry.get("source") != {
+        "source": "url",
+        "url": "https://github.com/itstarts/development-workflow.git",
+        "ref": "main",
+    }:
+        errors.append("invalid plugin marketplace: Git source is missing or incorrect")
+    if entry.get("policy") != {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL",
+    }:
+        errors.append("invalid plugin marketplace: install policy is missing or incorrect")
+    if entry.get("category") != "Productivity":
+        errors.append("invalid plugin marketplace: category must be Productivity")
 
 
 def stage_skill_payloads(skill_roots: Sequence[Path], codex_home: Path) -> None:
@@ -833,6 +882,7 @@ def validate(
         for namespace in unsupported_docs_namespaces:
             errors.append(f"unsupported docs namespace: docs/{namespace}")
 
+    manifest: Optional[dict] = None
     manifest_path = ROOT / ".codex-plugin" / "plugin.json"
     if manifest_path.is_file():
         try:
@@ -846,6 +896,10 @@ def validate(
                 errors.append("plugin skills path must be ./skills/")
             if not re.fullmatch(r"\d+\.\d+\.\d+", str(manifest.get("version", ""))):
                 errors.append("plugin version must be strict semver")
+
+    marketplace_path = ROOT / ".agents" / "plugins" / "marketplace.json"
+    if marketplace_path.is_file():
+        validate_plugin_marketplace(marketplace_path, manifest, errors)
 
     skills_root = ROOT / "skills"
     registry = load_evaluation_registry(errors)
