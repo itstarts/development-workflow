@@ -11,7 +11,6 @@
 
 规则与文档优先级
 - /workspace/fixture/AGENTS.md（来源：filesystem；优先级：0）
-- /workspace/fixture/AGENTS.md（来源：session；优先级：1）
 先完整读取规格、计划和所有适用的 AGENTS.md，再做任何修改。会话显式规则优先于文件系统规则，更深层目录规则优先；显式文档路径优先于自动选择值。实施前核对文档路径、适用规则与计划评审状态。
 计划评审已明确批准。
 
