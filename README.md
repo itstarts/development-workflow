@@ -28,11 +28,11 @@ substantive development → AGENTS rule governance
 通过 repo marketplace 安装完整 plugin bundle：
 
 ```bash
-codex plugin marketplace add itstarts/development-workflow --ref v0.1.0
+codex plugin marketplace add itstarts/development-workflow --ref v0.1.1
 codex plugin add development-workflow@development-workflow
 ```
 
-当前稳定版本为 `v0.1.0`。catalog 与 plugin entry 均固定到该不可变 tag，避免安装内容随 `main` 变化。
+当前稳定版本为 `v0.1.1`。catalog 与 plugin entry 均固定到该不可变 tag，避免安装内容随 `main` 变化。
 
 也可以通过 `skill-installer` 一次安装全部 skill：
 
@@ -40,7 +40,7 @@ codex plugin add development-workflow@development-workflow
 python3 \
   "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
   --repo itstarts/development-workflow \
-  --ref v0.1.0 \
+  --ref v0.1.1 \
   --path \
     skills/routing-development-workflows \
     skills/creating-product-requirements \

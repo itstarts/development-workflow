@@ -1154,6 +1154,9 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertTrue(policy_path.is_file())
         policy = policy_path.read_text(encoding="utf-8")
         rules = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        agent_development = (ROOT / "docs" / "agent-development.md").read_text(
+            encoding="utf-8"
+        )
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         security = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
 
@@ -1163,6 +1166,24 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertIn("/compare/vPREVIOUS...vCURRENT", policy)
         self.assertIn("```markdown\n## 本版内容", policy)
         self.assertIn("docs/release-notes.md", rules)
+        release_audit_contract = rules + agent_development
+        for phrase in (
+            "没有已审计的不可变 tag",
+            "已审计 tag 仍为当前 HEAD 的祖先",
+            "该 tag 之后新增的可达 commit/blob",
+            "增量扫描异常时恢复完整历史扫描",
+            "git merge-base --is-ancestor <baseline-tag> HEAD",
+        ):
+            with self.subTest(release_audit_contract=phrase):
+                self.assertIn(phrase, release_audit_contract)
+        for phrase in (
+            "已审计不可变 tag",
+            "当前树及该 tag 之后新增的可达 commit/blob",
+            "增量扫描异常时恢复完整历史扫描",
+        ):
+            with self.subTest(security_release_audit_contract=phrase):
+                self.assertIn(phrase, security)
+        self.assertNotIn("公开发布前应同时扫描当前树和完整 Git 历史", security)
         self.assertRegex(
             changelog,
             rf"(?m)^## {re.escape(version)} - [0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}}$",
@@ -1511,15 +1532,12 @@ class RepositoryContractTests(unittest.TestCase):
                 self.assertIn(required, public_workflow)
 
     def test_renderer_stdout_breaking_migration_is_publicly_documented(self):
-        manifest = json.loads(
-            (ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
-        )
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         self.assertIn("renderer stdout", changelog)
         self.assertIn("breaking contract change", changelog)
         self.assertIn("提取唯一 Markdown 代码框内容", changelog)
         self.assertIn(
-            f"首个公开版本发布为 `v{manifest['version']}`",
+            "首个公开版本发布为 `v0.1.0`",
             changelog,
         )
         self.assertIn("用户可见 handoff/status-block 回复后缀", changelog)

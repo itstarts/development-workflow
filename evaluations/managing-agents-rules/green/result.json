@@ -9,7 +9,7 @@
   ],
   "review_status": "approved",
   "reviewer": "skill-reviewer",
-  "reviewed_at": "2026-07-19",
+  "reviewed_at": "2026-07-20",
   "cases": [
     {"id": "01", "valid": true, "passed_criteria": ["substantive-trigger-and-project-root", "project-rule-state-handling", "no-candidate-zero-prompt", "truthful-state-and-completion"]},
     {"id": "02", "valid": true, "passed_criteria": ["substantive-trigger-and-project-root", "project-rule-state-handling", "per-diff-explicit-approval", "approval-invalidation-and-write-verification", "truthful-state-and-completion"]},

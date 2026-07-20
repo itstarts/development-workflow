@@ -31,7 +31,6 @@ When no qualified candidate exists, produce no rule-governance message. Mark tha
 
 - Do not call sibling skills, import their content, or depend on their installation paths. This skill may be selected alongside them, but it owns only AGENTS governance gates.
 - Do not persist session state to disk or record Codex task/thread identifiers.
-- Do not inspect or operate agent-rules. Do not make that repository a dependency or success condition.
 - Do not treat one approval as standing authorization for another diff, target, task, or session.
 - Do not install this skill, update a real skill home, or modify global rules merely because the skill is invoked.
 - Do not commit, push, or change unrelated files as part of rule governance.

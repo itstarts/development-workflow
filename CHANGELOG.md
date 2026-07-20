@@ -6,6 +6,18 @@
 
 - 暂无。
 
+## 0.1.1 - 2026-07-20
+
+### managing-agents-rules
+
+- 删除针对 `agent-rules` 仓库的特殊禁止规则；skill 不再仅因仓库身份拒绝检查或操作，同时继续保留逐 diff 批准、权限控制、安装、commit、兄弟 skill、会话状态和 task/thread 边界。
+- 新增反向契约测试并刷新隔离 GREEN 证据，确保发布载荷不再包含原禁令且既有规则治理流程保持稳定。
+
+### Repository
+
+- 将 plugin manifest、repo marketplace、README、安装指南和安全支持范围同步到 `v0.1.1`。
+- 后续发布可在已审计不可变 tag 仍为当前历史祖先时复用安全基线，只扫描当前树与新增可达历史；基线不可验证、历史改写或增量扫描异常时恢复完整历史扫描。
+
 ## 0.1.0 - 2026-07-20
 
 ### routing-development-workflows
