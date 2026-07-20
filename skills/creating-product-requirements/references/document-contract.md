@@ -1,14 +1,30 @@
 # Product Requirements Document Contract
 
-Use `assets/prd-template.md`. Replace every angle-bracket slot with current evidence and remove instructional slot text from the finished document.
+Use `assets/prd-template.md` for a full PRD and `assets/incremental-prd-template.md` for an incremental PRD. Replace every angle-bracket slot with current evidence and remove instructional slot text from the finished document.
 
 Write the user-facing document title, section headings, explanatory prose, labels, and template-derived content in Chinese by default. New PRDs use the `chinese-current` frontmatter schema below. Paths, commands, API names, protocols, filenames, stable topics, ISO dates, confidence integers, reviewer roles, and canonical handoff identifiers retain their technical form.
 
 The `topic` value is the same non-reserved lowercase ASCII kebab-case topic confirmed in the current requirements-understanding summary and emitted in the handoff. Do not translate, localize, title-case, or independently rename it when writing the PRD.
 
+## Full and Incremental Documents
+
+When no relevant approved baseline PRD exists, create a full PRD. When a relevant approved baseline PRD is verified, default to a separate incremental PRD. A user may explicitly request a consolidated replacement, but the current confirmed summary must cover that full replacement scope before the baseline can be changed.
+
+An incremental PRD must:
+
+- identify the repository-relative approved baseline path and state that unchanged baseline behavior remains in force;
+- contain only the delta, affected context, non-goals, acceptance criteria, dependencies, risks, and handoff constraints present in the confirmed requirements-understanding summary;
+- do not overwrite the baseline and do not repeat the complete baseline;
+- retain the ordinary `chinese-current` frontmatter schema and canonical eight-field handoff, with the incremental document's own path, topic, scope, confidence, review, and approval state;
+- start its own independent review and user approval as pending; baseline approval never carries forward to the increment.
+
+Reference the baseline to establish document identity and inheritance. Within the confirmed delta, restate affected context when it materially improves clarity and use a reference when that is sufficient. There is no blanket preference for citation over restatement, but neither choice authorizes copying the complete baseline or adding behavior outside the confirmed summary.
+
+There is no length, complexity, or review-cost ceiling. Do not switch an approved-baseline change to a full restatement, split one stable topic, or omit confirmed product behavior solely to reduce page count, authoring complexity, or review cost. Independent product topics still follow the ordinary one-topic rule.
+
 ## Required Product Content
 
-State the product problem, goals, non-goals, success measures, target users, user scenarios, scope, observable product requirements, business rules, product-visible error behavior, acceptance criteria, dependencies, risks, and assumptions. Add performance, compatibility, privacy, accessibility, or other non-functional requirements only when they affect product behavior.
+For a full PRD, state the product problem, goals, non-goals, success measures, target users, user scenarios, scope, observable product requirements, business rules, product-visible error behavior, acceptance criteria, dependencies, risks, and assumptions. For an incremental PRD, state only the confirmed delta and the affected context required to interpret and verify it. Add performance, compatibility, privacy, accessibility, or other non-functional requirements only when they appear in the confirmed summary and affect product behavior.
 
 When `routing-development-workflows` supplied a reliable route handoff, preserve it in the body section `## 工作流分流` using exactly one `workflow_route: standard | full` line and one `风险事实: <observed facts or none>` line. The alternatives are reference-only: a finished PRD contains one route. If the route is missing, duplicated, unsupported, conflicts with the separately supplied handoff, or its risk facts are unreliable, record `workflow_route: full` and the known uncertainty rather than inferring `standard`. This body section is recoverable workflow evidence; it is not product scope and does not add fields to frontmatter or the canonical eight-field handoff.
 

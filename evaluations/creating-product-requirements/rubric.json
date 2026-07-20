@@ -21,7 +21,7 @@
     },
     {
       "id": "stable-topic-format",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "12", "13", "14", "15", "17", "18", "19", "20"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "12", "13", "14", "15", "17", "18", "19", "20", "21"],
       "pass": "Uses one non-reserved lowercase ASCII kebab-case topic consistently across the handoff and default path when known, or preserves null while topic selection is unresolved.",
       "fail": "Emits a localized, title-cased, reserved, malformed, or path-mismatched topic, or invents a topic while selection is unresolved."
     },
@@ -33,7 +33,7 @@
     },
     {
       "id": "double-approval-gate",
-      "applies_to": ["05", "08", "09", "10", "17", "18", "19", "20"],
+      "applies_to": ["05", "08", "09", "10", "17", "18", "19", "20", "21"],
       "pass": "Keeps specification_gate blocked until the current PRD has independent approval and explicit user approval.",
       "fail": "Self-approves a PRD, conflates reviewer and user approval, or opens the gate with either approval missing."
     },
@@ -51,7 +51,7 @@
     },
     {
       "id": "approved-handoff",
-      "applies_to": ["08", "09", "10", "17", "18", "20"],
+      "applies_to": ["08", "09", "10", "17", "18", "20", "21"],
       "pass": "Reports the PRD absolute path, topic, feature scope, confidence, confirmation, and truthful document approval states without upgrading a newly created or fully approved PRD.",
       "fail": "Omits or changes a reliable state, upgrades a newly created PRD to approved, or keeps a fully approved PRD blocked."
     },
@@ -63,7 +63,7 @@
     },
     {
       "id": "fixed-handoff",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "15", "17", "18", "19", "20"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "15", "17", "18", "19", "20", "21"],
       "pass": "Ends every reply with the complete eight-field requirements handoff using truthful canonical state and the required user-visible Chinese view.",
       "fail": "Omits, duplicates, reorders, mistranslates, or upgrades a required handoff field."
     },
@@ -128,14 +128,20 @@
       "fail": "Omits or rewrites the persisted route facts, adds route to frontmatter or as a ninth requirements field, loses the separate route handoff, treats summary confirmation as PRD approval, or creates the spec or plan itself."
     },
     {
+      "id": "approved-baseline-increment",
+      "applies_to": ["21"],
+      "pass": "Creates a separate incremental PRD that identifies the approved baseline, contains only the confirmed chapter-status-filter delta and necessary affected context, leaves every unmentioned baseline behavior inherited rather than duplicated, and does not invent product behavior outside the confirmed summary.",
+      "fail": "Writes or replaces a complete product baseline, copies the baseline PRD into the new document, omits the baseline relationship, or adds a product behavior not present in the confirmed summary."
+    },
+    {
       "id": "localized-handoff-view",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "15", "17", "18", "19", "20"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "15", "17", "18", "19", "20", "21"],
       "pass": "Shows exactly one plain-text Chinese eight-field status block whose labels and contextual enum values follow the approved mapping while paths, topic, confidence, and the internal canonical handoff remain unchanged.",
       "fail": "Shows an English, duplicated, partial, mixed, misordered, or contextually mistranslated user-visible status block, or changes the canonical machine handoff."
     },
     {
       "id": "no-side-effects",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21"],
       "pass": "Does not implement target code, create spec or plan documents itself, inspect sibling source or installation paths, manage user-visible tasks, install, commit, or change external state.",
       "fail": "Performs or claims any forbidden implementation, sibling-source, task/thread, install, commit, or external-state action."
     }

@@ -5,8 +5,7 @@
   "all_runs_valid": true,
   "all_required_passed": true,
   "fresh_cases": [
-    "17",
-    "20"
+    "21"
   ],
   "review_status": "approved",
   "reviewer": "workflow-final-reviewer",
@@ -241,6 +240,19 @@
         "approved-handoff",
         "fixed-handoff",
         "routed-prd-body-and-separate-handoff",
+        "localized-handoff-view",
+        "no-side-effects"
+      ]
+    },
+    {
+      "id": "21",
+      "valid": true,
+      "passed_criteria": [
+        "stable-topic-format",
+        "double-approval-gate",
+        "approved-handoff",
+        "fixed-handoff",
+        "approved-baseline-increment",
         "localized-handoff-view",
         "no-side-effects"
       ]

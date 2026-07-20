@@ -1,13 +1,15 @@
 {
   "schema_version": 3,
   "evidence_role": "current-skill-red",
-  "selected_case": "20",
+  "selected_case": "21",
   "valid": true,
   "red_observed": true,
   "failed_criteria": [
-    "routed-prd-body-and-separate-handoff"
+    "approved-baseline-increment"
   ],
-  "warnings": [],
-  "output": "migration-red/20-output.md",
-  "sanitization": "The ephemeral fixture prefix was replaced with /workspace/fixture in the selected versioned output; raw trace inspection confirmed the created PRD omitted the routed body section."
+  "warnings": [
+    "two recovered diagnostic command failures"
+  ],
+  "output": "migration-red/21-output.md",
+  "sanitization": "The ephemeral fixture prefix was replaced with /workspace/fixture in the selected versioned output; raw trace inspection confirmed the created document used the complete baseline-shaped template, did not identify itself as an incremental PRD, and added unconfirmed non-goals such as custom filters, multi-status combinations, and preference persistence."
 }

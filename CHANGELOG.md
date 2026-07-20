@@ -6,6 +6,19 @@
 
 - 暂无。
 
+## 0.1.2 - 2026-07-20
+
+### creating-product-requirements
+
+- 已有当前可靠且独立评审、用户均批准的相关基线 PRD 时，默认另建增量 PRD；增量文档标明基线，只承载本次变化与必要影响，不覆盖或复刻完整基线。
+- 当前确认的 requirements-understanding summary 成为新增或变更产品行为的唯一写作边界；仓库证据可用于核验基线和提出问题，不再自行补充摘要外的默认值、非目标、错误规则或非功能需求。
+- 增量与基线保留独立路径、主题、八字段、评审和用户批准状态；基线批准不传递给增量，现有中文 frontmatter、英文 canonical handoff、route 与下游门禁保持兼容。
+- 新增增量 PRD 模板、合同测试及 fresh current-RED/GREEN 场景；工作流不以篇幅、复杂度或审查成本为由改写文档边界，也不规定引用永远优于必要重述。
+
+### Repository
+
+- 将 plugin manifest、repo marketplace、README 与安装指南同步到 `v0.1.2`。
+
 ## 0.1.1 - 2026-07-20
 
 ### managing-agents-rules

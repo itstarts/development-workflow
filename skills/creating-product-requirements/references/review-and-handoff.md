@@ -2,7 +2,7 @@
 
 ## Review Sequence
 
-Self-review the PRD, then dispatch a fresh read-only reviewer that did not write it. Give the reviewer the request, confirmed requirements-understanding summary, applicable rules, current PRD, and necessary repository evidence without an expected verdict or author defense.
+Self-review the PRD, then dispatch a fresh read-only reviewer that did not write it. Give the reviewer the request, confirmed requirements-understanding summary, applicable rules, current PRD, and necessary repository evidence without an expected verdict or author defense. For an incremental PRD, also give the reviewer the approved baseline PRD and require checks that the new document identifies the baseline, does not repeat the complete baseline, and contains no product behavior outside the confirmed summary.
 
 Require findings ordered by severity, open questions, verification gaps, and one final verdict. Accept only `APPROVED`, `CHANGES_REQUESTED`, or `BLOCKED`. Fix every finding and re-review the latest file. After `APPROVED`, the main agent records a generic reviewer role and date. Independent approval does not equal user approval; the user explicitly approves the current PRD only after being directed to that reviewed file.
 
@@ -11,6 +11,8 @@ Require findings ordered by severity, open questions, verification gaps, and one
 Use `pending` when a confirmation or approval has not happened. Use `unknown` for an existing file whose relevant metadata is missing, unreadable, unsupported, duplicate, conflicting, or cannot be tied to the current version. Preserve a reliably selected path even when content state is unknown.
 
 A material change to PRD meaning must reset independent review and user approval to pending, remove stale reviewer identity, and remove all related approval and review dates. A material route change, including a change between `standard` and `full` or a risk-fact change that crosses that boundary, must also reset independent review and user approval. If it also changes the confirmed summary, reset understanding confirmation, reassess confidence truthfully from 0 through 100, and repeat summary confirmation. A confidence score at or above 95 does not replace a pending confirmation.
+
+An approved baseline and its incremental PRD retain separate lifecycle states. Creating, reviewing, approving, invalidating, or handing off the increment does not rewrite the baseline's metadata. The canonical handoff always describes the current increment when that is the document under review.
 
 For a read-only handoff check, do not re-litigate the content quality of a PRD whose current metadata is complete, reliable, and approved. Report specification_gate open when every recorded gate is satisfied. If new evidence requires a content change, report that separately; change the file and reset approvals only through the material change workflow rather than silently overturning valid approval metadata.
 

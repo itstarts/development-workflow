@@ -475,7 +475,7 @@ class RepositoryContractTests(unittest.TestCase):
                     if case_id
                     not in {
                         "09", "10", "11", "12", "13", "14", "15", "16",
-                        "17", "18", "19", "20",
+                        "17", "18", "19", "20", "21",
                     }
                 ]
             rubric["criteria"] = [
@@ -500,6 +500,7 @@ class RepositoryContractTests(unittest.TestCase):
                 "18-legacy-english-prd-rereview.md",
                 "19-localized-prd-write-reconciliation.md",
                 "20-routed-standard-prd-handoff.md",
+                "21-approved-baseline-increment.md",
             ):
                 (target / "cases" / case_name).unlink()
             shutil.rmtree(target / "green")
