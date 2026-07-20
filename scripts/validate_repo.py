@@ -29,6 +29,7 @@ REQUIRED_ROOT_FILES = (
     ".codex/agents/final-reviewer.toml",
     ".codex/agents/workflow-final-reviewer.toml",
     "README.md",
+    "docs/release-notes.md",
     "CHANGELOG.md",
     "requirements-dev.txt",
 )
@@ -147,12 +148,20 @@ def validate_plugin_marketplace(
         manifest_name is not None and entry.get("name") != manifest_name
     ):
         errors.append("invalid plugin marketplace: plugin name must match the manifest")
+    manifest_version = manifest.get("version") if isinstance(manifest, dict) else None
+    expected_ref = (
+        f"v{manifest_version}"
+        if isinstance(manifest_version, str) and manifest_version
+        else None
+    )
     if entry.get("source") != {
         "source": "url",
         "url": "https://github.com/itstarts/development-workflow.git",
-        "ref": "main",
+        "ref": expected_ref,
     }:
-        errors.append("invalid plugin marketplace: Git source is missing or incorrect")
+        errors.append(
+            "invalid plugin marketplace: Git source must use the manifest version tag"
+        )
     if entry.get("policy") != {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL",

@@ -28,9 +28,11 @@ substantive development → AGENTS rule governance
 通过 repo marketplace 安装完整 plugin bundle：
 
 ```bash
-codex plugin marketplace add itstarts/development-workflow --ref main
+codex plugin marketplace add itstarts/development-workflow --ref v0.1.0
 codex plugin add development-workflow@development-workflow
 ```
+
+当前稳定版本为 `v0.1.0`。catalog 与 plugin entry 均固定到该不可变 tag，避免安装内容随 `main` 变化。
 
 也可以通过 `skill-installer` 一次安装全部 skill：
 
@@ -38,7 +40,7 @@ codex plugin add development-workflow@development-workflow
 python3 \
   "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
   --repo itstarts/development-workflow \
-  --ref main \
+  --ref v0.1.0 \
   --path \
     skills/routing-development-workflows \
     skills/creating-product-requirements \
@@ -95,6 +97,7 @@ python3 -m venv .venv
 | [安装指南](docs/install.md) | 安装、单 skill 安装和安全更新 |
 | [工作流与文档契约](docs/workflow.md) | 完整交接链、受控实施入口、默认路径和批准门 |
 | [Agent 开发指南](docs/agent-development.md) | 仓库规则、TDD、评估、评审和发布流程 |
+| [Release notes 规范](docs/release-notes.md) | GitHub Release 的结构、内容边界和版本链接规则 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献范围和提交前检查 |
 | [SECURITY.md](SECURITY.md) | 安全问题报告和敏感信息边界 |
 | [CHANGELOG.md](CHANGELOG.md) | 版本变化 |
