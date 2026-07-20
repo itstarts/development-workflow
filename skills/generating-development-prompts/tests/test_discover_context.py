@@ -627,6 +627,7 @@ class DiscoverContextReviewTests(DiscoverContextTestSupport, unittest.TestCase):
                 "status": "approved",
                 "reviewer": "review-agent",
                 "reviewed_at": "2026-07-11",
+                "implementation_gate": "open",
             },
             actual,
         )
@@ -648,6 +649,7 @@ class DiscoverContextReviewTests(DiscoverContextTestSupport, unittest.TestCase):
                 "status": "approved",
                 "reviewer": "skill-reviewer",
                 "reviewed_at": "2026-07-19",
+                "implementation_gate": "open",
             },
             approved,
         )
@@ -662,9 +664,58 @@ class DiscoverContextReviewTests(DiscoverContextTestSupport, unittest.TestCase):
             "---\n# Plan\n"
         )
         self.assertEqual(
-            {"status": "not-approved", "reviewer": None, "reviewed_at": None},
+            {
+                "status": "not-approved",
+                "reviewer": None,
+                "reviewed_at": None,
+                "implementation_gate": "blocked",
+            },
             pending,
         )
+
+    def test_standard_package_review_is_reliable_but_blocks_implementation_until_spec_approval(self):
+        pending_spec = self.review(
+            "---\n"
+            "文档类型: 实施计划\n"
+            "主题: package-review\n"
+            "技术规格: docs/specs/2026-07-20-package-review-design.md\n"
+            "技术规格用户批准: 待批准\n"
+            "评审模式: 技术包\n"
+            "计划评审状态: 已通过\n"
+            "计划评审角色: spec-plan-reviewer\n"
+            "计划评审日期: 2026-07-20\n"
+            "---\n# Plan\n"
+        )
+        self.assertEqual("approved", pending_spec["status"])
+        self.assertEqual("blocked", pending_spec["implementation_gate"])
+
+        approved_spec = self.review(
+            "---\n"
+            "文档类型: 实施计划\n"
+            "主题: package-review\n"
+            "技术规格: docs/specs/2026-07-20-package-review-design.md\n"
+            "技术规格用户批准: 已批准\n"
+            "评审模式: 技术包\n"
+            "计划评审状态: 已通过\n"
+            "计划评审角色: spec-plan-reviewer\n"
+            "计划评审日期: 2026-07-20\n"
+            "---\n# Plan\n"
+        )
+        self.assertEqual("approved", approved_spec["status"])
+        self.assertEqual("open", approved_spec["implementation_gate"])
+
+        invalid_sequential = self.review(
+            "---\n"
+            "文档类型: 实施计划\n"
+            "主题: package-review\n"
+            "技术规格: docs/specs/2026-07-20-package-review-design.md\n"
+            "技术规格用户批准: 待批准\n"
+            "评审模式: 逐级\n"
+            "计划评审状态: 待评审\n"
+            "---\n# Plan\n"
+        )
+        self.assertEqual("unknown", invalid_sequential["status"])
+        self.assertEqual("unknown", invalid_sequential["implementation_gate"])
 
     def test_mixed_or_invalid_chinese_plan_metadata_is_unknown(self):
         cases = (

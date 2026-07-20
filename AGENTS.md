@@ -8,17 +8,19 @@
 
 本仓库维护 Codex 开发交接工作流，简称 `dw`：
 
+- `routing-development-workflows`：在没有显式入口时，依据批准、范围、风险和验证事实选择 `fast | standard | full | blocked`，只负责分类和交接。
 - `creating-product-requirements`：把产品意图澄清为单一稳定主题、经独立评审和用户批准的 PRD。
-- `creating-development-specs-and-plans`：只从已批准 PRD 生成经批准的技术 spec，再生成可执行 plan。
+- `creating-development-specs-and-plans`：只从已批准 PRD 生成技术 spec 与 plan；`standard` 使用统一技术包评审，`full` 保留逐级批准。
 - `generating-development-prompts`：读取已有 spec、plan 和仓库证据，生成可复制到新 Codex 会话的开发提示词。
-- `implementing-bounded-changes`：在用户明确批准后，以冻结范围、比例化 TDD、定向验证、相关文档更新和独立评审直接完成小改动或 Bug 修复。
+- `implementing-bounded-changes`：在用户明确批准后，以冻结范围、比例化 TDD、定向验证、相关文档更新和风险匹配的评审直接完成小改动或 Bug 修复。
 - `managing-agents-rules`：在实质性开发前检查项目根规则，并在任务完成时对有证据的项目级或全局长期规则候选执行逐 diff 批准治理。
 - `.codex-plugin/plugin.json`：把可用 skill 作为一个 plugin bundle 发布。
 
-五个 skill 必须保持职责独立。前三个 skill 通过文档路径、评审状态和显式输出字段协作；受控实施 skill 直接依据用户批准、当前范围和仓库证据执行；规则治理 skill 只管理有证据且逐 diff 批准的长期规则。任何 skill 都不通过本机安装路径或插件缓存路径互相调用。
+六个 skill 必须保持职责独立。总路由 skill 只分类和交接，不创建下游制品或实施；三个文档交接 skill 通过文档路径、评审状态和显式输出字段协作；受控实施 skill 直接依据用户批准、当前范围和仓库证据执行；规则治理 skill 只管理有证据且逐 diff 批准的长期规则。任何 skill 都不通过本机安装路径或插件缓存路径互相调用。
 
 ## 当前状态
 
+- `routing-development-workflows` 已实现并完成无目标 baseline、GREEN 前向验证和仓库验证；维护时继续保留单一路由、未知风险失败关闭、稳定 handoff 和只路由不执行的合同。
 - `generating-development-prompts` 已有经过验证的实现，可以维护。
 - `creating-product-requirements` 和 `creating-development-specs-and-plans` 均已实现并完成独立评审；维护时仍须保留 RED 证据、GREEN 前向结果、仓库验证和独立评审门。
 - `implementing-bounded-changes` 已实现并完成无目标 baseline、GREEN 前向验证、仓库验证和独立评审；维护时继续保留范围控制、比例化 TDD、最终评审通过且不过度评审的合同。
@@ -58,11 +60,13 @@
 - 默认 plan 路径：`docs/plans/YYYY-MM-DD-<topic>.md`。
 - 用户显式路径优先于默认路径。
 - 一份 PRD 只对应一个稳定主题，范围类型只能是 `product | phase | feature`；理解置信度至少 95 且用户确认当前摘要后才能创建 PRD。
+- 总路由提供的 `standard | full` 与风险事实保存在 PRD 正文并作为独立 route handoff 传递，不增加 requirements 八字段；route 缺失、冲突或不可靠时按 `full` 处理。
 - PRD 必须经过独立评审和用户明确批准，才能作为技术 spec 的稳定输入。
-- spec 必须经过独立评审和用户明确批准后才能作为 plan 的稳定输入。
+- `standard` route 可在 spec 用户批准前创建 spec 与 plan 草案，并由同一位 package reviewer 给出覆盖两份当前文档的 verdict；package 已通过但 spec 尚未获用户批准时，实施门必须保持关闭。
+- `full`、route 缺失或 route 不可靠时，spec 必须经过独立评审和用户明确批准后才能创建 plan，plan 再独立评审。
 - plan 只有真实评审通过后才能记录 `review_status: approved`；不得预填或推断批准状态。
 - PRD skill 固定报告 requirements 八字段；specs/plans skill 必须校验并保留这些字段，再以十四字段报告 requirements、spec、plan 与双门状态；prompt skill 保留显式 spec/plan 路径与评审状态。
-- bounded implementation skill 不依赖上述文档链；必须保留用户推进批准、冻结范围、定向验证、相关文档更新和真实独立评审证据。
+- bounded implementation skill 不依赖上述文档链；必须保留用户推进批准、冻结范围、定向验证和相关文档更新。只有不改变行为、配置语义、公共契约、产品含义或操作流程，且确定性检查充分、仓库规则不强制评审的纯文档、格式或机械改动，才可记录具体理由并免独立评审。
 
 ## Git
 
@@ -84,10 +88,10 @@
 .venv/bin/python scripts/check.py --full
 ```
 
-`check.py` 统一执行仓库测试、目标 skill 测试、stage-aware freshness 和官方 skill validator；`--full` 还执行 plugin validator。开发环境先运行 `python3 -m venv .venv` 和 `.venv/bin/python -m pip install -r requirements-dev.txt`。仓库支持 Python 3.9 及以上；验证使用项目当前 `.venv`，不要求重复运行第二个 Python 版本。没有新 diff 或验证失败时，不在完整门前重复定向门。新增 skill 后，把它加入仓库 validator、官方 skill validator、安装测试和 plugin 验证。
+定向 `check.py --skill` 执行目标 skill 测试、stage-aware freshness 和官方 skill validator，不重复运行无关根测试；共享脚本或仓库工具变化时按实际 diff 单独运行其直接根测试。`--full` 执行完整仓库测试、全部 skill 测试、严格 freshness、全部官方 skill validator 和 plugin validator。开发环境先运行 `python3 -m venv .venv` 和 `.venv/bin/python -m pip install -r requirements-dev.txt`。仓库支持 Python 3.9 及以上；验证使用项目当前 `.venv`，不要求重复运行第二个 Python 版本。没有新 diff 或验证失败时，不在完整门前重复定向门。新增 skill 后，把它加入仓库 validator、官方 skill validator、安装测试和 plugin 验证。
 
 ## 评审
 
 任务拆分用于实施和定向验证，不自动形成独立评审门。独立评审默认以风险边界和最新完整 diff 为单位，不得仅因任务数量或受影响 skill 数量增加而逐任务、逐 skill 评审；仅当单项任务独立触及高风险边界，或后续工作依赖尚未验证的关键基础时，才设置中间里程碑评审。
 
-中等及以上变更必须由未参与实现的独立评审者检查 diff、skill 触发条件、TDD 证据、前向结果、plugin 打包、安装边界与文档契约。最终评审必须覆盖受影响 skill、相关跨 skill 回归，以及完整五-skill plugin 的打包与安装边界证据；未受影响 skill 只需按风险和集成关系提供必要回归，不重复逐 skill 评审。评审发现的改动必须重新验证并复审到收敛。
+中等及以上变更必须由未参与实现的独立评审者检查 diff、skill 触发条件、TDD 证据、前向结果、plugin 打包、安装边界与文档契约。最终评审必须覆盖受影响 skill、相关跨 skill 回归，以及完整六-skill plugin 的打包与安装边界证据；未受影响 skill 只需按风险和集成关系提供必要回归，不重复逐 skill 评审。评审发现的改动必须重新验证并由同一评审者复审；连续两轮修复与复审仍未通过时停止自动循环并保持阻塞，用户方向可以解决范围选择，但不能替代缺失的正确性或评审证据。

@@ -56,6 +56,7 @@ def valid_payload() -> dict:
                     "status": "approved",
                     "reviewer": "review-agent",
                     "reviewed_at": "2026-07-11",
+                    "implementation_gate": "open",
                 },
             },
         },
@@ -230,6 +231,18 @@ class RenderPromptTests(unittest.TestCase):
             with self.subTest(removed=removed):
                 self.assertNotIn(removed, section)
 
+    def test_approved_package_review_still_blocks_when_spec_approval_is_pending(self):
+        payload = valid_payload()
+        payload["documents"]["plan"]["review"]["implementation_gate"] = "blocked"
+
+        completed = self.render_raw(payload)
+
+        self.assertEqual(0, completed.returncode, completed.stderr)
+        body = self.prompt_body(completed.stdout)
+        self.assertIn("技术包评审已通过", body)
+        self.assertIn("技术规格用户批准仍未完成", body)
+        self.assertIn("实施前停止修改", body)
+
     def test_prompt_prefers_matching_agents_from_one_session_inventory(self):
         completed = self.render_raw(valid_payload())
         self.assertEqual(0, completed.returncode, completed.stderr)
@@ -302,7 +315,8 @@ class RenderPromptTests(unittest.TestCase):
             "不得仅因任务数量",
             "中间里程碑评审",
             "执行整体评审",
-            "重复修复、验证和整体复审",
+            "修复范围内发现、重跑受影响验证",
+            "同一评审者复审",
             "整体复审通过且验证证据完整后才报告完成",
         ):
             with self.subTest(expected=expected):
@@ -319,7 +333,8 @@ class RenderPromptTests(unittest.TestCase):
             "每项任务完成与影响范围匹配的验证",
             "全部计划任务完成并集成后",
             "执行整体评审",
-            "重复修复、验证和整体复审，直到 APPROVED",
+            "获得 APPROVED 后停止",
+            "连续两轮修复与复审仍未通过",
         ):
             with self.subTest(expected=expected):
                 self.assertIn(expected, output)

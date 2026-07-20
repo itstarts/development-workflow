@@ -22,6 +22,7 @@ CHINESE_PLAN_KEYS = {
     "主题": "topic",
     "技术规格": "spec_path",
     "技术规格用户批准": "spec_user_approval",
+    "评审模式": "review_mode",
     "计划评审状态": "review_status",
     "计划评审角色": "reviewer",
     "计划评审日期": "reviewed_at",
@@ -105,6 +106,7 @@ def missing_documents() -> dict:
                 "status": "unknown",
                 "reviewer": None,
                 "reviewed_at": None,
+                "implementation_gate": "unknown",
             },
         },
     }
@@ -283,7 +285,12 @@ def document_entry(candidate: Optional[Candidate], source: str) -> dict:
 
 
 def unknown_review() -> dict:
-    return {"status": "unknown", "reviewer": None, "reviewed_at": None}
+    return {
+        "status": "unknown",
+        "reviewer": None,
+        "reviewed_at": None,
+        "implementation_gate": "unknown",
+    }
 
 
 def scalar_value(line: str) -> Optional[Tuple[str, str]]:
@@ -356,6 +363,7 @@ def review_from_records(records: Optional[dict], frontmatter: bool) -> dict:
         "status": status,
         "reviewer": records.get(reviewer_key),
         "reviewed_at": records.get(reviewed_at_key),
+        "implementation_gate": "open" if status == "approved" else "blocked",
     }
 
 
@@ -393,7 +401,16 @@ def review_from_frontmatter(record: Optional[MetadataRecord]) -> dict:
         or topic in RESERVED_TOPICS
     ):
         return unknown_review()
-    if not fields["spec_path"] or fields["spec_user_approval"] != "已批准":
+    if not fields["spec_path"]:
+        return unknown_review()
+
+    spec_user_approval = fields["spec_user_approval"]
+    review_mode = fields.get("review_mode")
+    if spec_user_approval not in {"待批准", "已批准"}:
+        return unknown_review()
+    if review_mode not in {None, "技术包", "逐级"}:
+        return unknown_review()
+    if spec_user_approval == "待批准" and review_mode != "技术包":
         return unknown_review()
 
     raw_status = fields["review_status"]
@@ -402,7 +419,12 @@ def review_from_frontmatter(record: Optional[MetadataRecord]) -> dict:
     if raw_status == "待评审":
         if reviewer is not None or reviewed_at is not None:
             return unknown_review()
-        return {"status": "not-approved", "reviewer": None, "reviewed_at": None}
+        return {
+            "status": "not-approved",
+            "reviewer": None,
+            "reviewed_at": None,
+            "implementation_gate": "blocked",
+        }
     if raw_status == "已通过":
         if reviewer is None or reviewed_at is None or not valid_iso_date(reviewed_at):
             return unknown_review()
@@ -410,6 +432,9 @@ def review_from_frontmatter(record: Optional[MetadataRecord]) -> dict:
             "status": "approved",
             "reviewer": reviewer,
             "reviewed_at": reviewed_at,
+            "implementation_gate": (
+                "open" if spec_user_approval == "已批准" else "blocked"
+            ),
         }
     return unknown_review()
 

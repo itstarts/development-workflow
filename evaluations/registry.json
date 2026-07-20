@@ -18,6 +18,11 @@
     },
     "implementing-bounded-changes": {
       "evaluation_mode": "managed",
+      "evidence_profile": "creation-plus-current-red",
+      "stage": "review-approved"
+    },
+    "routing-development-workflows": {
+      "evaluation_mode": "managed",
       "evidence_profile": "creation-only",
       "stage": "review-approved"
     },

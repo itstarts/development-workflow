@@ -23,7 +23,7 @@
     {
       "id": "04",
       "valid": true,
-      "failed_criteria": ["independent-review"]
+      "failed_criteria": ["mechanical-review-exemption"]
     },
     {
       "id": "05",

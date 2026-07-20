@@ -110,6 +110,17 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("render_prompt.py", skill)
         self.assertIn("stdout verbatim", skill)
 
+    def test_generated_prompt_caps_automatic_final_review_cycles(self):
+        template = read("assets/development-prompt.md").casefold()
+        for phrase in (
+            "连续两轮修复与复审",
+            "停止自动循环",
+            "实施门禁保持关闭",
+            "用户指令不能替代缺失的正确性或评审证据",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, template)
+
     def test_manual_prompt_request_keeps_unapproved_plan_compatibility(self):
         policy_path = ROOT / "references" / "session-routing-policy.md"
         policy = policy_path.read_text(encoding="utf-8").casefold() if policy_path.is_file() else ""

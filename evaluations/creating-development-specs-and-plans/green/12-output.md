@@ -1,11 +1,6 @@
-只读检查完成，三文档批准链有效，实施门禁开放：
+只读核验通过：三个文档的批准元数据完整且无重复，`PRD → 技术规格 → 实施计划` 引用链有效，主题与范围一致，工作树保持干净。未重新评审正文、修改文件或开始实施。
 
-- PRD 校验结果为 `approved`，无问题；用户批准、独立评审均通过。
-- [技术规格](/workspace/fixture/docs/specs/2026-07-12-order-approval-design.md:1)准确引用 [PRD](/workspace/fixture/docs/requirements/2026-07-12-order-approval.md:1)，批准元数据一致。
-- [实施计划](/workspace/fixture/docs/plans/2026-07-12-order-approval.md:1)准确引用该规格；评审状态唯一且已批准。
-- 三份文件均已跟踪、工作区无差异。未复审正文、修改文件、开始实施或操作会话。
-
-当前运行时未暴露 `generating-development-prompts` 能力，因此自动路由按规则停止；未搜索安装路径。下方快照已保留全部下游上下文，无需重新提供路径或目标。
+实现条件已满足，但当前运行时未暴露 `generating-development-prompts`，自动会话路由因此停止；未搜索安装路径，也未操作用户可见会话。
 
 需求文档：/workspace/fixture/docs/requirements/2026-07-12-order-approval.md
 需求主题：order-approval

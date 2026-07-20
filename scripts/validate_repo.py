@@ -869,12 +869,40 @@ def validate_creation_only_freshness(
     errors: list[str],
     messages: list[str],
 ) -> None:
-    if any(production_path_matches(path, skill_name) for path in paths):
+    production_changed = any(
+        production_path_matches(path, skill_name) for path in paths
+    )
+    production_commit = last_production_commit(skill_name)
+    if production_changed and production_commit is None:
+        skill_root = ROOT / "skills" / skill_name
+        evaluation_root = ROOT / "evaluations" / skill_name
+        required = {
+            relative(path)
+            for path in production_files(skill_root)
+        }
+        if evaluation_root.is_dir():
+            required.update(
+                relative(path)
+                for path in evaluation_root.rglob("*")
+                if path.is_file()
+            )
+        required.add("evaluations/registry.json")
+        missing = sorted(required - paths)
+        if missing:
+            errors.append(
+                f"{skill_name}: worktree creation evidence bundle is incomplete; missing "
+                + ", ".join(missing)
+            )
+        else:
+            messages.append(
+                f"{skill_name}: freshness worktree-creation-current"
+            )
+        return
+    if production_changed:
         errors.append(
             f"{skill_name}: production changed after creation-only evidence; upgrade to a current-red profile"
         )
         return
-    production_commit = last_production_commit(skill_name)
     result_path = f"evaluations/{skill_name}/green/result.json"
     result_commit = last_commit_for_paths([result_path])
     if production_commit is None or result_commit is None:

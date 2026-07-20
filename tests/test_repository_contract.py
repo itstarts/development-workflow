@@ -475,7 +475,7 @@ class RepositoryContractTests(unittest.TestCase):
                     if case_id
                     not in {
                         "09", "10", "11", "12", "13", "14", "15", "16",
-                        "17", "18", "19",
+                        "17", "18", "19", "20",
                     }
                 ]
             rubric["criteria"] = [
@@ -499,6 +499,7 @@ class RepositoryContractTests(unittest.TestCase):
                 "17-localized-prd-approval-writeback.md",
                 "18-legacy-english-prd-rereview.md",
                 "19-localized-prd-write-reconciliation.md",
+                "20-routed-standard-prd-handoff.md",
             ):
                 (target / "cases" / case_name).unlink()
             shutil.rmtree(target / "green")
@@ -547,6 +548,21 @@ class RepositoryContractTests(unittest.TestCase):
                 json.dumps(prompt_green, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
+            for skill_name, entry in registry["skills"].items():
+                if skill_name == "creating-product-requirements" or entry["stage"] == "baseline-only":
+                    continue
+                entry["stage"] = "review-approved"
+                green_path = repository / "evaluations" / skill_name / "green" / "result.json"
+                green = json.loads(green_path.read_text(encoding="utf-8"))
+                green.update(
+                    review_status="approved",
+                    reviewer="test-independent-reviewer",
+                    reviewed_at="2026-07-15",
+                )
+                green_path.write_text(
+                    json.dumps(green, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
             registry_path.write_text(
                 json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
@@ -1337,7 +1353,7 @@ class RepositoryContractTests(unittest.TestCase):
                 "技术规格独立评审",
             ],
             "skills/creating-development-specs-and-plans/assets/plan-template.md": [
-                "文档类型", "主题", "技术规格", "技术规格用户批准", "计划评审状态",
+                "文档类型", "主题", "技术规格", "技术规格用户批准", "评审模式", "计划评审状态",
             ],
         }
         for relative, expected_keys in localized_templates.items():
@@ -1420,6 +1436,7 @@ class RepositoryContractTests(unittest.TestCase):
                     "status": "approved",
                     "reviewer": "skill-reviewer",
                     "reviewed_at": "2026-07-19",
+                    "implementation_gate": "open",
                 },
                 chinese,
             )
@@ -1465,7 +1482,7 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertGreaterEqual(guide.count("不改变任何外部状态"), 3)
 
     def test_all_registered_skills_are_complete_and_exposed(self):
-        self.assertEqual(5, len(registered_skill_names()))
+        self.assertEqual(6, len(registered_skill_names()))
         for skill_name in registered_skill_names():
             with self.subTest(skill_name=skill_name):
                 skill = ROOT / "skills" / skill_name
@@ -1490,6 +1507,11 @@ class RepositoryContractTests(unittest.TestCase):
         governance = VALIDATOR.load_skill_frontmatter(governance_path)[
             "description"
         ].casefold()
+        routing_path = ROOT / "skills" / "routing-development-workflows" / "SKILL.md"
+        self.assertTrue(routing_path.is_file())
+        routing = VALIDATOR.load_skill_frontmatter(routing_path)[
+            "description"
+        ].casefold()
 
         self.assertIn("product requirements", requirements)
         self.assertIn("product scope", requirements)
@@ -1503,6 +1525,11 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertIn("copyable codex development task instructions", handoff)
         self.assertNotIn("approved product requirements", handoff)
         self.assertIn("explicitly approved implementation", bounded)
+        self.assertIn("development request", routing)
+        self.assertIn("fast", routing)
+        self.assertIn("standard", routing)
+        self.assertIn("full", routing)
+        self.assertNotIn("create a product requirements document", routing)
         self.assertIn("bug fix", bounded)
         self.assertIn("bounded change", bounded)
         self.assertNotIn("product requirements", bounded)
@@ -1948,7 +1975,7 @@ class RepositoryContractTests(unittest.TestCase):
             "RED→GREEN→REFACTOR",
             "creating-product-requirements",
             "PRD",
-            "五个 skill",
+            "六个 skill",
             "managing-agents-rules",
             "不得依赖 `~/.codex/plugins/cache/`",
             "不得创建或操作用户可见 Codex task/thread",
@@ -1980,7 +2007,7 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("repository validation passed", result.stdout)
 
-    def test_five_skill_workflow_docs_and_final_reviewer_are_current(self):
+    def test_six_skill_workflow_docs_and_final_reviewer_are_current(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         rules = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
@@ -1991,15 +2018,16 @@ class RepositoryContractTests(unittest.TestCase):
             with self.subTest(skill_name=skill_name):
                 self.assertIn(skill_name, readme)
                 self.assertIn(skill_name, changelog)
-        self.assertIn("PRD → technical spec/plan → development prompt", readme)
+        self.assertIn("development request → fast | standard | full | blocked", readme)
+        self.assertIn("PRD → spec+plan technical package → development prompt", readme)
         self.assertIn("approved bounded change → implementation", readme)
         self.assertIn("AGENTS rule governance", readme)
-        self.assertIn("五个 skill", rules)
+        self.assertIn("六个 skill", rules)
         self.assertIn("两个 authoring skill", reviewer)
         self.assertIn("prompt skill", reviewer)
         self.assertIn("bounded implementation skill", reviewer)
         self.assertIn("managing-agents-rules", reviewer)
-        self.assertIn("五-skill plugin", reviewer)
+        self.assertIn("六-skill plugin", reviewer)
 
     def test_repository_validator_dynamically_requires_public_skill_discovery(self):
         public_documents = (

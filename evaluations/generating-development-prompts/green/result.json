@@ -5,16 +5,11 @@
   "all_runs_valid": true,
   "all_required_passed": true,
   "fresh_cases": [
-    "01",
-    "02",
-    "03",
-    "04",
-    "05",
-    "06"
+    "05"
   ],
   "review_status": "approved",
-  "reviewer": "skill-reviewer",
-  "reviewed_at": "2026-07-19",
+  "reviewer": "workflow-final-reviewer",
+  "reviewed_at": "2026-07-20",
   "cases": [
     {
       "id": "01",

@@ -1,20 +1,20 @@
 {
   "name": "development-workflow",
   "version": "0.1.0",
-  "description": "Create approved requirements and plans, automatically continue their session routing handoff, implement bounded changes, or govern AGENTS rules.",
+  "description": "Route development work by risk, create approved requirements and plans, continue session handoffs, implement bounded changes, or govern AGENTS rules.",
   "author": {
     "name": "development-workflow maintainers"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Development Workflow (dw)",
-    "shortDescription": "Create PRDs, plans, routed prompts, bounded changes, and AGENTS rules.",
-    "longDescription": "Create approved product requirements and technical specifications, produce reviewed plans, automatically continue into three-state session routing and copyable handoff prompts, implement explicitly approved bounded changes, or govern evidence-backed AGENTS rules with explicit per-diff approval.",
+    "shortDescription": "Route work, create PRDs and plans, implement bounded changes, and govern AGENTS rules.",
+    "longDescription": "Choose a risk-matched development path, create approved product requirements and technical specifications, produce reviewed plans as standard technical packages or sequential gates, automatically continue into three-state session routing and copyable handoff prompts, implement explicitly approved bounded changes, or govern evidence-backed AGENTS rules with explicit per-diff approval.",
     "developerName": "development-workflow maintainers",
     "category": "Productivity",
     "capabilities": [],
     "defaultPrompt": [
-      "Automatically continue an approved PRD through planning and session routing, or run a bounded change or AGENTS rule review."
+      "Route the development request to fast, standard, full, or blocked, then continue through the selected workflow."
     ]
   }
 }

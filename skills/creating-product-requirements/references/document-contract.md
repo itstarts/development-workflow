@@ -10,6 +10,8 @@ The `topic` value is the same non-reserved lowercase ASCII kebab-case topic conf
 
 State the product problem, goals, non-goals, success measures, target users, user scenarios, scope, observable product requirements, business rules, product-visible error behavior, acceptance criteria, dependencies, risks, and assumptions. Add performance, compatibility, privacy, accessibility, or other non-functional requirements only when they affect product behavior.
 
+When `routing-development-workflows` supplied a reliable route handoff, preserve it in the body section `## 工作流分流` using exactly one `workflow_route: standard | full` line and one `风险事实: <observed facts or none>` line. The alternatives are reference-only: a finished PRD contains one route. If the route is missing, duplicated, unsupported, conflicts with the separately supplied handoff, or its risk facts are unreliable, record `workflow_route: full` and the known uncertainty rather than inferring `standard`. This body section is recoverable workflow evidence; it is not product scope and does not add fields to frontmatter or the canonical eight-field handoff.
+
 Record product-visible constraints without choosing a technical solution. Keep architecture, component design, API definitions, database schemas, migration design, code files, and implementation tasks out of the PRD. Move those concerns to the downstream technical specification.
 
 ## Frontmatter and Approval States

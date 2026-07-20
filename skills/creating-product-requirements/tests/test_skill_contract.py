@@ -399,6 +399,29 @@ class CreatingProductRequirementsContractTests(unittest.TestCase):
         self.assertIn("requirements_scope", text)
         self.assertIn("does not create the design spec", text)
 
+    def test_router_handoff_is_persisted_without_changing_eight_fields(self):
+        skill = read("SKILL.md").casefold()
+        contract = read("references/document-contract.md").casefold()
+        review = read("references/review-and-handoff.md").casefold()
+        template = read("assets/prd-template.md")
+
+        for phrase in (
+            "routing-development-workflows",
+            "workflow_route",
+            "standard | full",
+            "## 工作流分流",
+            "风险事实",
+            "missing or unreliable route",
+            "full",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase.casefold(), (skill + contract + review + template.casefold()))
+        self.assertIn("pass the route handoff separately", review)
+        self.assertIn("eight-field", review)
+        self.assertEqual(8, len(fenced_text_blocks(read("references/review-and-handoff.md"))[0]))
+        self.assertIn("material route change", review)
+        self.assertIn("reset independent review and user approval", review)
+
     def test_transition_does_not_depend_on_sibling_source_or_installation_paths(self):
         text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
         for required in (

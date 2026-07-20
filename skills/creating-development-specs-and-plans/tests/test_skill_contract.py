@@ -41,6 +41,53 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
         self.assertIn("before creating the plan", text)
         self.assertIn("main agent updates", text)
 
+    def test_standard_route_reviews_spec_and_plan_as_one_package(self):
+        text = (
+            read("SKILL.md")
+            + read("references/document-contracts.md")
+            + read("references/review-and-handoff.md")
+        ).casefold()
+
+        for phrase in (
+            "standard route",
+            "technical package",
+            "create the plan before spec user approval",
+            "one package reviewer",
+            "one verdict covers the current spec and plan",
+            "technical specification user approval remains pending",
+            "synchronize the plan metadata",
+            "does not invalidate the package review",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+
+    def test_full_route_keeps_sequential_spec_then_plan_gates(self):
+        text = (
+            read("SKILL.md")
+            + read("references/document-contracts.md")
+            + read("references/review-and-handoff.md")
+        ).casefold()
+
+        self.assertIn("full route", text)
+        self.assertIn("user approves that reviewed spec before creating the plan", text)
+        self.assertIn("separate plan reviewer", text)
+        self.assertIn("missing or unreliable route", text)
+
+    def test_plan_limits_automatic_review_to_two_unapproved_cycles(self):
+        text = (
+            read("references/document-contracts.md")
+            + read("assets/plan-template.md")
+        ).casefold()
+
+        for phrase in (
+            "two consecutive repair-and-review cycles",
+            "stop automatic repair",
+            "implementation gate remains blocked",
+            "cannot replace missing correctness or review evidence",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+
     def test_null_path_state_mapping(self):
         text = read("references/review-and-handoff.md").casefold()
         self.assertIn("spec_path: <absolute path> | null", text)
@@ -216,7 +263,8 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
                 "文档类型": "实施计划",
                 "主题": "<stable-topic>",
                 "技术规格": "<repository-relative-spec-path>",
-                "技术规格用户批准": "已批准",
+                "技术规格用户批准": "<待批准-或-已批准>",
+                "评审模式": "<技术包-或-逐级>",
                 "计划评审状态": "待评审",
             },
             plan_metadata,
@@ -571,6 +619,7 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
         self.assertTrue(plan_template.startswith("---\n"))
         self.assertIn("计划评审状态: 待评审", plan_template)
         self.assertIn("技术规格:", plan_template)
+        self.assertIn("评审模式:", plan_template)
 
         self.assertEqual("待评审", parse_frontmatter(plan_template)["计划评审状态"])
         approved = plan_template.replace(
