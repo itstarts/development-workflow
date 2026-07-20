@@ -139,9 +139,22 @@ class ManagingAgentsRulesContractTests(unittest.TestCase):
                 "do not call sibling skills",
                 "do not implement the target feature",
                 "do not persist session state",
-                "do not inspect or operate agent-rules",
                 "do not treat one approval as standing authorization",
             ),
+        )
+
+    def test_publishable_skill_does_not_forbid_agent_rules_repository(self):
+        publishable = "\n".join(
+            (
+                read("SKILL.md"),
+                read("references/approval-and-write-safety.md"),
+            )
+        ).casefold()
+
+        self.assertNotIn("do not inspect or operate agent-rules", publishable)
+        self.assertNotIn(
+            "do not make that repository a dependency or success condition",
+            publishable,
         )
 
     def test_review_wait_uses_the_available_interface_and_observed_identity(self):
@@ -505,13 +518,12 @@ class ManagingAgentsRulesContractTests(unittest.TestCase):
             )
         )
 
-    def test_approval_reference_forbids_external_and_implicit_actions(self):
+    def test_approval_reference_forbids_implicit_actions(self):
         approval = read("references/approval-and-write-safety.md")
         assert_terms(
             self,
             approval,
             (
-                "do not inspect or operate agent-rules",
                 "do not install",
                 "do not commit",
                 "do not call sibling skills",

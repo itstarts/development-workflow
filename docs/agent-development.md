@@ -101,6 +101,8 @@ git diff --check
 
 仓库 validator 同时校验 repo marketplace 的名称、Git source、安装策略、分类以及 plugin 名称与 manifest 的一致性。
 
-仓库支持 Python 3.9 及以上；验证使用项目当前 `.venv`，不重复运行第二个 Python 版本。发布前还要检查 Git 历史中的作者元数据、已删除内容和历史 blob，确保没有本机路径或敏感信息；仅扫描当前工作树不足以证明公开安全。
+仓库支持 Python 3.9 及以上；验证使用项目当前 `.venv`，不重复运行第二个 Python 版本。
 
-GitHub Release notes 必须遵循 [Release notes 规范](release-notes.md)。发布候选需同步 manifest 版本、Marketplace `source.ref`、README 与安装指南中的 tag、CHANGELOG 日期和 Release 标题；完成最新完整 diff 的独立评审、统一完整门和历史扫描后创建 tag，再从远端 tag 安装到临时 `CODEX_HOME` 并比较 payload，最后发布 GitHub Release。
+发布前敏感信息审计使用可验证基线。首次公开发布、没有已审计的不可变 tag、历史被改写或基线不可验证时，检查当前树和完整 Git 历史中的作者元数据、已删除内容及历史 blob。后续发布先运行 `git merge-base --is-ancestor <baseline-tag> HEAD`；只有已审计 tag 仍为当前 HEAD 的祖先时，才复用该基线并检查当前树及该 tag 之后新增的可达 commit/blob。命令失败、tag 不可验证、历史被改写或增量扫描异常时恢复完整历史扫描。仅扫描当前工作树不足以证明未经审计的历史可公开。
+
+GitHub Release notes 必须遵循 [Release notes 规范](release-notes.md)。发布候选需同步 manifest 版本、Marketplace `source.ref`、README 与安装指南中的 tag、CHANGELOG 日期和 Release 标题；完成最新完整 diff 的独立评审、统一完整门和适用的全量或增量历史扫描后创建 tag，再从远端 tag 安装到临时 `CODEX_HOME` 并比较 payload，最后发布 GitHub Release。

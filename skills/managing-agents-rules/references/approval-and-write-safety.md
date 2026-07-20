@@ -26,4 +26,4 @@ Apply only the approved minimal patch and preserve unrelated content and user ch
 
 If sensitive content such as a secret, token, credential, or privacy data appears, stop that candidate: do not display the value and do not write it. Report only the category and the blocked action.
 
-Do not inspect or operate agent-rules. Do not install anything, do not commit anything, and do not call sibling skills. Global writes remain subject to platform permission controls even after the user approves the concrete diff.
+Do not install anything, do not commit anything, and do not call sibling skills. Global writes remain subject to platform permission controls even after the user approves the concrete diff.
