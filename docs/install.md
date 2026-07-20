@@ -13,11 +13,11 @@
 仓库根目录的 `.agents/plugins/marketplace.json` 把六个 skill 作为一个 `development-workflow` plugin bundle 发布。先添加 repo marketplace，再安装 plugin：
 
 ```bash
-codex plugin marketplace add itstarts/development-workflow --ref v0.1.1
+codex plugin marketplace add itstarts/development-workflow --ref v0.1.2
 codex plugin add development-workflow@development-workflow
 ```
 
-当前稳定版本为 `v0.1.1`，catalog 和 plugin entry 均固定到同一个已验证 tag。`codex plugin marketplace add ... --ref <tag>` 只固定 marketplace catalog 的快照，不能覆盖 entry 自己的 plugin Git ref。发布后续不可变 tag 时，维护者必须先把 `.agents/plugins/marketplace.json` 中的 `source.ref` 更新为与 manifest 版本一致的 tag，完成候选验证后再创建该 tag；使用者随后以同一个 `--ref <tag>` 添加 catalog。
+当前稳定版本为 `v0.1.2`，catalog 和 plugin entry 均固定到同一个已验证 tag。`codex plugin marketplace add ... --ref <tag>` 只固定 marketplace catalog 的快照，不能覆盖 entry 自己的 plugin Git ref。发布后续不可变 tag 时，维护者必须先把 `.agents/plugins/marketplace.json` 中的 `source.ref` 更新为与 manifest 版本一致的 tag，完成候选验证后再创建该 tag；使用者随后以同一个 `--ref <tag>` 添加 catalog。
 
 安装完成后启动新的 Codex 会话，使 plugin 和 skill 列表重新加载。以上命令会修改当前用户的 Codex marketplace 和 plugin 安装状态；只在明确希望安装完整 bundle 时执行。
 
@@ -27,7 +27,7 @@ codex plugin add development-workflow@development-workflow
 python3 \
   "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
   --repo itstarts/development-workflow \
-  --ref v0.1.1 \
+  --ref v0.1.2 \
   --path \
     skills/routing-development-workflows \
     skills/creating-product-requirements \
@@ -47,7 +47,7 @@ python3 \
 python3 \
   "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
   --repo itstarts/development-workflow \
-  --ref v0.1.1 \
+  --ref v0.1.2 \
   --path skills/creating-product-requirements
 ```
 

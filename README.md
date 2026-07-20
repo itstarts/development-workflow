@@ -17,7 +17,7 @@ substantive development → AGENTS rule governance
 | Skill | 职责 |
 |---|---|
 | `routing-development-workflows` | 在没有显式 workflow 入口时，依据批准、范围、风险和验证事实选择 `fast | standard | full | blocked`，只输出稳定交接，不创建文档或实施 |
-| `creating-product-requirements` | 澄清产品范围、用户场景和验收标准，生成经独立评审和用户批准的单主题 PRD；门禁打开后自动进入 spec workflow |
+| `creating-product-requirements` | 澄清产品范围、用户场景和验收标准；已有批准基线时默认生成不复刻完整基线的单主题增量 PRD，否则生成完整 PRD；门禁打开后自动进入 spec workflow |
 | `creating-development-specs-and-plans` | 校验已批准 PRD；`standard` 把 spec+plan 合并为一次技术包评审，`full` 保留逐级批准；十四字段验证通过后自动进入会话路由 |
 | `generating-development-prompts` | 从已批准十四字段或显式请求判断当前会话、新会话或阻塞；仅在需要新会话时生成单一代码框中的可复制提示词 |
 | `implementing-bounded-changes` | 在用户明确批准后，以冻结范围、比例化 TDD、定向验证和文档同步完成小改动或 Bug 修复；纯机械改动可按严格条件免独立评审 |
@@ -28,11 +28,11 @@ substantive development → AGENTS rule governance
 通过 repo marketplace 安装完整 plugin bundle：
 
 ```bash
-codex plugin marketplace add itstarts/development-workflow --ref v0.1.1
+codex plugin marketplace add itstarts/development-workflow --ref v0.1.2
 codex plugin add development-workflow@development-workflow
 ```
 
-当前稳定版本为 `v0.1.1`。catalog 与 plugin entry 均固定到该不可变 tag，避免安装内容随 `main` 变化。
+当前稳定版本为 `v0.1.2`。catalog 与 plugin entry 均固定到该不可变 tag，避免安装内容随 `main` 变化。
 
 也可以通过 `skill-installer` 一次安装全部 skill：
 
@@ -40,7 +40,7 @@ codex plugin add development-workflow@development-workflow
 python3 \
   "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
   --repo itstarts/development-workflow \
-  --ref v0.1.1 \
+  --ref v0.1.2 \
   --path \
     skills/routing-development-workflows \
     skills/creating-product-requirements \
@@ -55,7 +55,7 @@ python3 \
 ## 工作流
 
 1. `routing-development-workflows` 在没有显式入口时选择一条路径：只有范围稳定、用户已批准实施、无高风险边界且定向验证充分时进入 `fast`；普通需求进入 `standard`；公共契约、架构、数据、权限、迁移、并发、一致性或外部状态等边界进入 `full`；确定性能力或授权缺口进入 `blocked`。
-2. `creating-product-requirements` 在理解置信度达到 95% 且用户确认摘要后创建 PRD，并把 route 与风险事实保存到 `工作流分流`，不改变 canonical 八字段。PRD 经独立评审和用户批准后，在同一会话自动进入 spec workflow。
+2. `creating-product-requirements` 在理解置信度达到 95% 且用户确认摘要后创建 PRD。存在可靠批准基线时默认另建增量 PRD，只写确认摘要中的变化和必要影响，不覆盖或复刻完整基线；没有相关基线时创建完整 PRD。route 与风险事实仍保存到 `工作流分流`，不改变 canonical 八字段。PRD 经独立评审和用户批准后，在同一会话自动进入 spec workflow。
 3. `creating-development-specs-and-plans` 复验 PRD。`standard` 在 spec 用户批准前先生成 spec+plan 草案，由一位 reviewer 统一评审；评审通过但 spec 未获用户批准时，计划评审真实保持已通过，实施门仍关闭。`full` 保留 spec 评审→用户批准→plan 评审的逐级顺序。
 4. `generating-development-prompts` 基于已验证十四字段和当前会话证据输出 `current-session`、`new-session` 或 `blocked`；它分别保留计划评审状态与实施门，不会把“技术包已评审、spec 待用户批准”误判为可实施。
 

@@ -456,6 +456,51 @@ class CreatingProductRequirementsContractTests(unittest.TestCase):
         self.assertEqual("待批准", metadata["用户批准"])
         self.assertEqual("待评审", metadata["独立评审"])
 
+    def test_approved_baseline_defaults_to_summary_bounded_incremental_prd(self):
+        incremental_template = ROOT / "assets/incremental-prd-template.md"
+        self.assertTrue(incremental_template.is_file())
+
+        text = (
+            read("SKILL.md")
+            + read("references/discovery-and-confidence.md")
+            + read("references/document-contract.md")
+            + read("references/review-and-handoff.md")
+        ).casefold()
+        for required in (
+            "approved baseline prd",
+            "incremental prd",
+            "default",
+            "do not overwrite the baseline",
+            "do not repeat the complete baseline",
+            "confirmed requirements-understanding summary",
+            "must not add product behavior",
+            "no length, complexity, or review-cost ceiling",
+            "no blanket preference for citation over restatement",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, text)
+
+        template = incremental_template.read_text(encoding="utf-8")
+        metadata = parse_frontmatter(template)
+        self.assertEqual("产品需求", metadata["文档类型"])
+        for required in (
+            "# <增量产品需求名称>",
+            "本文类型: 增量 PRD",
+            "## 基线 PRD",
+            "## 本次增量",
+            "## 新增或变更的产品行为",
+            "## 受影响的既有行为",
+            "## 验收标准",
+            "## 非目标与保持不变",
+            "## 工作流分流",
+            "## 技术规格交接",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, template)
+        self.assertIn("确认摘要未包含时删除本节", template)
+        self.assertNotIn("写明本增量没有新增非功能需求", template)
+        self.assertIn("assets/incremental-prd-template.md", read("SKILL.md"))
+
     def test_references_are_loaded_progressively_by_stage(self):
         text = read("SKILL.md").casefold()
         discovery = "references/discovery-and-confidence.md"
