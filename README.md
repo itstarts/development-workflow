@@ -16,7 +16,7 @@ substantive development → AGENTS rule governance
 
 | Skill | 职责 |
 |---|---|
-| `routing-development-workflows` | 在没有显式 workflow 入口时，依据批准、范围、风险和验证事实选择 `fast | standard | full | blocked`，只输出稳定交接，不创建文档或实施 |
+| `routing-development-workflows` | 在没有显式 workflow 入口时，依据批准、范围、风险和验证事实选择 `fast`、`standard`、`full` 或 `blocked`，只输出稳定交接，不创建文档或实施 |
 | `creating-product-requirements` | 澄清产品范围、用户场景和验收标准；已有批准基线时默认生成不复刻完整基线的单主题增量 PRD，否则生成完整 PRD；门禁打开后自动进入 spec workflow |
 | `creating-development-specs-and-plans` | 校验已批准 PRD；`standard` 把 spec+plan 合并为一次技术包评审，`full` 保留逐级批准；十四字段验证通过后自动进入会话路由 |
 | `generating-development-prompts` | 从已批准十四字段或显式请求判断当前会话、新会话或阻塞；仅在需要新会话时生成单一代码框中的可复制提示词 |
