@@ -51,6 +51,7 @@
 - 新增或修改角色时，必须同步检查触发范围、输入证据、批准条件、只读边界和外部状态限制，并更新 `docs/agent-development.md` 中的角色说明。
 - `README.md` 保持面向使用者的简明入口；安装细节、工作流契约和 Agent 开发流程分别维护在 `docs/install.md`、`docs/workflow.md` 和 `docs/agent-development.md`，避免把内部执行规则堆入 README。
 - 公开安装命令、仓库地址、许可证、版本状态或发布边界变化时，同步更新 README、相关 `docs/`、`CHANGELOG.md` 和 plugin manifest 中受影响的当前事实。
+- GitHub Release notes 必须遵循 `docs/release-notes.md`：第一节固定为 `## 本版内容`，使用面向用户的中文结果表述；安装命令、版本、tag 和 compare 链接必须一致，只记录当前候选实际完成的验证与已确认限制，不直接复制 commit 列表或编造发布证据。
 - 发布前同时扫描当前树和完整 Git 历史中的本机路径、凭证、真实用户数据与 task/thread 标识符；只删除当前文件不能证明历史可公开。
 
 ## 文档交接契约

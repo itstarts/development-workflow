@@ -102,3 +102,5 @@ git diff --check
 仓库 validator 同时校验 repo marketplace 的名称、Git source、安装策略、分类以及 plugin 名称与 manifest 的一致性。
 
 仓库支持 Python 3.9 及以上；验证使用项目当前 `.venv`，不重复运行第二个 Python 版本。发布前还要检查 Git 历史中的作者元数据、已删除内容和历史 blob，确保没有本机路径或敏感信息；仅扫描当前工作树不足以证明公开安全。
+
+GitHub Release notes 必须遵循 [Release notes 规范](release-notes.md)。发布候选需同步 manifest 版本、Marketplace `source.ref`、README 与安装指南中的 tag、CHANGELOG 日期和 Release 标题；完成最新完整 diff 的独立评审、统一完整门和历史扫描后创建 tag，再从远端 tag 安装到临时 `CODEX_HOME` 并比较 payload，最后发布 GitHub Release。

@@ -2,7 +2,11 @@
 
 本项目遵循语义化版本。六个 skill 共享 plugin 版本；每个版本分别记录 skill 与集成契约变化。
 
-## 0.1.0 - Unreleased
+## Unreleased
+
+- 暂无。
+
+## 0.1.0 - 2026-07-20
 
 ### routing-development-workflows
 
@@ -29,7 +33,7 @@
 - 行为或语义变更仍使用一位独立 reviewer；连续两轮修复与复审仍未批准时停止自动循环并保持实施门阻塞，用户偏好不能替代正确性证据。
 - 在当前任务会话内按相关代码、测试、fixture、配置、依赖、命令和环境复用已通过验证，只让相关变化使对应结果失效；评审或 Agent 交接本身不再触发重跑，仓库要求的最终门只在最后一次相关变化后运行一次，并在覆盖同一 focused seam 时直接提供 GREEN。
 - 项目特定的“变更范围→验证命令”只从实际 diff 与验证证据形成可选规则候选；受控实施不直接修改 `AGENTS.md`，用户可逐 diff 选择加入或拒绝。
-- 通过无目标 skill baseline、5 个固定场景、官方 validator、plugin staging 和独立评审建立创建闭环。
+- 通过无目标 skill baseline、6 个固定场景、官方 validator、plugin staging 和独立评审建立创建闭环。
 
 ### creating-product-requirements
 
@@ -105,5 +109,5 @@
 - 固定 validator 开发依赖，仓库支持 Python 3.9 及以上并统一使用项目当前 `.venv` 验证。
 - 仓库验证器忽略 Python 缓存和系统元数据，保持 skill 测试后的重复验证稳定。
 - plugin 同时暴露总路由、PRD → technical spec/plan → development prompt 完整交接链、approved bounded change → implementation 受控实施入口和 `managing-agents-rules` 规则治理入口；本地 staging 验证六个 skill 可单独或组合复制且拒绝覆盖已有目标。
-- 公开文档记录 PRD→spec 与 plan→三态路由的两段自动衔接、单一最终 handoff 和单 skill 能力缺口；plugin 保持未发布 `0.1.0`，本次不发布。
+- 公开文档记录 PRD→spec 与 plan→三态路由的两段自动衔接、单一最终 handoff 和单 skill 能力缺口；首个公开版本发布为 `v0.1.0`，manifest、Marketplace、README 与安装指南统一固定到该 tag。
 - 用户可见 handoff/status-block 回复后缀从英文字段和值改为语境化中文，属于 `breaking contract change`；英文 canonical 机器字段、门禁计算、skill 间传递、旧英文输入和 renderer stdout 字节合同保持兼容。映射失败时停止本次自动交接且不输出残缺、混合或英文 fallback 状态块。

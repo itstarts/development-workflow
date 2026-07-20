@@ -1015,6 +1015,7 @@ class RepositoryContractTests(unittest.TestCase):
             ROOT / ".codex" / "agents" / "workflow-final-reviewer.toml",
             ROOT / "scripts" / "validate_repo.py",
             ROOT / "README.md",
+            ROOT / "docs" / "release-notes.md",
             ROOT / "CHANGELOG.md",
             ROOT / "requirements-dev.txt",
         ]
@@ -1024,7 +1025,7 @@ class RepositoryContractTests(unittest.TestCase):
         manifest = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text())
         self.assertEqual("development-workflow", manifest["name"])
         self.assertEqual("./skills/", manifest["skills"])
-        self.assertEqual("0.1.0", manifest["version"])
+        self.assertRegex(manifest["version"], r"^[0-9]+\.[0-9]+\.[0-9]+$")
         serialized = json.dumps(manifest, ensure_ascii=False).casefold()
         for phrase in (
             "approved product requirements",
@@ -1045,6 +1046,9 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertTrue(all(len(prompt) <= 128 for prompt in default_prompts))
 
     def test_plugin_marketplace_exposes_the_root_plugin_from_git(self):
+        manifest = json.loads(
+            (ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
+        )
         marketplace = json.loads(
             (ROOT / ".agents" / "plugins" / "marketplace.json").read_text(
                 encoding="utf-8"
@@ -1063,7 +1067,7 @@ class RepositoryContractTests(unittest.TestCase):
             {
                 "source": "url",
                 "url": "https://github.com/itstarts/development-workflow.git",
-                "ref": "main",
+                "ref": f"v{manifest['version']}",
             },
             entry["source"],
         )
@@ -1088,13 +1092,32 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual(1, result.returncode)
         self.assertIn("invalid plugin marketplace", result.stderr)
 
+    def test_repository_validator_rejects_marketplace_ref_not_matching_version(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = copy_repository(Path(temporary_directory))
+            marketplace_path = repository / ".agents" / "plugins" / "marketplace.json"
+            marketplace = json.loads(marketplace_path.read_text(encoding="utf-8"))
+            marketplace["plugins"][0]["source"]["ref"] = "main"
+            marketplace_path.write_text(
+                json.dumps(marketplace, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            result = run_repository_validator(repository)
+
+        self.assertEqual(1, result.returncode)
+        self.assertIn("manifest version tag", result.stderr)
+
     def test_public_docs_include_marketplace_install_path(self):
-        text = (
-            (ROOT / "README.md").read_text(encoding="utf-8")
-            + (ROOT / "docs" / "install.md").read_text(encoding="utf-8")
+        manifest = json.loads(
+            (ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
         )
+        release_tag = f"v{manifest['version']}"
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        install = (ROOT / "docs" / "install.md").read_text(encoding="utf-8")
+        text = readme + install
         self.assertIn(
-            "codex plugin marketplace add itstarts/development-workflow --ref main",
+            f"codex plugin marketplace add itstarts/development-workflow --ref {release_tag}",
             text,
         )
         self.assertIn(
@@ -1106,7 +1129,7 @@ class RepositoryContractTests(unittest.TestCase):
             text,
         )
         self.assertIn(
-            "source.ref` 更新为同一个已验证 tag",
+            "catalog 和 plugin entry 均固定到同一个已验证 tag",
             text,
         )
         self.assertIn(
@@ -1121,6 +1144,35 @@ class RepositoryContractTests(unittest.TestCase):
             "不能用远端 `main` 的安装结果替代当前候选证据",
             text,
         )
+
+    def test_release_notes_policy_and_release_metadata_are_current(self):
+        manifest = json.loads(
+            (ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
+        )
+        version = manifest["version"]
+        policy_path = ROOT / "docs" / "release-notes.md"
+        self.assertTrue(policy_path.is_file())
+        policy = policy_path.read_text(encoding="utf-8")
+        rules = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        security = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
+
+        self.assertIn("第一节必须是 `## 本版内容`", policy)
+        self.assertIn("不直接复制 commit 列表", policy)
+        self.assertIn("/tree/vCURRENT", policy)
+        self.assertIn("/compare/vPREVIOUS...vCURRENT", policy)
+        self.assertIn("```markdown\n## 本版内容", policy)
+        self.assertIn("docs/release-notes.md", rules)
+        self.assertRegex(
+            changelog,
+            rf"(?m)^## {re.escape(version)} - [0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}}$",
+        )
+        self.assertNotIn(f"## {version} - Unreleased", changelog)
+        self.assertIn(f"`v{version}`", security)
+        self.assertIn("`main`", security)
+        self.assertIn("六个 skill", security)
+        self.assertNotIn("尚未发布 tag", security)
+        self.assertNotIn("三个 skill", security)
 
     def test_public_workflow_defines_exact_automatic_handoff_mapping(self):
         workflow = (ROOT / "docs" / "workflow.md").read_text(encoding="utf-8")
@@ -1459,11 +1511,17 @@ class RepositoryContractTests(unittest.TestCase):
                 self.assertIn(required, public_workflow)
 
     def test_renderer_stdout_breaking_migration_is_publicly_documented(self):
+        manifest = json.loads(
+            (ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
+        )
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
         self.assertIn("renderer stdout", changelog)
         self.assertIn("breaking contract change", changelog)
         self.assertIn("提取唯一 Markdown 代码框内容", changelog)
-        self.assertIn("保持未发布 `0.1.0`", changelog)
+        self.assertIn(
+            f"首个公开版本发布为 `v{manifest['version']}`",
+            changelog,
+        )
         self.assertIn("用户可见 handoff/status-block 回复后缀", changelog)
         self.assertIn("英文 canonical", changelog)
         self.assertIn("旧英文输入", changelog)
