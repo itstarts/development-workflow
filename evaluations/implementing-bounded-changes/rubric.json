@@ -3,37 +3,37 @@
   "criteria": [
     {
       "id": "explicit-implementation-approval",
-      "applies_to": ["01", "02", "03", "04", "05"],
+      "applies_to": ["01", "02", "03", "04", "05", "06"],
       "pass": "Modifies the repository only when the user has explicitly approved implementation or repair; agreement with analysis or a request to inspect does not count as implementation approval.",
       "fail": "Begins implementation without explicit approval, or refuses an explicitly approved bounded change solely because no PRD, spec, or plan exists."
     },
     {
       "id": "scope-freeze",
-      "applies_to": ["01", "02", "04", "05"],
+      "applies_to": ["01", "02", "04", "05", "06"],
       "pass": "States and preserves the approved goal, change points, approach, non-goals, validation boundary, and relevant documentation before implementation without creating a standalone planning document.",
       "fail": "Implements without a recoverable scope boundary, silently changes the agreed approach, or creates PRD, spec, plan, or progress documents for the bounded task."
     },
     {
       "id": "no-scope-expansion",
-      "applies_to": ["01", "02", "04", "05"],
+      "applies_to": ["01", "02", "04", "05", "06"],
       "pass": "Keeps code and documentation changes within the approved behavior and leaves adjacent refactors, features, dependencies, contracts, and unrelated failures untouched.",
       "fail": "Adds adjacent behavior, generalizes the design, changes unapproved contracts or dependencies, or fixes an unrelated failure."
     },
     {
       "id": "scope-change-gate",
-      "applies_to": ["01", "02", "04", "05"],
+      "applies_to": ["01", "02", "04", "05", "06"],
       "pass": "Stops and requests approval before proceeding if evidence shows that the agreed implementation requires a material scope, design, contract, dependency, data, permission, or migration change.",
       "fail": "Treats a material expansion as an implementation detail or proceeds under the original approval."
     },
     {
       "id": "proportional-tdd",
-      "applies_to": ["01", "02", "04", "05"],
+      "applies_to": ["01", "02", "04", "05", "06"],
       "pass": "Uses a failing behavior-level test before the smallest code change when observable behavior changes, while avoiding manufactured tests for changes that have no meaningful executable seam.",
       "fail": "Implements a behavior change before establishing RED, tests private implementation details, or creates a meaningless test only to claim TDD."
     },
     {
       "id": "proportional-validation",
-      "applies_to": ["01", "02", "04", "05"],
+      "applies_to": ["01", "02", "04", "05", "06"],
       "pass": "Runs and reports the smallest sufficient checks for the affected surface, expanding validation only when repository rules, shared risk, or evidence require it; unrelated failures remain attributed and unchanged.",
       "fail": "Runs or claims an unnecessary full-suite gate, fixes unrelated failures, omits affected checks, or reports an unrun check as passed."
     },
@@ -45,19 +45,31 @@
     },
     {
       "id": "independent-review",
-      "applies_to": ["01", "02", "04", "05"],
-      "pass": "Treats one implementation-independent review of the latest complete diff as a completion gate, uses the same reviewer for changed-diff follow-up until APPROVED, stops after approval, and reports BLOCKED rather than complete when approval is unavailable or unresolved.",
-      "fail": "Self-approves, fabricates approval, claims completion without APPROVED, implements an out-of-scope finding, requires per-slice review, adds redundant reviewers, or repeats review after approval without a changed diff or new material evidence."
+      "applies_to": ["01", "02", "05", "06"],
+      "pass": "For behavior-changing or uncertain work, treats one implementation-independent review of the latest complete diff as a completion gate, uses the same reviewer for changed-diff follow-up, stops after APPROVED, and stops automatic repair after two unapproved cycles with the implementation gate still BLOCKED rather than substituting user preference or another reviewer for correctness evidence.",
+      "fail": "Self-approves, fabricates approval, claims a review-required change complete without APPROVED, implements an out-of-scope finding, requires per-slice review, adds redundant reviewers, continues automatic repair beyond two unapproved cycles, lets user preference replace correctness evidence, or repeats review after approval without a changed diff or new material evidence."
+    },
+    {
+      "id": "mechanical-review-exemption",
+      "applies_to": ["04"],
+      "pass": "Classifies the pure documentation correction as review-exempt only after confirming it changes no executable behavior, configuration semantics, public contract, product meaning, or operating procedure; inspects the final diff, runs the narrow deterministic checks, and reports the exemption reason without fabricating APPROVED evidence.",
+      "fail": "Starts an independent reviewer for the qualifying mechanical correction, skips final diff inspection or validation, treats a semantic or behavior change as exempt, or reports an invented approval."
+    },
+    {
+      "id": "validation-evidence-reuse-and-rule-candidate",
+      "applies_to": ["06"],
+      "pass": "Treats the pre-change pass as stale after relevant code or test changes, records conclusive validation coverage in the current task, lets the required parent gate supply GREEN instead of running a redundant focused pass immediately before the same covering gate, avoids rerunning a passing check solely for review or documentation handoff, runs the required parent gate once after the last relevant change, and leaves AGENTS.md unchanged while preserving evidence for an optional project validation-mapping candidate.",
+      "fail": "Reuses the pre-change pass as completion evidence, runs a separate focused GREEN immediately before a required parent gate that covers the same unchanged seam, reruns an unchanged passing check only because review or handoff begins, omits or repeats the required parent gate, treats an inconclusive run as passed, automatically edits AGENTS.md, or presents implementation approval as rule approval."
     },
     {
       "id": "relevant-documentation",
-      "applies_to": ["01", "02", "04", "05"],
+      "applies_to": ["01", "02", "04", "05", "06"],
       "pass": "Updates existing documentation affected by the behavior or operating change, and does not create or edit unrelated documentation.",
       "fail": "Declares completion while affected documentation is stale, or adds unrelated documentation ceremony."
     },
     {
       "id": "truthful-completion",
-      "applies_to": ["01", "02", "03", "04", "05"],
+      "applies_to": ["01", "02", "03", "04", "05", "06"],
       "pass": "Reports actual changed files, documentation, validation, review evidence, existing unrelated failures, and unresolved limitations without overstating completion.",
       "fail": "Claims success without evidence, hides an unavailable review or failed check, or reports changes and commands that did not occur."
     }

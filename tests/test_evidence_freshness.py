@@ -1,4 +1,5 @@
 import json
+import importlib.util
 import os
 import shutil
 import subprocess
@@ -6,10 +7,17 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = "creating-product-requirements"
+VALIDATOR_SPEC = importlib.util.spec_from_file_location(
+    "validate_repo_under_test", ROOT / "scripts" / "validate_repo.py"
+)
+assert VALIDATOR_SPEC is not None and VALIDATOR_SPEC.loader is not None
+VALIDATE_REPO = importlib.util.module_from_spec(VALIDATOR_SPEC)
+VALIDATOR_SPEC.loader.exec_module(VALIDATE_REPO)
 
 
 def copy_repository(destination):
@@ -114,6 +122,69 @@ def run_validator(root, *args):
 
 
 class EvidenceFreshnessTests(unittest.TestCase):
+    def test_new_uncommitted_creation_only_bundle_is_current(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            files = (
+                "skills/new-router/SKILL.md",
+                "skills/new-router/references/policy.md",
+                "evaluations/new-router/rubric.json",
+                "evaluations/new-router/cases/01.md",
+                "evaluations/new-router/baseline/pre-creation-audit.json",
+                "evaluations/new-router/baseline/result.json",
+                "evaluations/new-router/baseline/01-output.md",
+                "evaluations/new-router/green/result.json",
+                "evaluations/new-router/green/01-output.md",
+                "evaluations/registry.json",
+            )
+            for relative in files:
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("fixture\n", encoding="utf-8")
+            errors = []
+            messages = []
+            with mock.patch.object(VALIDATE_REPO, "ROOT", root), mock.patch.object(
+                VALIDATE_REPO, "last_production_commit", return_value=None
+            ):
+                VALIDATE_REPO.validate_creation_only_freshness(
+                    "new-router", set(files), errors, messages
+                )
+
+        self.assertEqual([], errors)
+        self.assertEqual(["new-router: freshness worktree-creation-current"], messages)
+
+    def test_new_uncommitted_creation_only_bundle_rejects_missing_green_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            files = {
+                "skills/new-router/SKILL.md",
+                "evaluations/new-router/rubric.json",
+                "evaluations/new-router/cases/01.md",
+                "evaluations/new-router/baseline/pre-creation-audit.json",
+                "evaluations/new-router/baseline/result.json",
+                "evaluations/new-router/baseline/01-output.md",
+                "evaluations/new-router/green/result.json",
+                "evaluations/registry.json",
+            }
+            for relative in files:
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("fixture\n", encoding="utf-8")
+            missing = root / "evaluations/new-router/green/01-output.md"
+            missing.parent.mkdir(parents=True, exist_ok=True)
+            missing.write_text("fixture\n", encoding="utf-8")
+            errors = []
+            messages = []
+            with mock.patch.object(VALIDATE_REPO, "ROOT", root), mock.patch.object(
+                VALIDATE_REPO, "last_production_commit", return_value=None
+            ):
+                VALIDATE_REPO.validate_creation_only_freshness(
+                    "new-router", files, errors, messages
+                )
+
+        self.assertEqual([], messages)
+        self.assertTrue(any("green/01-output.md" in error for error in errors), errors)
+
     def test_non_git_copy_is_structurally_checkable_but_strict_freshness_fails(self):
         with tempfile.TemporaryDirectory() as directory:
             root = copy_repository(Path(directory))
@@ -588,7 +659,7 @@ class EvidenceFreshnessTests(unittest.TestCase):
         self.assertIn(f"{SKILL}: freshness clean-current", result.stdout)
 
     def test_creation_only_profile_requires_upgrade_after_production_change(self):
-        target = "implementing-bounded-changes"
+        target = "routing-development-workflows"
         with tempfile.TemporaryDirectory() as directory:
             root = copy_repository(Path(directory))
             git(root, "init", "-q")

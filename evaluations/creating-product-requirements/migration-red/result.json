@@ -1,15 +1,13 @@
 {
   "schema_version": 3,
   "evidence_role": "current-skill-red",
-  "selected_case": "17",
+  "selected_case": "20",
   "valid": true,
   "red_observed": true,
   "failed_criteria": [
-    "localized-prd-approval-writeback"
+    "routed-prd-body-and-separate-handoff"
   ],
-  "warnings": [
-    "one recovered diagnostic command failure"
-  ],
-  "output": "migration-red/17-output.md",
-  "sanitization": "The ephemeral fixture prefix was replaced with /workspace/fixture in the selected versioned output."
+  "warnings": [],
+  "output": "migration-red/20-output.md",
+  "sanitization": "The ephemeral fixture prefix was replaced with /workspace/fixture in the selected versioned output; raw trace inspection confirmed the created PRD omitted the routed body section."
 }

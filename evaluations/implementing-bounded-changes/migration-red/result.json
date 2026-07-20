@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "evidence_role": "current-skill-red",
+  "selected_case": "06",
+  "valid": true,
+  "red_observed": true,
+  "failed_criteria": ["validation-evidence-reuse-and-rule-candidate"]
+}

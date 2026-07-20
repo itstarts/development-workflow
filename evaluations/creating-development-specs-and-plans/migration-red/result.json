@@ -1,15 +1,13 @@
 {
   "schema_version": 3,
   "evidence_role": "current-skill-red",
-  "selected_case": "22",
+  "selected_case": "24",
   "valid": true,
   "red_observed": true,
   "failed_criteria": [
-    "acceptance-evidence-boundary"
+    "standard-technical-package-lifecycle"
   ],
-  "warnings": [
-    "one recovered diagnostic command failure"
-  ],
-  "output": "migration-red/22-output.md",
+  "warnings": [],
+  "output": "migration-red/24-output.md",
   "sanitization": "The ephemeral fixture prefix was replaced with /workspace/fixture in the selected versioned output."
 }

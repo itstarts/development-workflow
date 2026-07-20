@@ -10,7 +10,7 @@
 
 ## 通过 plugin marketplace 安装
 
-仓库根目录的 `.agents/plugins/marketplace.json` 把五个 skill 作为一个 `development-workflow` plugin bundle 发布。先添加 repo marketplace，再安装 plugin：
+仓库根目录的 `.agents/plugins/marketplace.json` 把六个 skill 作为一个 `development-workflow` plugin bundle 发布。先添加 repo marketplace，再安装 plugin：
 
 ```bash
 codex plugin marketplace add itstarts/development-workflow --ref main
@@ -29,6 +29,7 @@ python3 \
   --repo itstarts/development-workflow \
   --ref main \
   --path \
+    skills/routing-development-workflows \
     skills/creating-product-requirements \
     skills/creating-development-specs-and-plans \
     skills/generating-development-prompts \
@@ -52,13 +53,14 @@ python3 \
 
 可用路径：
 
+- `skills/routing-development-workflows`
 - `skills/creating-product-requirements`
 - `skills/creating-development-specs-and-plans`
 - `skills/generating-development-prompts`
 - `skills/implementing-bounded-changes`
 - `skills/managing-agents-rules`
 
-五个 skill 可独立安装和运行。marketplace 方式安装完整 plugin bundle；`skill-installer` 方式可以只选需要的 skill。PRD→spec→会话路由的完整自动链要求 `creating-product-requirements`、`creating-development-specs-and-plans` 和 `generating-development-prompts` 在同一运行时同时可用；单独安装其中一个时，它仍完成自身职责，并在需要进入未加载的下游 skill 时如实报告能力缺口，不读取兄弟 skill 的源码或安装目录。受控实施 skill 直接读取当前批准范围和仓库证据，`managing-agents-rules` 独立执行 AGENTS 规则治理。
+六个 skill 可独立安装和运行。marketplace 方式安装完整 plugin bundle；`skill-installer` 方式可以只选需要的 skill。自动总路由还要求 `routing-development-workflows` 可用；PRD→spec/plan→会话路由的完整链要求三个 authoring/prompt skill 同时可用。单独安装某个 skill 时，它仍完成自身职责，并在需要进入未加载的下游 capability 时如实报告能力缺口，不读取兄弟 skill 的源码或安装目录。
 
 ## 安全更新
 
@@ -79,7 +81,7 @@ installer 在目标 skill 目录已存在时会停止：
 
    省略 `--skill` 时比较 registry 中全部已实现 skill。命令只报告 publishable payload 的 missing、extra、different 或非普通文件，不创建、复制、删除或修改目标，也不构成正式安装授权。内容 missing、extra 或 different 返回 `1`；参数、registry、路径、读取、symlink 或其它非普通文件错误返回 `2`。
 3. 备份或移走旧目录后，再把已验证候选安装到正式位置。
-4. 启动新 Codex 会话并确认五个 skill 均可见。
+4. 启动新 Codex 会话并确认六个 skill 均可见。
 
 `verify_install.py` 只验证 `skill-installer` 写入的 skill 目录，不能验证 marketplace plugin cache。
 
@@ -89,6 +91,6 @@ installer 在目标 skill 目录已存在时会停止：
 2. 使用临时 `CODEX_HOME` 执行 `codex plugin marketplace add <temporary-marketplace-root>` 和 `codex plugin add <plugin-name>@<marketplace-name>`。
 3. 在 `<temporary-CODEX_HOME>/plugins/cache/<marketplace-name>/<plugin-name>/<version-or-local>` 找到 CLI 实际安装的副本，对该目录运行官方 plugin validator。
 4. 将已安装副本的 `.codex-plugin/` 和 `skills/` 与待发布候选逐文件比较；validator 通过且没有 missing、extra 或 different，才证明当前候选经过真实安装。
-5. 正式安装后启动新的 Codex 会话，并确认 plugin 及五个 skill 均可见。
+5. 正式安装后启动新的 Codex 会话，并确认 plugin 及六个 skill 均可见。
 
 仓库开发不得直接修改 `~/.codex/skills` 中的安装副本；源代码变更只在本仓库完成。

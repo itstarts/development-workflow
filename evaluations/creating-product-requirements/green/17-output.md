@@ -1,6 +1,6 @@
-已将批准写回同一份 [PRD](/workspace/fixture/docs/requirements/2026-07-19-localized-metadata.md:7)：状态改为“已批准”，新增日期 `2026-07-19`。已验证中文 schema、topic、评审日期及 reviewer role 均保持不变，未添加英文别名。
+已将用户批准写回[当前 PRD](/workspace/fixture/docs/requirements/2026-07-19-localized-metadata.md)：`用户批准` 更新为 `已批准`，新增 `批准日期: 2026-07-20`。
 
-当前会话未提供下游 spec 能力；未创建 spec、commit 或 task/thread。
+已核对实际文件与 diff：中文 schema、主题、评审日期及 reviewer role 均保持不变。未创建 spec、commit 或 task/thread。
 
 需求文档：/workspace/fixture/docs/requirements/2026-07-19-localized-metadata.md
 需求主题：localized-metadata

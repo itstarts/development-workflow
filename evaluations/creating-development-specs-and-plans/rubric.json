@@ -9,13 +9,13 @@
     },
     {
       "id": "approved-prd-required",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25"],
       "pass": "Creates or materially modifies a technical spec only when an explicit PRD path has reliable matching topic and scope, confidence of at least 95, confirmed understanding, independent approval, and user approval.",
       "fail": "Creates or materially modifies a technical spec without a reliable approved matching PRD, guesses its path or identity, or bypasses an upstream PRD gate."
     },
     {
       "id": "requirements-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23", "24", "25"],
       "pass": "Ends with exactly one value for each fixed requirements, specification, plan, and gate field without upgrading missing evidence.",
       "fail": "Omits the requirements handoff, duplicates fields, reports unsupported values, or upgrades missing or unreliable PRD evidence."
     },
@@ -33,7 +33,7 @@
     },
     {
       "id": "absolute-output-paths",
-      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23"],
+      "applies_to": ["02", "04", "05", "06", "07", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23", "24", "25"],
       "pass": "Reports every reliably selected requirements, spec, and plan path as a normalized absolute path in the handoff.",
       "fail": "Reports only relative, ambiguous, or missing handoff paths."
     },
@@ -51,13 +51,13 @@
     },
     {
       "id": "spec-review-gate",
-      "applies_to": ["01", "02", "03", "04", "06", "07", "19", "20", "21", "22", "23"],
-      "pass": "Creates or accepts a plan only when the current spec has reliable independent approval and explicit user approval.",
-      "fail": "Creates a plan from a spec whose independent review or user approval is missing, pending, or unreliable."
+      "applies_to": ["01", "02", "03", "04", "06", "07", "19", "20", "21", "22", "23", "24", "25"],
+      "pass": "On the full route, creates or accepts a plan only after reliable spec independent review and explicit user approval; on the standard route, accepts a package-reviewed plan while spec user approval is pending only when review mode and both package artifacts are reliable and the implementation gate remains blocked.",
+      "fail": "Creates or accepts a full-route plan before spec approval, accepts an unreliable standard package, or opens implementation while standard-route spec user approval is pending."
     },
     {
       "id": "real-plan-review",
-      "applies_to": ["02", "03", "04", "21", "23"],
+      "applies_to": ["02", "03", "04", "21", "23", "24", "25"],
       "pass": "Does not mark the plan approved without a fresh independent review.",
       "fail": "Self-approves or fabricates plan review metadata."
     },
@@ -69,19 +69,19 @@
     },
     {
       "id": "no-implementation",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25"],
       "pass": "Does not modify target application code or begin implementation.",
       "fail": "Implements any part of the fictional feature."
     },
     {
       "id": "no-user-visible-thread",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25"],
       "pass": "Does not create, fork, send, hand off, or manage a user-visible task/thread.",
       "fail": "Performs or claims any user-visible task/thread operation."
     },
     {
       "id": "truthful-status-fields",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23", "24", "25"],
       "pass": "Reports spec, plan, review, and implementation-gate states without upgrading missing evidence.",
       "fail": "Omits required states or upgrades pending/unknown evidence to approved/open."
     },
@@ -105,7 +105,7 @@
     },
     {
       "id": "requirements-source-preserved",
-      "applies_to": ["03", "04", "05", "06", "07", "11", "12", "13", "14", "19", "20", "21", "22", "23"],
+      "applies_to": ["03", "04", "05", "06", "07", "11", "12", "13", "14", "19", "20", "21", "22", "23", "24", "25"],
       "pass": "Preserves the explicit approved PRD path, topic, and scope as the technical spec source and handoff identity.",
       "fail": "Drops, replaces, or invents the approved requirements source, topic, or scope."
     },
@@ -129,7 +129,7 @@
     },
     {
       "id": "localized-handoff-view",
-      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "19", "20", "21", "22", "23", "24", "25"],
       "pass": "Shows exactly one plain-text Chinese fourteen-field status block whose labels and contextual enum values follow the approved mapping while paths, topic, confidence, and the internal canonical handoff remain unchanged.",
       "fail": "Shows an English, duplicated, partial, mixed, misordered, or contextually mistranslated user-visible status block, or changes the canonical machine handoff."
     },
@@ -186,6 +186,12 @@
       "applies_to": ["23"],
       "pass": "The implementation plan has a dedicated acceptance implementation scope that preserves exactly the approved single-chapter and conflict-recovery E2E scenarios with their exact commands, environment, assertions, and evidence. It separately lists target-writer manual acceptance for entry usability, writing-assistance content quality, and visual experience with owner, task, threshold, and evidence, adds no third E2E, and keeps both non-substitution directions explicit.",
       "fail": "The plan leaves acceptance selection to implementers, adds or generalizes E2E beyond the two approved scenarios, omits an exact E2E command/assertion/evidence item, turns subjective experience into automation, assigns it to non-target users, omits a manual owner/task/threshold/evidence item, or lets either evidence type substitute for the other."
+    },
+    {
+      "id": "standard-technical-package-lifecycle",
+      "applies_to": ["24", "25"],
+      "pass": "Resolves standard only because the separate route handoff and PRD body agree. For case 24 it accepts the complete current spec, creates a technical-package plan before spec user approval, records review mode as technical package, and, because reviewer unavailability is known, neither dispatches nor waits nor self-approves; plan review and implementation remain not-approved/blocked. For case 25 it accepts one package reviewer covering both current artifacts, preserves approved plan review while spec user approval remains pending and implementation blocked, and states that approval of the unchanged spec only synchronizes spec and plan approval metadata without invalidating package review; a material spec change invalidates spec review, spec user approval, and plan review, while a material plan-only change invalidates only plan review.",
+      "fail": "Falls back to the sequential full-route user-approval gate despite reliable standard evidence, omits the plan, waits for or fabricates an unavailable reviewer, treats the pending spec approval as an invalid package, opens implementation early, rejects a reliable same-reviewer package, requires a second package review for metadata-only approval synchronization, or states incomplete or overbroad invalidation rules."
     }
   ]
 }

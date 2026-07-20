@@ -10,17 +10,27 @@ Map reliable `pending` or confidence below 95 to `not-approved`. Map a missing p
 
 After this workflow has been selected from an upstream eight-field handoff, it owns the downstream response contract. If PRD revalidation fails, emit the complete fourteen-field handoff rather than falling back to eight fields. Map unreliable requirements values to `unknown` or `not-approved` as defined above, preserve reliably selected spec and plan paths, keep `specification_gate: blocked` and `implementation_gate: blocked`, and report the validation failure.
 
+## Route and Review Mode
+
+Use the standard route only when the separate router handoff and the approved PRD's unique `## 工作流分流` section both reliably say `standard`. A missing or unreliable route, a mismatch, or `full` uses the full route. Never downgrade a route to reduce review time.
+
+The standard route uses one technical package. Create the complete spec and plan drafts before review, then dispatch one package reviewer with the approved PRD, route facts, applicable rules, both current files, and relevant repository evidence. One verdict covers the current spec and plan. Fix every finding in either artifact and give the same reviewer the latest complete package until it is approved or genuinely blocked. The reviewer stays read-only; the main agent writes approved spec-review and plan-review metadata only after the verdict. Technical specification user approval remains pending, so `implementation_gate` stays blocked.
+
+After the user approves the unchanged package-reviewed spec, update its approval metadata and synchronize the plan metadata to `技术规格用户批准: 已批准`. This metadata-only synchronization does not invalidate the package review. A material spec change invalidates spec review, spec user approval, and plan review; a material plan-only change invalidates plan review only.
+
+The full route remains sequential. Use a spec reviewer first; the user approves that reviewed spec before creating the plan. Then dispatch a separate plan reviewer.
+
 ## Specification Review
 
 Dispatch a fresh read-only spec reviewer that did not write the spec. Give it the user request, applicable rules, current spec, and relevant repository evidence. Do not provide an expected verdict, author defense, or requested approval.
 
 When the reviewer is known to be unavailable, do not dispatch and do not wait. Keep independent review pending, report the blocked gate, and stop after the fixed handoff. Do not probe a known-unavailable channel merely to manufacture an attempted review.
 
-Require findings ordered by severity, open questions, verification gaps, and one final verdict. Fix every finding and re-review the latest file until it is approved or genuinely blocked. The reviewer stays read-only; after approval of the latest file, the main agent updates independent-review metadata in the spec's current reliable schema. A reviewer verdict does not equal user approval. Ask the user only after independent spec review passes; the user explicitly approves the current written spec before creating the plan. A material spec change invalidates approval from both the independent reviewer and the user, removes their current-schema dates and reviewer metadata, then restarts both gates.
+On the full route, require findings ordered by severity, open questions, verification gaps, and one final verdict. Fix every finding and re-review the latest file until it is approved or genuinely blocked. The reviewer stays read-only; after approval of the latest file, the main agent updates independent-review metadata in the spec's current reliable schema. A reviewer verdict does not equal user approval. Ask the user only after independent spec review passes; the user explicitly approves the current written spec before creating the plan. A material spec change invalidates approval from both the independent reviewer and the user, removes their current-schema dates and reviewer metadata, then restarts both gates. On the standard route, the package-review section above owns this sequence.
 
 ## Plan Review
 
-Dispatch a fresh read-only plan reviewer that did not write the plan. Give it the approved spec, applicable rules, current plan, relevant repository evidence, and available verification evidence. Require coverage, path, interface, ordering, testing, documentation, and validation checks. Include security review only when the spec contains a real security, permission, or sensitive-data boundary.
+On the full route, dispatch a fresh read-only plan reviewer that did not write the plan. Give it the approved spec, applicable rules, current plan, relevant repository evidence, and available verification evidence. Require coverage, path, interface, ordering, testing, documentation, and validation checks. Include security review only when the spec contains a real security, permission, or sensitive-data boundary. On the standard route, do not add this second reviewer; the one package reviewer already owns both files.
 
 Apply the same known-unavailable rule: do not dispatch, do not wait, keep the plan pending, and never replace the missing review with author self-review.
 

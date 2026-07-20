@@ -6,12 +6,11 @@
   "all_required_passed": true,
   "fresh_cases": [
     "17",
-    "18",
-    "19"
+    "20"
   ],
   "review_status": "approved",
-  "reviewer": "skill-reviewer",
-  "reviewed_at": "2026-07-19",
+  "reviewer": "workflow-final-reviewer",
+  "reviewed_at": "2026-07-20",
   "cases": [
     {
       "id": "01",
@@ -229,6 +228,19 @@
         "double-approval-gate",
         "fixed-handoff",
         "localized-prd-write-reconciliation",
+        "localized-handoff-view",
+        "no-side-effects"
+      ]
+    },
+    {
+      "id": "20",
+      "valid": true,
+      "passed_criteria": [
+        "stable-topic-format",
+        "double-approval-gate",
+        "approved-handoff",
+        "fixed-handoff",
+        "routed-prd-body-and-separate-handoff",
         "localized-handoff-view",
         "no-side-effects"
       ]

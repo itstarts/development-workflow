@@ -103,7 +103,6 @@ class CheckCliTests(unittest.TestCase):
 
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         labels = [
-            "repo-tests",
             "skill-tests:alpha",
             "skill-tests:beta",
             "repository-validator:alpha",
@@ -113,9 +112,28 @@ class CheckCliTests(unittest.TestCase):
         ]
         positions = [result.stdout.index(label) for label in labels]
         self.assertEqual(sorted(positions), positions)
-        self.assertEqual(1, result.stdout.count("repo-tests"))
+        self.assertNotIn("repo-tests", result.stdout)
         self.assertIn("--reviewed-skill alpha --require-freshness", result.stdout)
         self.assertIn("--evidence-only beta --require-freshness", result.stdout)
+
+    def test_targeted_mode_does_not_run_unrelated_root_tests(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            quick, _ = self.fixture(root, {"alpha": "implemented"})
+            (root / "tests" / "test_unrelated.py").write_text(
+                "raise RuntimeError('targeted mode ran unrelated root tests')\n",
+                encoding="utf-8",
+            )
+            result = self.run_check(
+                root,
+                "--skill",
+                "alpha",
+                "--skill-validator",
+                str(quick),
+            )
+
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertNotIn("repo-tests", result.stdout)
 
     def test_full_mode_requires_every_skill_review_approved_before_launch(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -248,7 +266,7 @@ class CheckCliTests(unittest.TestCase):
 
         self.assertEqual(1, result.returncode)
         self.assertIn("[TIMEOUT] skill-validator:alpha", result.stdout)
-        self.assertIn("[PASS] repo-tests", result.stdout)
+        self.assertIn("[PASS] skill-tests:alpha", result.stdout)
         self.assertEqual(1, result.stdout.count("skill-validator:alpha"))
 
     def test_nonzero_check_is_reported_and_propagated_after_other_results_finish(self):
@@ -261,7 +279,7 @@ class CheckCliTests(unittest.TestCase):
             )
 
         self.assertEqual(1, result.returncode)
-        self.assertIn("[PASS] repo-tests", result.stdout)
+        self.assertIn("[PASS] skill-tests:alpha", result.stdout)
         self.assertIn("[FAIL] skill-validator:alpha", result.stdout)
         self.assertIn("exit=7", result.stdout)
 

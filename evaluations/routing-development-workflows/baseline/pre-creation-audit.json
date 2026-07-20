@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "evidence_role": "pre-creation-audit",
+  "chronology": "All five no-target-skill runs completed before the routing-development-workflows skill directory was initialized.",
+  "valid_red_cases": ["01", "02", "03", "05"],
+  "cases": [
+    {"id": "01", "valid": true, "failed_criteria": ["single-route-decision", "fast-all-conditions", "stable-route-handoff"]},
+    {"id": "02", "valid": true, "failed_criteria": ["single-route-decision", "standard-on-ordinary-or-unknown", "stable-route-handoff"]},
+    {"id": "03", "valid": true, "failed_criteria": ["single-route-decision", "full-on-material-risk", "stable-route-handoff"]},
+    {"id": "04", "valid": true, "failed_criteria": []},
+    {"id": "05", "valid": true, "failed_criteria": ["single-route-decision", "standard-on-ordinary-or-unknown", "stable-route-handoff"]}
+  ],
+  "red_observed": true,
+  "limitations": "Raw trace and stderr remain in ignored local work evidence. Versioned outputs are selected sanitized finals; the audit records rubric failures observable in those outputs."
+}

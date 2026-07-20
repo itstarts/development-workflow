@@ -145,6 +145,19 @@ def validate(payload: Any) -> None:
     review_status = require_type(review, "status", str, "input.documents.plan.review")
     if review_status not in {"approved", "not-approved", "unknown"}:
         raise InputError("invalid_input", ["input.documents.plan.review.status is not recognized"])
+    implementation_gate = require_type(
+        review, "implementation_gate", str, "input.documents.plan.review"
+    )
+    if implementation_gate not in {"open", "blocked", "unknown"}:
+        raise InputError(
+            "invalid_input",
+            ["input.documents.plan.review.implementation_gate is not recognized"],
+        )
+    if implementation_gate == "open" and review_status != "approved":
+        raise InputError(
+            "invalid_input",
+            ["input.documents.plan.review.implementation_gate cannot be open without approved review"],
+        )
     for field in ("reviewer", "reviewed_at"):
         require_nullable_string(review, field, "input.documents.plan.review")
 
@@ -221,11 +234,15 @@ def render(payload: Dict[str, Any]) -> str:
         f"优先级：{item['precedence']}）"
         for item in rules
     ) or "- 无已发现规则路径；实施前仍须确认当前作用域规则。"
-    plan_gate = (
-        "计划评审已明确批准。"
-        if plan_review["status"] == "approved"
-        else "计划评审未明确批准：实施前停止修改，取得明确批准后再继续。"
-    )
+    if plan_review["implementation_gate"] == "open":
+        plan_gate = "计划评审已明确批准，实施门禁已开放。"
+    elif plan_review["status"] == "approved":
+        plan_gate = (
+            "技术包评审已通过，但技术规格用户批准仍未完成："
+            "实施前停止修改，取得用户批准并重新核对实施门禁后再继续。"
+        )
+    else:
+        plan_gate = "实施门禁未开放：实施前停止修改，取得完整批准证据后再继续。"
     allowed, forbidden = effective_permissions(payload["permissions"])
     values = {
         "goal_line": f"开发目标：{safe_text(payload['request']['goal'])}",

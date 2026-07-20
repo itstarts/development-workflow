@@ -5,8 +5,9 @@
   "all_runs_valid": true,
   "all_required_passed": true,
   "review_status": "approved",
-  "reviewer": "bounded_skill_review",
-  "reviewed_at": "2026-07-17",
+  "reviewer": "workflow-final-reviewer",
+  "reviewed_at": "2026-07-20",
+  "fresh_cases": ["06"],
   "cases": [
     {
       "id": "01",
@@ -26,12 +27,17 @@
     {
       "id": "04",
       "valid": true,
-      "passed_criteria": ["explicit-implementation-approval", "scope-freeze", "no-scope-expansion", "scope-change-gate", "proportional-tdd", "proportional-validation", "independent-review", "relevant-documentation", "truthful-completion"]
+      "passed_criteria": ["explicit-implementation-approval", "scope-freeze", "no-scope-expansion", "scope-change-gate", "proportional-tdd", "proportional-validation", "mechanical-review-exemption", "relevant-documentation", "truthful-completion"]
     },
     {
       "id": "05",
       "valid": true,
       "passed_criteria": ["explicit-implementation-approval", "scope-freeze", "no-scope-expansion", "scope-change-gate", "proportional-tdd", "proportional-validation", "bounded-delegation", "independent-review", "relevant-documentation", "truthful-completion"]
+    },
+    {
+      "id": "06",
+      "valid": true,
+      "passed_criteria": ["explicit-implementation-approval", "scope-freeze", "no-scope-expansion", "scope-change-gate", "proportional-tdd", "proportional-validation", "independent-review", "validation-evidence-reuse-and-rule-candidate", "relevant-documentation", "truthful-completion"]
     }
   ]
 }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Route Development Workflows"
+  short_description: "Route development requests by verified risk"
+  default_prompt: "Use $routing-development-workflows to choose the safest efficient dw route."

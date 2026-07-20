@@ -275,6 +275,34 @@ class ManagingAgentsRulesContractTests(unittest.TestCase):
         )
         self.assertIn("do not explain the omission", candidates.casefold())
 
+    def test_project_validation_mapping_candidate_stays_optional_and_evidence_backed(self):
+        candidates = read("references/rule-candidates-and-scope.md")
+        approval = read("references/approval-and-write-safety.md")
+
+        assert_terms(
+            self,
+            candidates,
+            (
+                "current task evidence",
+                "evidence-backed",
+                "validation cost",
+                "project-specific validation",
+                "project candidate",
+            ),
+        )
+        assert_terms(
+            self,
+            approval,
+            (
+                "target path",
+                "candidate text",
+                "evidence",
+                "classification reason",
+                "minimal unified diff",
+                "approval is valid only when it explicitly follows",
+            ),
+        )
+
     def test_candidate_reference_invalidates_review_after_project_rule_change(self):
         candidates = read("references/rule-candidates-and-scope.md").casefold()
         assert_terms(

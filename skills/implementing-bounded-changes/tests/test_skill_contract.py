@@ -69,6 +69,7 @@ class ImplementingBoundedChangesContractTests(unittest.TestCase):
 
         self.assertIn("observe the test fail", skill)
         self.assertIn("smallest implementation", skill)
+        self.assertIn("let an immediately required parent gate supply the green result", skill)
         self.assertIn("no meaningful executable seam", skill)
         self.assertIn("do not manufacture a test", skill)
 
@@ -80,6 +81,47 @@ class ImplementingBoundedChangesContractTests(unittest.TestCase):
         self.assertIn("repository rules", skill)
         self.assertIn("update only existing documentation affected", skill)
         self.assertIn("documentation is part of completion", skill)
+
+    def test_validation_results_are_reused_until_relevant_inputs_change(self):
+        skill = read_skill().casefold()
+
+        for phrase in (
+            "in-memory validation ledger",
+            "do not rerun a passing check",
+            "review or agent handoff",
+            "invalidate only the affected validation",
+            "required parent or final gate once",
+            "let the gate supply its green result",
+            "inconclusive result",
+            "diagnose the cause before retrying",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, skill)
+
+        for relevant_input in (
+            "production code",
+            "test",
+            "fixture",
+            "configuration",
+            "dependency",
+            "validation command",
+            "environment",
+        ):
+            with self.subTest(relevant_input=relevant_input):
+                self.assertIn(relevant_input, skill)
+
+    def test_project_validation_mapping_remains_optional_rule_governance_input(self):
+        skill = read_skill().casefold()
+
+        for phrase in (
+            "reusable project-specific validation mapping",
+            "temporary in-memory mapping",
+            "do not edit `agents.md`",
+            "implementation approval is not rule approval",
+            "candidate evidence",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, skill)
 
     def test_delegation_and_review_must_be_bounded_and_truthful(self):
         skill = read_skill().casefold()
@@ -95,14 +137,37 @@ class ImplementingBoundedChangesContractTests(unittest.TestCase):
     def test_final_review_is_required_without_over_reviewing(self):
         skill = read_skill().casefold()
 
-        self.assertIn("final review is a completion gate", skill)
+        self.assertIn("classify the review requirement", skill)
+        self.assertIn("pure documentation, formatting, or deterministic mechanical change", skill)
+        self.assertIn("does not change executable behavior", skill)
+        self.assertIn("stale, non-normative documentation example", skill)
+        self.assertIn("behavior already established by current code and focused tests", skill)
+        self.assertIn("normative api, configuration, operational", skill)
+        self.assertIn("independent review is not required", skill)
+        self.assertIn("inspect the latest complete diff", skill)
+        self.assertIn("behavior change", skill)
+        self.assertIn("classification is uncertain", skill)
+        self.assertIn("repository rules require review", skill)
         self.assertIn("one implementation-independent reviewer", skill)
         self.assertIn("do not require per-slice or per-task review", skill)
         self.assertIn("same reviewer", skill)
-        self.assertIn("until the reviewer returns approved", skill)
+        self.assertIn("same reviewer re-check", skill)
         self.assertIn("once approved, stop reviewing", skill)
         self.assertIn("do not add another reviewer", skill)
         self.assertIn("report the task as blocked", skill)
+
+    def test_review_automation_stops_after_two_unapproved_fix_cycles(self):
+        skill = read_skill().casefold()
+
+        for phrase in (
+            "two consecutive repair-and-review cycles",
+            "stop the automatic loop",
+            "implementation gate remains blocked",
+            "cannot replace missing correctness or review evidence",
+            "same reviewer",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, skill)
 
     def test_completion_report_preserves_failures_and_limits(self):
         skill = read_skill().casefold()

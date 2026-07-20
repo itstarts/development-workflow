@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "criteria": [
+    {
+      "id": "single-route-decision",
+      "applies_to": ["01", "02", "03", "05"],
+      "pass": "Returns exactly one fast, standard, full, or blocked route with evidence-based reasons and one next capability or blocking action; it does not mix routes or start downstream work.",
+      "fail": "Returns multiple competing routes, omits the route, chooses a route without reasons, or starts writing documents or production files while classifying."
+    },
+    {
+      "id": "fast-all-conditions",
+      "applies_to": ["01"],
+      "pass": "Chooses fast only when implementation is explicitly approved, the goal and observable result are stable, the change is local and ordinarily reversible, no listed high-risk boundary is present, focused validation is sufficient, and repository rules do not require a stronger path; it selects implementing-bounded-changes without implementing the change itself.",
+      "fail": "Chooses fast while any condition is missing, invents approval, or performs the requested edit instead of handing off."
+    },
+    {
+      "id": "standard-on-ordinary-or-unknown",
+      "applies_to": ["02", "05"],
+      "pass": "Chooses standard for an ordinary feature that needs product and technical clarification but has no confirmed full-route risk, and also fails closed to standard rather than fast when a material routing fact is unknown; it asks only the decisive missing question when clarification is required.",
+      "fail": "Routes an ordinary or materially uncertain feature to fast, escalates to full without a high-risk fact, or asks an unrelated batch of questions."
+    },
+    {
+      "id": "full-on-material-risk",
+      "applies_to": ["03"],
+      "pass": "Chooses full when the request changes a data model and permission boundary, names the observed risk facts, preserves the complete PRD-spec-plan gates, and does not implement or design the migration while routing.",
+      "fail": "Chooses fast or standard for the confirmed high-risk change, weakens the existing gates, or begins migration design or implementation."
+    },
+    {
+      "id": "explicit-entry-outside-router",
+      "applies_to": ["04"],
+      "pass": "Reports that the explicit creating-product-requirements entry is outside this router's applicability, preserves that requested capability, and emits no workflow_route or canonical router handoff while creating no PRD itself.",
+      "fail": "Invokes the router for the explicit entry, emits workflow_route including a bypass value or competing route, overrides the requested capability, creates the PRD, or searches fixed installation paths."
+    },
+    {
+      "id": "stable-route-handoff",
+      "applies_to": ["01", "02", "03", "05"],
+      "pass": "Emits one compact canonical handoff containing one fast, standard, full, or blocked route, scope summary, observed risk facts including unknowns, approval state, destination capability, and next action; downstream capability selection uses runtime exposure rather than sibling source or installation paths.",
+      "fail": "Leaves the handoff implicit, drops unknown or approval state, fabricates a capability, or reads/calls a sibling through a repository, installation, or plugin-cache path."
+    }
+  ]
+}

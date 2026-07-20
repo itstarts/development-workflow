@@ -10,13 +10,13 @@ Require findings ordered by severity, open questions, verification gaps, and one
 
 Use `pending` when a confirmation or approval has not happened. Use `unknown` for an existing file whose relevant metadata is missing, unreadable, unsupported, duplicate, conflicting, or cannot be tied to the current version. Preserve a reliably selected path even when content state is unknown.
 
-A material change to PRD meaning must reset independent review and user approval to pending, remove stale reviewer identity, and remove all related approval and review dates. If it also changes the confirmed summary, reset understanding confirmation, reassess confidence truthfully from 0 through 100, and repeat summary confirmation. A confidence score at or above 95 does not replace a pending confirmation.
+A material change to PRD meaning must reset independent review and user approval to pending, remove stale reviewer identity, and remove all related approval and review dates. A material route change, including a change between `standard` and `full` or a risk-fact change that crosses that boundary, must also reset independent review and user approval. If it also changes the confirmed summary, reset understanding confirmation, reassess confidence truthfully from 0 through 100, and repeat summary confirmation. A confidence score at or above 95 does not replace a pending confirmation.
 
 For a read-only handoff check, do not re-litigate the content quality of a PRD whose current metadata is complete, reliable, and approved. Report specification_gate open when every recorded gate is satisfied. If new evidence requires a content change, report that separately; change the file and reset approvals only through the material change workflow rather than silently overturning valid approval metadata.
 
 ## Canonical Handoff
 
-Build and validate this canonical English snapshot first. It is the only machine-authoritative handoff and the only form passed to a downstream capability:
+Build and validate this canonical English snapshot first. It remains the machine-authoritative requirements handoff:
 
 ```text
 requirements_path: <absolute-path> | null
@@ -29,7 +29,7 @@ requirements_independent_review: pending | approved | unknown
 specification_gate: blocked | open
 ```
 
-The alternatives are reference-only; select exactly one value per field. Open the gate only when the PRD exists and confidence is at least 95, summary confirmation is approved, metadata is reliable, and both document approvals are approved. Keep this canonical English snapshot internal; do not print it as a second user-visible status block.
+The alternatives are reference-only; select exactly one value per field. Open the gate only when the PRD exists and confidence is at least 95, summary confirmation is approved, metadata is reliable, and both document approvals are approved. Keep this canonical English snapshot internal; do not print it as a second user-visible status block. The route is not a ninth requirements field: pass the route handoff separately, while its `workflow_route` and risk facts remain recoverable from `## 工作流分流` in the approved PRD.
 
 Do not reverse-parse the Chinese view into canonical state. A legacy English handoff remains valid input and follows the same validation rules.
 
@@ -85,7 +85,7 @@ If pre-rendering fails because a valid canonical value has no mapping, mappings 
 
 ## Approved Transition
 
-After writing and validating user approval, freeze the complete canonical English eight-field handoff and pre-render its Chinese view. Only when `specification_gate` is `open` and that view passes validation, select the runtime-exposed skill capability named `creating-development-specs-and-plans` in the same session. Pass the absolute `requirements_path`, exact `requirements_topic`, exact `requirements_scope`, and the complete canonical English handoff as explicit input. Do not ask the user to repeat those values.
+After writing and validating user approval, freeze the complete canonical English eight-field handoff and pre-render its Chinese view. Only when `specification_gate` is `open` and that view passes validation, select the runtime-exposed skill capability named `creating-development-specs-and-plans` in the same session. Pass the absolute `requirements_path`, exact `requirements_topic`, exact `requirements_scope`, the complete canonical English handoff, and the separate route handoff as explicit input. Do not ask the user to repeat those values.
 
 The PRD workflow does not create the design spec. Do not read sibling skill source, do not inspect sibling skill installation directories, and do not infer an installation path. If the named capability is unavailable, report the capability gap and end with the pre-rendered truthful Chinese eight-field view.
 

@@ -155,12 +155,14 @@ def build_checks(
     plugin_validator: Optional[Path],
 ) -> list[Check]:
     python = sys.executable
-    checks = [
-        Check(
-            "repo-tests",
-            (python, "-m", "unittest", "discover", "-s", "tests", "-v"),
+    checks = []
+    if args.full:
+        checks.append(
+            Check(
+                "repo-tests",
+                (python, "-m", "unittest", "discover", "-s", "tests", "-v"),
+            )
         )
-    ]
     for name in targets:
         checks.append(
             Check(

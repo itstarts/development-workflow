@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "evidence_role": "migration-baseline",
+  "target_skill_loaded": false,
+  "all_runs_valid": true,
+  "failures_observed": true,
+  "cases": [
+    {"id": "01", "valid": true, "failed_criteria": ["single-route-decision", "fast-all-conditions", "stable-route-handoff"]},
+    {"id": "02", "valid": true, "failed_criteria": ["single-route-decision", "standard-on-ordinary-or-unknown", "stable-route-handoff"]},
+    {"id": "03", "valid": true, "failed_criteria": ["single-route-decision", "full-on-material-risk", "stable-route-handoff"]},
+    {"id": "04", "valid": true, "failed_criteria": []},
+    {"id": "05", "valid": true, "failed_criteria": ["single-route-decision", "standard-on-ordinary-or-unknown", "stable-route-handoff"]}
+  ]
+}
