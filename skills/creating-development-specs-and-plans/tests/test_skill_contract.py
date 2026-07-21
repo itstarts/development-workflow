@@ -152,7 +152,7 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
         text = (read("SKILL.md") + read("references/review-and-handoff.md")).casefold()
         for required in (
             "fresh read-only spec reviewer",
-            "fix every finding",
+            "fix only `blocking_in_scope` findings",
             "re-review",
             "does not equal user approval",
             "explicitly approves the current written spec",
@@ -686,61 +686,80 @@ class CreatingSpecsAndPlansContractTests(unittest.TestCase):
             with self.subTest(plan_template=required):
                 self.assertIn(required, plan_template)
 
-    def test_spec_and_plan_require_failure_and_guarantee_traceability(self):
+    def test_spec_and_plan_keep_technical_detail_proportional_to_approved_requirements(self):
         contracts = read("references/document-contracts.md").casefold()
         spec_template = read("assets/spec-template.md").casefold()
         plan_template = read("assets/plan-template.md").casefold()
 
         for required in (
-            "command outcome and failure matrix",
-            "every state-changing command",
-            "asynchronous completion",
-            "client-visible",
-            "local persistence failure",
-            "database engine",
-            "read-to-write",
-            "lock acquisition",
-            "lock hold duration",
-            "busy",
-            "deadlock",
-            "timeout",
-            "guarantee id",
-            "exact test",
-            "observable assertion",
+            "approved requirements are the product-scope ceiling",
+            "minimum technical decisions",
+            "confirmed risk",
+            "group outcomes that require the same caller action and produce the same consistency effect",
+            "do not enumerate speculative",
+            "requirement or confirmed risk",
+            "minimum sufficient validation",
+            "do not add or replace approved states, identifiers, interfaces, errors, or validation scope",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, contracts)
 
         for required in (
-            "命令结果与失败矩阵",
-            "数据库事务与锁语义",
-            "保证与测试追踪",
-            "保证 id",
-            "客户端可见结果",
-            "结果 id",
-            "结果类型",
-            "每个结果单独一行",
-            "不得在同一行合并",
+            "关键结果与失败边界（按需）",
+            "需求或已确认风险依据",
             "调用方动作",
-            "一致性效果",
-            "对应结果 id",
+            "数据或一致性影响",
+            "需求与验证追踪",
+            "最小技术保证",
+            "最小充分验证",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, spec_template)
-        self.assertNotIn(
-            "成功或无变化结果 | 失败分类",
-            spec_template,
-        )
+        for forbidden in (
+            "每个结果单独一行",
+            "不得在同一行合并",
+            "保证 id",
+            "结果 id",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, spec_template)
 
         for required in (
-            "覆盖保证",
-            "覆盖结果",
-            "精确测试",
-            "可观察断言",
-            "无遗漏保证",
+            "需求与风险追踪",
+            "需求或风险依据",
+            "最小实现",
+            "定向验证",
+            "不得为了追踪而新增",
+            "不得新增或替换已批准的状态、标识符、接口、错误分类或验证范围",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, plan_template)
+        for forbidden in (
+            "覆盖保证",
+            "覆盖结果",
+            "无遗漏保证",
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, plan_template)
+
+    def test_review_uses_approved_prd_as_scope_ceiling_and_rechecks_only_the_delta(self):
+        review = (
+            read("SKILL.md") + read("references/review-and-handoff.md")
+        ).casefold()
+        for required in (
+            "approved prd is the product-scope ceiling",
+            "classify each finding",
+            "`blocking_in_scope`",
+            "`scope_change_required`",
+            "`non_blocking_note`",
+            "minimum in-scope correction",
+            "prior blocking findings",
+            "changed regions",
+            "regressions caused by the correction",
+            "do not fix every finding",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, review)
 
     def test_security_detail_is_required_only_when_relevant(self):
         contracts = read("references/document-contracts.md").casefold()
