@@ -2045,6 +2045,26 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertNotIn("任务级评审", final_reviewer)
         self.assertNotIn("任务级与集成评审", workflow_reviewer)
 
+    def test_repository_reviewers_treat_approved_requirements_as_scope_ceiling(self):
+        reviewer_paths = (
+            ROOT / ".codex" / "agents" / "final-reviewer.toml",
+            ROOT / ".codex" / "agents" / "skill-reviewer.toml",
+            ROOT / ".codex" / "agents" / "workflow-final-reviewer.toml",
+        )
+        for path in reviewer_paths:
+            reviewer = path.read_text(encoding="utf-8").casefold()
+            for required in (
+                "已批准需求或冻结范围是产品范围上限",
+                "`blocking_in_scope`",
+                "`scope_change_required`",
+                "`non_blocking_note`",
+                "最小范围内修正",
+                "不得把偏好方案",
+                "复审只检查原阻断项、变更区域和修复引入的回归",
+            ):
+                with self.subTest(path=path.name, required=required):
+                    self.assertIn(required, reviewer)
+
     def test_agent_rules_record_tdd_and_self_containment_gates(self):
         root_rules = (ROOT / "AGENTS.md").read_text()
         skill_rules = (ROOT / "skills" / "AGENTS.md").read_text()

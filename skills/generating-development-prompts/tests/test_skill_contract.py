@@ -255,6 +255,21 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn("latest complete diff", skill)
         self.assertNotIn("独立评审未通过不得进入下一项", template)
 
+    def test_execution_contract_keeps_review_bounded_by_approved_requirements(self):
+        combined = (read("SKILL.md") + read("assets/development-prompt.md")).casefold()
+        for required in (
+            "已批准需求是产品范围上限",
+            "`blocking_in_scope`",
+            "`scope_change_required`",
+            "`non_blocking_note`",
+            "最小范围内修正",
+            "范围扩展不得直接实施",
+            "复审只检查原阻断项、变更区域和修复引入的回归",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, combined)
+        self.assertNotIn("修复范围内发现", combined)
+
     def test_production_files_have_no_framework_name_path_or_derived_workflow(self):
         forbidden = (
             "systematic " + "debugging",

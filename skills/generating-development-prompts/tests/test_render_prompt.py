@@ -314,9 +314,13 @@ class RenderPromptTests(unittest.TestCase):
             "最新完整 diff",
             "不得仅因任务数量",
             "中间里程碑评审",
-            "执行整体评审",
-            "修复范围内发现、重跑受影响验证",
-            "同一评审者复审",
+            "执行首次整体评审",
+            "已批准需求是产品范围上限",
+            "`BLOCKING_IN_SCOPE`",
+            "`SCOPE_CHANGE_REQUIRED`",
+            "`NON_BLOCKING_NOTE`",
+            "最小范围内修正",
+            "复审只检查原阻断项、变更区域和修复引入的回归",
             "整体复审通过且验证证据完整后才报告完成",
         ):
             with self.subTest(expected=expected):
@@ -332,7 +336,7 @@ class RenderPromptTests(unittest.TestCase):
             "再写最小实现",
             "每项任务完成与影响范围匹配的验证",
             "全部计划任务完成并集成后",
-            "执行整体评审",
+            "执行首次整体评审",
             "获得 APPROVED 后停止",
             "连续两轮修复与复审仍未通过",
         ):

@@ -28,11 +28,11 @@ substantive development → AGENTS rule governance
 通过 repo marketplace 安装完整 plugin bundle：
 
 ```bash
-codex plugin marketplace add itstarts/development-workflow --ref v0.1.2
+codex plugin marketplace add itstarts/development-workflow --ref v0.1.3
 codex plugin add development-workflow@development-workflow
 ```
 
-当前稳定版本为 `v0.1.2`。catalog 与 plugin entry 均固定到该不可变 tag，避免安装内容随 `main` 变化。
+当前稳定版本为 `v0.1.3`。catalog 与 plugin entry 均固定到该不可变 tag，避免安装内容随 `main` 变化。
 
 也可以通过 `skill-installer` 一次安装全部 skill：
 
@@ -40,7 +40,7 @@ codex plugin add development-workflow@development-workflow
 python3 \
   "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
   --repo itstarts/development-workflow \
-  --ref v0.1.2 \
+  --ref v0.1.3 \
   --path \
     skills/routing-development-workflows \
     skills/creating-product-requirements \
@@ -56,7 +56,7 @@ python3 \
 
 1. `routing-development-workflows` 在没有显式入口时选择一条路径：只有范围稳定、用户已批准实施、无高风险边界且定向验证充分时进入 `fast`；普通需求进入 `standard`；公共契约、架构、数据、权限、迁移、并发、一致性或外部状态等边界进入 `full`；确定性能力或授权缺口进入 `blocked`。
 2. `creating-product-requirements` 在理解置信度达到 95% 且用户确认摘要后创建 PRD。存在可靠批准基线时默认另建增量 PRD，只写确认摘要中的变化和必要影响，不覆盖或复刻完整基线；没有相关基线时创建完整 PRD。route 与风险事实仍保存到 `工作流分流`，不改变 canonical 八字段。PRD 经独立评审和用户批准后，在同一会话自动进入 spec workflow。
-3. `creating-development-specs-and-plans` 复验 PRD。`standard` 在 spec 用户批准前先生成 spec+plan 草案，由一位 reviewer 统一评审；评审通过但 spec 未获用户批准时，计划评审真实保持已通过，实施门仍关闭。`full` 保留 spec 评审→用户批准→plan 评审的逐级顺序。
+3. `creating-development-specs-and-plans` 复验 PRD，并把已批准 PRD 作为产品范围上限，只补满足需求、适用规则或已确认风险所需的最小技术细节。`standard` 在 spec 用户批准前先生成 spec+plan 草案，由一位 reviewer 统一评审；评审通过但 spec 未获用户批准时，计划评审真实保持已通过，实施门仍关闭。`full` 保留 spec 评审→用户批准→plan 评审的逐级顺序。评审项必须区分范围内阻断、需要扩围和非阻断建议；扩围不进入当前修复，复审只检查原阻断项、变更区域和修复回归。
 4. `generating-development-prompts` 基于已验证十四字段和当前会话证据输出 `current-session`、`new-session` 或 `blocked`；它分别保留计划评审状态与实施门，不会把“技术包已评审、spec 待用户批准”误判为可实施。
 
 普通非阻塞澄清只显示固定三行“当前阶段 / 主题 / 下一步”；暂停、阻塞、摘要确认、批准、文档阶段完成与跨 skill 交接继续显示完整中文八字段或十四字段。内部英文 canonical 字段、门禁计算与旧英文输入兼容性保持不变。完整契约见[工作流与文档契约](docs/workflow.md)。

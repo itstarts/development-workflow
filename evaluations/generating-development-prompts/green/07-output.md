@@ -1,24 +1,25 @@
-$goal_line
+```text
+开发目标：先完整读取并严格依据已批准的产品需求 /workspace/fixture/docs/requirements/2026-07-17-example.md、技术规格和实施计划：通过现有公共接口提供一个可验证的示例功能并保持兼容，按失败测试、最小实现、验证与独立评审的顺序完成；已批准需求是产品范围上限。
 
 开发目标与来源文档
-规格：$spec_path（来源：$spec_source）
-计划：$plan_path（来源：$plan_source；评审：$plan_review）
+规格：/workspace/fixture/docs/specs/2026-07-17-example-design.md（来源：explicit）
+计划：/workspace/fixture/docs/plans/2026-07-17-example.md（来源：explicit；评审：approved）
 
 仓库与分支状态
-$repository_gate
-$branch_gate
+仓库状态已识别为 Git 仓库。
+目标分支未指定：修改前根据计划与仓库规则派生开发分支名；不得直接使用 main 或 master，仓库状态不允许建分支时停止。
 
 规则与文档优先级
-$rules
+- /workspace/fixture/AGENTS.md（来源：filesystem；优先级：0）
 先完整读取规格、计划和所有适用的 AGENTS.md，再做任何修改。会话显式规则优先于文件系统规则，更深层目录规则优先；显式文档路径优先于自动选择值。实施前核对文档路径、适用规则与计划评审状态。
-$plan_gate
+计划评审已明确批准，实施门禁已开放。
 
 范围上限与评审依据
 已批准需求是产品范围上限；显式手工提示词请求没有可靠 PRD 时，以用户明确冻结且已批准的范围作为同等上限。规格和计划只能补充满足该范围、适用规则或已确认风险所需的最小技术细节，不能自行扩大产品范围。新增产品行为、持久身份、状态机、信任边界、共享框架、基础设施、验收范围或测试范围均属于范围扩展；范围扩展不得直接实施，必须返回需求与用户批准。不得把偏好架构、通用加固、推测性故障或更广测试策略当作阻断项，除非能给出上述范围内依据。
 
 权限边界
-允许：$allowed
-禁止：$forbidden
+允许：create-development-branch-or-worktree、create-local-commit、query-official-documentation、install-plan-listed-dependencies、download-plan-required-playwright-browsers、start-local-development-service、run-tests-build-lint-local-validation
+禁止：push、merge、rebase、tag、release、production-deployment、cloudflare-or-dns-change、unauthorized-secrets-tokens-credentials-or-production-data
 平台安全与审批规则始终优先；外部状态、敏感信息或破坏性操作必须遵循当前会话审批机制，用户权限覆盖不能绕过平台约束。
 
 全局子代理选择
@@ -31,3 +32,4 @@ $plan_gate
 
 完成条件与报告
 全部计划任务完成并集成后，先运行完整的相关验证，再由一名未参与实现的独立评审者依据已批准需求、适用规则、已确认风险和当前验证证据，对最新完整 diff 执行首次整体评审。每项 finding 必须标为 `BLOCKING_IN_SCOPE`、`SCOPE_CHANGE_REQUIRED` 或 `NON_BLOCKING_NOTE`，写明具体依据、当前证据与影响、范围效果，以及适用时的最小范围内修正。只修复 `BLOCKING_IN_SCOPE` 并重跑受影响验证；`SCOPE_CHANGE_REQUIRED` 返回需求和用户批准，`NON_BLOCKING_NOTE` 不阻断当前范围。复审只检查原阻断项、变更区域和修复引入的回归；新阻断项仅限修复导致的回归或此前遗漏的需求/规则直接违反，并说明此前未发现的原因。获得 APPROVED 后停止，不增加重复评审；若连续两轮修复与复审仍未通过，则停止自动循环、报告剩余发现，实施门禁保持关闭。用户指令不能替代缺失的正确性或评审证据。只有整体复审通过且验证证据完整后才报告完成。报告关键变更、受影响文件、验证命令与结果、中间里程碑评审（若有）和整体复审结论、风险、未验证项和后续操作。
+```

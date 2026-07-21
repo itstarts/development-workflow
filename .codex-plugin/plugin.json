@@ -1,6 +1,6 @@
 {
   "name": "development-workflow",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Route development work by risk, create approved requirements and plans, continue session handoffs, implement bounded changes, or govern AGENTS rules.",
   "author": {
     "name": "development-workflow maintainers"

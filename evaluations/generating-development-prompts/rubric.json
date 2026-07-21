@@ -33,7 +33,7 @@
     },
     {
       "id": "no-user-visible-thread",
-      "applies_to": ["01", "02", "03", "04", "05", "06"],
+      "applies_to": ["01", "02", "03", "04", "05", "06", "07"],
       "pass": "Does not create, fork, open, send, hand off, or manage a user-visible task/thread.",
       "fail": "Performs or claims any user-visible task/thread operation."
     },
@@ -63,9 +63,15 @@
     },
     {
       "id": "manual-single-code-block",
-      "applies_to": ["05", "06"],
+      "applies_to": ["05", "06", "07"],
       "pass": "Returns renderer stdout as one complete dynamic text code block with no prompt fragment or status suffix outside it.",
       "fail": "Uses multiple code blocks, adds a routing suffix or explanatory fragment, or does not render a copyable prompt."
+    },
+    {
+      "id": "requirements-bounded-review-prompt",
+      "applies_to": ["07"],
+      "pass": "The generated prompt treats the approved requirements, or an explicitly frozen approved scope when no reliable PRD exists, as the product-scope ceiling. It requires every review finding to be classified as BLOCKING_IN_SCOPE, SCOPE_CHANGE_REQUIRED, or NON_BLOCKING_NOTE with a concrete requirements, rule, confirmed-risk, or current-diff regression basis and a minimum in-scope correction. It forbids directly implementing scope expansion or turning a preferred architecture into a blocker, and limits re-review to prior blockers, changed regions, and regressions introduced by the correction.",
+      "fail": "The prompt lets the spec, plan, or reviewer expand product scope; directs the implementation agent to fix every review suggestion; lacks explicit finding classification and basis; implements scope expansion without returning to requirements or user approval; treats architecture preference as mandatory; or restarts an unrestricted full audit on each re-review."
     }
   ]
 }

@@ -5,13 +5,12 @@
   "all_runs_valid": true,
   "all_required_passed": true,
   "fresh_cases": [
-    "12",
-    "24",
-    "25"
+    "20",
+    "21"
   ],
   "review_status": "approved",
   "reviewer": "workflow-final-reviewer",
-  "reviewed_at": "2026-07-20",
+  "reviewed_at": "2026-07-21",
   "cases": [
     {
       "id": "01",
@@ -304,7 +303,7 @@
         "truthful-status-fields",
         "requirements-source-preserved",
         "localized-handoff-view",
-        "command-failure-and-guarantee-traceability"
+        "requirements-bounded-technical-design"
       ]
     },
     {
@@ -321,7 +320,7 @@
         "truthful-status-fields",
         "requirements-source-preserved",
         "localized-handoff-view",
-        "plan-guarantee-traceability"
+        "requirements-bounded-plan"
       ]
     },
     {

@@ -2,9 +2,22 @@
 
 本项目遵循语义化版本。六个 skill 共享 plugin 版本；每个版本分别记录 skill 与集成契约变化。
 
-## Unreleased
+## 0.1.3 - 2026-07-21
 
-- 暂无。
+### creating-development-specs-and-plans
+
+- 已批准 PRD 成为 spec、plan 与独立评审的产品范围上限；技术文档只补批准需求、适用规则或已确认风险所需的最小技术细节。
+- 删除默认强制的 Outcome ID、Guarantee ID、穷举失败矩阵、全量事务锁细节和双向测试追踪，改为按需记录关键结果并追踪“需求/风险 → 最小保证 → 最小充分验证”。
+- 评审 findings 固定区分 `BLOCKING_IN_SCOPE`、`SCOPE_CHANGE_REQUIRED` 与 `NON_BLOCKING_NOTE`；只修复第一类，扩围返回需求与用户批准，复审仅覆盖原阻断项、变更区域和修复回归。
+
+### generating-development-prompts
+
+- 生成的开发提示词显式携带需求范围上限、三类 finding、最小范围内修正和增量复审合同，避免实施 Agent 自动接受 reviewer 引入的额外机制、基础设施或测试范围。
+
+### Repository
+
+- 三个只读 reviewer 角色统一采用需求有据的阻断条件和增量复审边界；公开工作流与 Agent 开发文档同步该合同。
+- 将 plugin manifest、repo marketplace、README、安装指南和安全支持范围同步到 `v0.1.3`。
 
 ## 0.1.2 - 2026-07-20
 
