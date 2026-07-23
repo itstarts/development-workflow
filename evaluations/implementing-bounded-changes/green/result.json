@@ -6,8 +6,8 @@
   "all_required_passed": true,
   "review_status": "approved",
   "reviewer": "workflow-final-reviewer",
-  "reviewed_at": "2026-07-20",
-  "fresh_cases": ["06"],
+  "reviewed_at": "2026-07-23",
+  "fresh_cases": ["07"],
   "cases": [
     {
       "id": "01",
@@ -38,6 +38,11 @@
       "id": "06",
       "valid": true,
       "passed_criteria": ["explicit-implementation-approval", "scope-freeze", "no-scope-expansion", "scope-change-gate", "proportional-tdd", "proportional-validation", "independent-review", "validation-evidence-reuse-and-rule-candidate", "relevant-documentation", "truthful-completion"]
+    },
+    {
+      "id": "07",
+      "valid": true,
+      "passed_criteria": ["explicit-implementation-approval", "scope-freeze", "no-scope-expansion", "scope-change-gate", "proportional-tdd", "proportional-validation", "risk-matched-review-and-p2-note", "relevant-documentation", "truthful-completion"]
     }
   ]
 }

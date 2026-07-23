@@ -67,7 +67,7 @@
 - `full`、route 缺失或 route 不可靠时，spec 必须经过独立评审和用户明确批准后才能创建 plan，plan 再独立评审。
 - plan 只有真实评审通过后才能记录 `review_status: approved`；不得预填或推断批准状态。
 - PRD skill 固定报告 requirements 八字段；specs/plans skill 必须校验并保留这些字段，再以十四字段报告 requirements、spec、plan 与双门状态；prompt skill 保留显式 spec/plan 路径与评审状态。
-- bounded implementation skill 不依赖上述文档链；必须保留用户推进批准、冻结范围、定向验证和相关文档更新。只有不改变行为、配置语义、公共契约、产品含义或操作流程，且确定性检查充分、仓库规则不强制评审的纯文档、格式或机械改动，才可记录具体理由并免独立评审。
+- bounded implementation skill 不依赖上述文档链；必须保留用户推进批准、冻结范围、定向验证和相关文档更新。评审要求先服从当前用户指令和适用项目规则：局部、可逆、有确定性行为测试且不触及共享契约或高风险边界的轻量行为变更，默认可记录具体理由并免独立评审；中等任务按实际风险、可逆性和验证覆盖判断，不因行为变化或任务标签自动升级；数据模型、迁移、权限、安全、资金、不可逆操作、并发、事务、一致性等高风险边界及项目规则明确要求时必须最终评审。普通 P2 只有在违反批准验收、现有契约、适用规则、当前回归或具体高风险正确性要求时才作为 `BLOCKING_IN_SCOPE`，否则记录为 `SCOPE_CHANGE_REQUIRED` 或 `NON_BLOCKING_NOTE`，不进入自动修复—复审循环。
 
 ## Git
 
