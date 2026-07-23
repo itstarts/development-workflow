@@ -2,6 +2,19 @@
 
 本项目遵循语义化版本。六个 skill 共享 plugin 版本；每个版本分别记录 skill 与集成契约变化。
 
+## 0.1.4 - 2026-07-23
+
+### implementing-bounded-changes
+
+- 局部、可逆、有确定性行为测试且不触及共享契约或高风险边界的轻量行为变更，默认可记录依据并免独立评审。
+- 中等任务改为根据实际边界、可逆性、共享影响和验证覆盖决定是否评审；数据、迁移、权限、安全、资金、不可逆操作、并发、事务和一致性等高风险边界仍强制最终评审。
+- 评审 finding 固定分为 `BLOCKING_IN_SCOPE`、`SCOPE_CHANGE_REQUIRED` 和 `NON_BLOCKING_NOTE`；普通 P2 不再仅凭优先级标签触发自动修复—复审循环，只有具备验收、契约、规则、回归或具体高风险正确性依据的范围内阻断才进入循环。
+
+### Repository
+
+- 新增风险匹配评审与普通 P2 处理的 current-RED/GREEN 场景、合同测试和公开文档说明。
+- 将 plugin manifest、repo marketplace、README、安装指南和安全支持范围同步到 `v0.1.4`。
+
 ## 0.1.3 - 2026-07-21
 
 ### creating-development-specs-and-plans

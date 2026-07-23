@@ -20,7 +20,7 @@ substantive development → AGENTS rule governance
 | `creating-product-requirements` | 澄清产品范围、用户场景和验收标准；已有批准基线时默认生成不复刻完整基线的单主题增量 PRD，否则生成完整 PRD；门禁打开后自动进入 spec workflow |
 | `creating-development-specs-and-plans` | 校验已批准 PRD；`standard` 把 spec+plan 合并为一次技术包评审，`full` 保留逐级批准；十四字段验证通过后自动进入会话路由 |
 | `generating-development-prompts` | 从已批准十四字段或显式请求判断当前会话、新会话或阻塞；仅在需要新会话时生成单一代码框中的可复制提示词 |
-| `implementing-bounded-changes` | 在用户明确批准后，以冻结范围、比例化 TDD、定向验证和文档同步完成小改动或 Bug 修复；纯机械改动可按严格条件免独立评审 |
+| `implementing-bounded-changes` | 在用户明确批准后，以冻结范围、比例化 TDD、定向验证和文档同步完成小改动或 Bug 修复；轻量低风险行为变更可按证据免独立评审，中等任务按真实风险判断，高风险边界保持强制评审 |
 | `managing-agents-rules` | 在实质性开发前检查项目根规则，并在任务完成时对有证据的项目级或全局 AGENTS 规则候选执行逐 diff 批准治理 |
 
 ## 快速安装
@@ -28,11 +28,11 @@ substantive development → AGENTS rule governance
 通过 repo marketplace 安装完整 plugin bundle：
 
 ```bash
-codex plugin marketplace add itstarts/development-workflow --ref v0.1.3
+codex plugin marketplace add itstarts/development-workflow --ref v0.1.4
 codex plugin add development-workflow@development-workflow
 ```
 
-当前稳定版本为 `v0.1.3`。catalog 与 plugin entry 均固定到该不可变 tag，避免安装内容随 `main` 变化。
+当前稳定版本为 `v0.1.4`。catalog 与 plugin entry 均固定到该不可变 tag，避免安装内容随 `main` 变化。
 
 也可以通过 `skill-installer` 一次安装全部 skill：
 
@@ -40,7 +40,7 @@ codex plugin add development-workflow@development-workflow
 python3 \
   "${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
   --repo itstarts/development-workflow \
-  --ref v0.1.3 \
+  --ref v0.1.4 \
   --path \
     skills/routing-development-workflows \
     skills/creating-product-requirements \
@@ -61,7 +61,7 @@ python3 \
 
 普通非阻塞澄清只显示固定三行“当前阶段 / 主题 / 下一步”；暂停、阻塞、摘要确认、批准、文档阶段完成与跨 skill 交接继续显示完整中文八字段或十四字段。内部英文 canonical 字段、门禁计算与旧英文输入兼容性保持不变。完整契约见[工作流与文档契约](docs/workflow.md)。
 
-对于不需要 PRD、spec 和 plan 的已确认小改动，`implementing-bounded-changes` 在用户明确批准推进后冻结改动点、方案、非目标、验证和文档边界，再执行最小 TDD、定向验证和相关文档更新。同一相关状态下已通过的检查不会因评审或 Agent 交接而重复运行；变化只使受影响结果失效，仓库要求的最终门在最后一次相关变化后运行一次，并在覆盖同一 focused seam 时直接充当 GREEN。任务中形成的项目验证映射只作为可选规则候选展示，必须由用户逐 diff 选择是否加入项目 `AGENTS.md`。只有纯文档、格式或确定性机械改动，且不改变行为、配置语义、公共契约、产品含义或操作流程时，才可免独立评审；其它变更仍使用一位 reviewer。连续两轮修复与复审仍未通过时停止自动循环并保持阻塞，用户偏好不能替代正确性证据。
+对于不需要 PRD、spec 和 plan 的已确认小改动，`implementing-bounded-changes` 在用户明确批准推进后冻结改动点、方案、非目标、验证和文档边界，再执行最小 TDD、定向验证和相关文档更新。同一相关状态下已通过的检查不会因评审或 Agent 交接而重复运行；变化只使受影响结果失效，仓库要求的最终门在最后一次相关变化后运行一次，并在覆盖同一 focused seam 时直接充当 GREEN。任务中形成的项目验证映射只作为可选规则候选展示，必须由用户逐 diff 选择是否加入项目 `AGENTS.md`。评审先服从当前用户指令和项目规则：局部、可逆、有确定性行为测试且不触及共享或高风险边界的轻量行为变更默认可免独立评审；中等任务根据真实边界、可逆性和验证覆盖判断，不因任务标签自动升级；数据、迁移、权限、安全、资金、不可逆操作、并发、事务和一致性等高风险边界默认强制最终评审。评审 finding 分为范围内阻断、需要扩围和非阻断建议；没有现有验收、契约、规则、回归或具体高风险正确性依据的普通 P2 只记录，不进入修复—复审循环。只有范围内阻断进入同一 reviewer 的复审；连续两轮仍未通过时停止自动循环并保持阻塞。
 
 `managing-agents-rules` 独立应用于实质性开发的前置检查和完成扫描。它不会调用其它 skill，也不会自动写规则；每个项目级或全局候选都必须有当前任务证据、明确目标和当前最小 diff，并取得只对该 diff 有效的批准。
 
